@@ -31,14 +31,11 @@ public class WAVExplorer {
 	//TODO: use ints for things like sampleRate?
 	public WAVExplorer(String filepath) {
 		String loc = null;
-		String foo = null;
 		try {
 			loc = Environment.getExternalStorageDirectory().getAbsolutePath();
-			File f = new File(loc,filepath);
-
+			File f = new File(filepath);
 			wavFile = new RandomAccessFile(f, "r");
-			foo = Uri.fromFile(f).toString();
-			
+						
 			fileLength = wavFile.length();
 			
 			wavFile.seek(22);
@@ -99,7 +96,6 @@ public class WAVExplorer {
 			wavFile.close();
 		} catch (FileNotFoundException e) {
 			System.err.println("Couldn't find file "+loc+"/"+filepath);
-			System.err.println("foo "+foo);
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();

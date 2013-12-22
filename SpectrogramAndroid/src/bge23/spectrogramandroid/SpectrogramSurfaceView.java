@@ -1,5 +1,6 @@
 package bge23.spectrogramandroid;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -8,8 +9,9 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.media.MediaPlayer;
+import android.os.Environment;
 import android.os.Handler;
-import android.util.DisplayMetrics;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -40,19 +42,21 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		ctx = context;
 		sh = getHolder();
 		sh.addCallback(this);
-		String filepath = "woodpecker.wav";	
+		String filename = "woodpecker.wav";
+		String filepath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+filename;
 		spec = new Spectrogram(filepath);
 		windowDuration = spec.getWindowDuration();
 		System.out.println("Number of windows in input: "+spec.getWindowsInFile());
 		h = spec.elements;
 
 		//play wav file simultaneously with showing spectrogram:
-		/* 
 		MediaPlayer player = new MediaPlayer();
+		File f = new File(filepath);
+		f.setReadable(true,false); //need to set permissions so that it can be read by the media player
 		player.setDataSource(filepath);
 		player.prepare();
 		player.start();
-		 */
+		 
 
 	}
 
