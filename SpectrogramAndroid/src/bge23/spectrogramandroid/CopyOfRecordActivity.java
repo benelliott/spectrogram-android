@@ -40,7 +40,7 @@ public class CopyOfRecordActivity extends FragmentActivity implements
 		super.onCreate(savedInstanceState);
 		//setContentView(R.layout.activity_record);
 	    try {
-			setContentView(new SpectrogramView(this, null));
+			setContentView(new SpectrogramSurfaceView(this));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

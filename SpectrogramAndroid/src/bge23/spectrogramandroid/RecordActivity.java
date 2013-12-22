@@ -10,7 +10,7 @@ public class RecordActivity extends Activity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     try {
-		setContentView(new SpectrogramView(this, null));
+		setContentView(new SpectrogramSurfaceView(this));
 	} catch (IOException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();

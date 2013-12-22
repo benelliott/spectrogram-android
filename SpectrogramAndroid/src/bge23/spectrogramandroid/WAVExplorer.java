@@ -6,6 +6,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import android.net.Uri;
+import android.os.Environment;
+
 /*
  *  A class for extracting information from a .wav file based on
  *  information in its header. It also provides a means for extracting
@@ -27,9 +30,14 @@ public class WAVExplorer {
 	private int duration; //duration of WAV file in seconds
 	//TODO: use ints for things like sampleRate?
 	public WAVExplorer(String filepath) {
+		String loc = null;
+		String foo = null;
 		try {
-			File f = new File(filepath);
-			wavFile = new RandomAccessFile(filepath, "r");
+			loc = Environment.getExternalStorageDirectory().getAbsolutePath();
+			File f = new File(loc,filepath);
+
+			wavFile = new RandomAccessFile(f, "r");
+			foo = Uri.fromFile(f).toString();
 			
 			fileLength = wavFile.length();
 			
@@ -90,7 +98,9 @@ public class WAVExplorer {
 			duration = numSamples * sampleRate;
 			wavFile.close();
 		} catch (FileNotFoundException e) {
-			System.err.println("Couldn't find file!");
+			System.err.println("Couldn't find file "+loc+"/"+filepath);
+			System.err.println("foo "+foo);
+			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
