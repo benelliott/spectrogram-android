@@ -1,12 +1,10 @@
 package bge23.spectrogramandroid;
 
 import java.io.File;
-import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import android.net.Uri;
 import android.os.Environment;
 
 /*

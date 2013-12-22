@@ -19,22 +19,15 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 
 	private static final int width = 1024; //width of spectrogram component in pixels
 	private static final int height = 768; //width of spectrogram component in pixels
-	private double maxAmplitude = 1;//= 100000000000d; //largest value seen so far, scale colours accordingly
 
-	private Bitmap buffer;
-	private Bitmap bi;
-	private Canvas g2buffer;
-	private Canvas g2current; //current buffer to display;
 	private Spectrogram spec;
 	private int windowDuration = 32; //draw a new window in time with the audio file
 	private int windowsDrawn = 0; //how many windows have been drawn already
-	private int pixelWidth = 4;
-	private Timer timer;
 	private SurfaceHolder sh;
 	private Context ctx;
 	private SpectroThread sth;
 	private int h; //TODO rework
-	private int horiz = 0;
+
 	
 
 	public SpectrogramSurfaceView(Context context) throws IOException{

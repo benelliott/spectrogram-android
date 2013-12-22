@@ -1,9 +1,7 @@
 package bge23.spectrogramandroid;
 
-import java.io.FileDescriptor;
 import java.util.ArrayList;
 
-import android.graphics.Color;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
 //TODO: find good values for sliceDurationLimit, windowSize, overlap
