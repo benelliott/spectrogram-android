@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.os.Handler;
+import android.util.DisplayMetrics;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -120,7 +121,10 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		}
 		
 		private void doDraw(Canvas canvas) {
-			canvas.drawBitmap(spec.getBitmapWindow(windowsDrawn), 0, 1, windowsDrawn, 0, 1, h, false, null);
+			canvas.drawBitmap(spec.getBitmapWindow(windowsDrawn), 0, 1, (float)windowsDrawn, 0f, 1, h, false, null); //TODO change this!!
+			canvas.drawBitmap(spec.getBitmapWindow(windowsDrawn), 0, 1, (float)windowsDrawn+1, 0f, 1, h, false, null);
+			canvas.drawBitmap(spec.getBitmapWindow(windowsDrawn), 0, 1, (float)windowsDrawn+2, 0f, 1, h, false, null);
+
 			System.out.println("Windows drawn: "+windowsDrawn);
 			windowsDrawn++;
 		}
@@ -136,7 +140,7 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 			Bitmap ch = Bitmap.createBitmap(chunkmap, h, chunkwidth, Bitmap.Config.ARGB_8888);
 			Bitmap rotatedBitmap = rotateBitmap(ch,90);
 			canvas.drawBitmap(rotatedBitmap, windowsDrawn, 0, null);
-			windowsDrawn += 4;
+			windowsDrawn += chunkwidth;
 		}
 		
 		public Bitmap rotateBitmap(Bitmap source, float angle){

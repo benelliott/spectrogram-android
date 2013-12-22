@@ -144,8 +144,8 @@ public class Spectrogram {
 				elements = spectroData.length/2;
 				int[] toAdd = new int[elements];
 				for (int j = 0; j < elements; j++) {
-					if (maxAmplitude < spectroData[j]) maxAmplitude = spectroData[i];
-					int val = 255-cappedValue(spectroData[j]);
+					if (maxAmplitude < spectroData[j]) maxAmplitude = spectroData[j];
+					int val = cappedValue(spectroData[j]);
 					if (inColour) toAdd[elements-j-1] = heatMap(val); //needs to be 'upside down' because of where y=0 is in graphics packages
 					else toAdd[elements-j-1] = greyscale(val);
 				}
