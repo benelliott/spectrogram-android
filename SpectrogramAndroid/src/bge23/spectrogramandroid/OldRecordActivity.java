@@ -5,7 +5,7 @@ import java.io.IOException;
 import android.app.Activity;
 import android.os.Bundle;
 
-public class RecordActivity extends Activity {
+public class OldRecordActivity extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);

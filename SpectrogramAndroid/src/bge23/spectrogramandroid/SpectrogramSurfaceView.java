@@ -12,13 +12,14 @@ import android.graphics.Matrix;
 import android.media.MediaPlayer;
 import android.os.Environment;
 import android.os.Handler;
+import android.util.DisplayMetrics;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
-	private static final int width = 1024; //width of spectrogram component in pixels
-	private static final int height = 768; //width of spectrogram component in pixels
+	private static final int width = 700; //width of spectrogram component in pixels
+	private static final int height = 700; //width of spectrogram component in pixels
 
 	private Spectrogram spec;
 	private int windowDuration = 32; //draw a new window in time with the audio file
@@ -27,15 +28,21 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	private Context ctx;
 	private SpectroThread sth;
 	private int h; //TODO rework
-
+	private Canvas displayCanvas;
+	private Bitmap buffer;
+	private Canvas bufferCanvas;
+	private MediaPlayer player;
 	
 
 	public SpectrogramSurfaceView(Context context) throws IOException{
 		super(context);
+		displayCanvas = null;
+		buffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		bufferCanvas = new Canvas(buffer);
 		ctx = context;
 		sh = getHolder();
 		sh.addCallback(this);
-		String filename = "woodpecker.wav";
+		String filename = "woodpecker.wav"; //alternatives are cuckoo and lapwing
 		String filepath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+filename;
 		spec = new Spectrogram(filepath);
 		windowDuration = spec.getWindowDuration();
@@ -43,13 +50,11 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		h = spec.elements;
 
 		//play wav file simultaneously with showing spectrogram:
-		MediaPlayer player = new MediaPlayer();
+		player = new MediaPlayer();
 		File f = new File(filepath);
 		f.setReadable(true,false); //need to set permissions so that it can be read by the media player
 		player.setDataSource(filepath);
 		player.prepare();
-		player.start();
-		 
 
 	}
 
@@ -63,6 +68,7 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		sth.setRunning(true);
 		Timer timer = new Timer();
 		timer.schedule(sth,0,windowDuration);
+		player.start(); //TODO release
 	}
 
 	@Override
@@ -74,7 +80,8 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	class SpectroThread extends TimerTask {
 		private int width = 500;
 		private int height = 500;
-		private boolean run = false;
+		private boolean run = true;
+		
 
 
 
@@ -91,15 +98,17 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		}
 
 		public void run() {
-			Canvas c = null;
-			try {
-				c = sh.lockCanvas(null);
-				synchronized(sh) {
-					doDraw(c);
-				}
-			} finally {
-				if (c!=null) {
-					sh.unlockCanvasAndPost(c);
+			if (run) {
+				try {
+					displayCanvas = sh.lockCanvas(null);
+					synchronized (sh) {
+						doDraw(); //update buffer bitmap
+						displayCanvas.drawBitmap(buffer, 0, 0, null);
+					}
+				} finally {
+					if (displayCanvas != null) {
+						sh.unlockCanvasAndPost(displayCanvas);
+					}
 				}
 			}
 		}
@@ -117,17 +126,37 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 			}
 		}
 		
-		private void doDraw(Canvas canvas) {
-			canvas.drawBitmap(spec.getBitmapWindow(windowsDrawn), 0, 1, (float)windowsDrawn, 0f, 1, h, false, null); //TODO change this!!
-			canvas.drawBitmap(spec.getBitmapWindow(windowsDrawn), 0, 1, (float)windowsDrawn+1, 0f, 1, h, false, null);
-			canvas.drawBitmap(spec.getBitmapWindow(windowsDrawn), 0, 1, (float)windowsDrawn+2, 0f, 1, h, false, null);
+		private void doDraw() {
+			try {
+				int scaleFactor = 2;
+				Bitmap orig = Bitmap.createBitmap(spec.getBitmapWindow(windowsDrawn), 0, 1, 1, h, Bitmap.Config.ARGB_8888);
+				Bitmap scaled = scaleBitmap(orig,scaleFactor,h);
+				bufferCanvas.drawBitmap(scaled,windowsDrawn*scaleFactor,0f,null);
 
-			System.out.println("Windows drawn: "+windowsDrawn);
-			windowsDrawn++;
+				System.out.println("Window "+windowsDrawn+" drawn with (left, top) coordinate at ("+(float)windowsDrawn+","+0f+"), density "+scaled.getDensity());
+				windowsDrawn++;
+			} catch (IndexOutOfBoundsException e) {
+				run = false;
+			}
 		}
 		
+		public Bitmap scaleBitmap(Bitmap bitmapToScale, float newWidth, float newHeight) {   
+			if(bitmapToScale == null)
+			    return null;
+			//get the original width and height
+			int width = bitmapToScale.getWidth();
+			int height = bitmapToScale.getHeight();
+			// create a matrix for the manipulation
+			Matrix matrix = new Matrix();
+
+			// resize the bit map
+			matrix.postScale(newWidth / width, newHeight / height);
+
+			// recreate the new Bitmap and set it back
+			return Bitmap.createBitmap(bitmapToScale, 0, 0, bitmapToScale.getWidth(), bitmapToScale.getHeight(), matrix, true);  }
+		
 		private void doChunkDraw(Canvas canvas) { //TODO this is just for testing right now
-			int chunkwidth = 10;
+			int chunkwidth = 4;
 			int[] chunkmap = new int[chunkwidth*h];
 			for (int i = 0; i < chunkwidth; i++) {
 				for (int j = 0; j < h; j++) {
@@ -135,7 +164,9 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 				}
 			}
 			Bitmap ch = Bitmap.createBitmap(chunkmap, h, chunkwidth, Bitmap.Config.ARGB_8888);
+			ch.setDensity(Bitmap.DENSITY_NONE);
 			Bitmap rotatedBitmap = rotateBitmap(ch,90);
+			ch.setDensity(Bitmap.DENSITY_NONE);
 			canvas.drawBitmap(rotatedBitmap, windowsDrawn, 0, null);
 			windowsDrawn += chunkwidth;
 		}
