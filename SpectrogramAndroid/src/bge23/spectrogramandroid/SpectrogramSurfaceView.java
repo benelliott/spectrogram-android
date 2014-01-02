@@ -18,7 +18,7 @@ import android.view.SurfaceView;
 
 public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
-	private static final int width = 700; //width of spectrogram component in pixels
+	private static final int width = 800; //width of spectrogram component in pixels
 	private static final int height = 700; //width of spectrogram component in pixels
 
 	private Spectrogram spec;
@@ -32,9 +32,8 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	private Bitmap buffer;
 	private Canvas bufferCanvas;
 	private MediaPlayer player;
-	
 
-	public SpectrogramSurfaceView(Context context) throws IOException{
+	public SpectrogramSurfaceView(Context context, String filename) throws IOException{
 		super(context);
 		displayCanvas = null;
 		buffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -42,9 +41,8 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		ctx = context;
 		sh = getHolder();
 		sh.addCallback(this);
-		String filename = "woodpecker.wav"; //alternatives are cuckoo and lapwing
 		String filepath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+filename;
-		spec = new Spectrogram(filepath);
+		spec = new Spectrogram(filepath,true);
 		windowDuration = spec.getWindowDuration();
 		System.out.println("Number of windows in input: "+spec.getWindowsInFile());
 		h = spec.elements;
@@ -55,7 +53,6 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		f.setReadable(true,false); //need to set permissions so that it can be read by the media player
 		player.setDataSource(filepath);
 		player.prepare();
-
 	}
 
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,int height)  {      
@@ -128,15 +125,24 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		
 		private void doDraw() {
 			try {
-				int scaleFactor = 2;
+				int horizontalStretch = 2;
+				int verticalStretch = 4;
 				Bitmap orig = Bitmap.createBitmap(spec.getBitmapWindow(windowsDrawn), 0, 1, 1, h, Bitmap.Config.ARGB_8888);
-				Bitmap scaled = scaleBitmap(orig,scaleFactor,h);
-				bufferCanvas.drawBitmap(scaled,windowsDrawn*scaleFactor,0f,null);
+				Bitmap scaled = scaleBitmap(orig,horizontalStretch,h*verticalStretch);
+				bufferCanvas.drawBitmap(scaled,windowsDrawn*horizontalStretch,0f,null);
 
 				System.out.println("Window "+windowsDrawn+" drawn with (left, top) coordinate at ("+(float)windowsDrawn+","+0f+"), density "+scaled.getDensity());
 				windowsDrawn++;
 			} catch (IndexOutOfBoundsException e) {
 				run = false;
+				System.out.println("Displaying finished, "+windowsDrawn+" windows drawn successfully.");
+			}
+		}
+		
+		private void fillFrom(int offset) {
+			int drawAt = 0;
+			while (drawAt < width) {
+				
 			}
 		}
 		
