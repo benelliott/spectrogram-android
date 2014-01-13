@@ -9,7 +9,6 @@ import android.view.SurfaceView;
 
 public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
-	private int windowsDrawn = 0; //how many windows have been drawn already
 	private SurfaceHolder sh;
 	private DrawingThread dt;
 	private Canvas displayCanvas;
@@ -56,6 +55,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 			// Remember where we started (for dragging)
 			lastTouchX = x;
+			System.out.println("Last touch x set to "+x);
 			// Save the ID of this pointer (for dragging) //TODO i think a pointer is a finger. want to save it so we can ignore other pointer (finger) actions
 			mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
 			dt.setRunning(false); //stop new windows from coming in immediately
@@ -74,9 +74,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			// Calculate the distance moved
 			final float dx = x - lastTouchX;
 
-
-
-//			leftmostWindow += (dx*100);
 //			lastTouchX = x;
 //
 //			if (leftmostWindow < 0) {
@@ -85,12 +82,13 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 //			else if (leftmostWindow > windowsDrawn - width/horizontalStretch) {
 //				leftmostWindow = windowsDrawn - width/horizontalStretch; //draw most recent if dragged too far to the right
 //			}
-			System.out.println("Drag event detected, dx is "+dx+", leftmostWindow is DELETED, windowsDrawn is "+windowsDrawn);
 //			dt.fillScreenFrom(leftmostWindow); //fill screen from new X
+			System.out.println("Last touch x: "+lastTouchX+" x: "+x+" dx: "+dx+" (int)dx: "+(int)dx);
 			dt.quickSlide((int)dx);
 
 			// Remember this touch position for the next move event
-
+			lastTouchX = x;
+			System.out.println("Last touch x set to "+x+" after drag.");
 			break;
 		}
 

@@ -14,12 +14,14 @@ class DrawingThread extends Thread {
 	private Canvas displayCanvas;
 	private Bitmap buffer;
 	private Canvas bufferCanvas;
+	private Bitmap buffer2; //need to use this when shifting to the left because of a bug in Android, see http://stackoverflow.com/questions/6115695/android-canvas-gives-garbage-when-shifting-a-bitmap
+	private Canvas buffer2Canvas;
 	private int width;
 	private int height;
 	private int samplesPerWindow;
 	private int windowsDrawn;
 	private int leftmostWindow;
-	
+
 	public DrawingThread(SurfaceHolder sh, Canvas displayCanvas, int width, int height) {
 		super();
 		System.out.println("Width: "+width+" height: "+height);
@@ -32,6 +34,8 @@ class DrawingThread extends Thread {
 		samplesPerWindow = spec.getSamplesPerWindow();
 		buffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 		bufferCanvas = new Canvas(buffer);
+		buffer2 = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		buffer2Canvas = new Canvas(buffer2);
 	}
 
 
@@ -82,19 +86,41 @@ class DrawingThread extends Thread {
 
 	public void quickSlide(int offset) {
 		//TODO 'too far's
-		if (offset < 0) { //slide leftwards
-			offset = -offset; //change to positive for convenience
-			bufferCanvas.drawBitmap(buffer, HORIZONTAL_STRETCH*offset, 0, null);//shift current display to the right
-			for (int i = 0; i < offset; i++) {
-				drawSingleBitmap(leftmostWindow-offset+i,i*HORIZONTAL_STRETCH); //draw new windows from x = 0
+		try {
+			offset /= HORIZONTAL_STRETCH; //convert from pixel offset to window offset 
+			int newLeftmostWindow = leftmostWindow - offset;
+			if (newLeftmostWindow < 0) {
+				//if leftmost end is reached, set offset so that windows are drawn from window 0
+				offset = leftmostWindow/HORIZONTAL_STRETCH;
 			}
-			leftmostWindow -= offset;
-		} else { //slide rightwards
-			bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH*offset, 0, null);//shift current display to the left
-			for (int i = 0; i < offset; i++) {
-				drawSingleBitmap(leftmostWindow+width/HORIZONTAL_STRETCH,width+HORIZONTAL_STRETCH*(i-offset)); //draw new windows from x=width+HORIZONTAL_STRETCH*(i-offset)
+			if (newLeftmostWindow + width/HORIZONTAL_STRETCH > windowsDrawn) {
+				//do not permit scrolling past most recently drawn window
+				offset = -(windowsDrawn-width/HORIZONTAL_STRETCH-leftmostWindow); // negative because it will be a right-shift
 			}
-			leftmostWindow += offset;
+			displayCanvas = sh.lockCanvas(null);
+			if (offset > 0) { //slide leftwards
+				buffer2Canvas.drawBitmap(buffer, HORIZONTAL_STRETCH*offset, 0, null);//shift current display to the right by HORIZONTAL_STRETCH*offset pixels
+				bufferCanvas.drawBitmap(buffer2, 0, 0, null); //must copy to a second buffer first due to a bug in Android source
+				leftmostWindow -= offset;
+				for (int i = 0; i < offset; i++) {
+					drawSingleBitmap(leftmostWindow+i,i*HORIZONTAL_STRETCH); //draw windows from x = 0 to x = HORIZONTAL_STRETCH*offset
+				}
+			} else { //slide rightwards
+				offset = -offset; //change to positive for convenience
+				bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH*offset, 0, null);//shift current display to the left by HORIZONTAL_STRETCH*offset pixels
+				int rightmostWindow = leftmostWindow+width/HORIZONTAL_STRETCH; //'old' rightmost window (of now-shifted screen)
+				for (int i = 0; i < offset; i++) {
+					drawSingleBitmap(rightmostWindow+i,width+HORIZONTAL_STRETCH*(i-offset)); //draw windows from x=width+HORIZONTAL_STRETCH*(i-offset).
+				}
+				leftmostWindow += offset;
+			}
+			synchronized (sh) {	
+				displayCanvas.drawBitmap(buffer, 0, 0, null); //draw buffer to display
+			}
+		} finally {
+			if (displayCanvas != null) {
+				sh.unlockCanvasAndPost(displayCanvas);
+			}
 		}
 	}
 
@@ -154,7 +180,7 @@ class DrawingThread extends Thread {
 
 	private void quickProgress2() {
 		/*
-		 * 
+		 * Semaphore-based implementation //TODO
 		 */
 		if ((windowsDrawn) * HORIZONTAL_STRETCH < width) { //still room to draw new bitmaps without scrolling
 			drawNextBitmap(windowsDrawn);
@@ -170,7 +196,6 @@ class DrawingThread extends Thread {
 	}	
 
 	private void drawBitmapGroup(int leftmostBitmap, int rightmostBitmap) {
-		//draw all canvas black, then use for loop to keep drawing bitmaps through interval from left hand side
 		/*
 		 * Replace the entire display with the bitmaps in the interval
 		 * [leftmostBitmap, rightmostBitmap-1],
@@ -194,10 +219,10 @@ class DrawingThread extends Thread {
 		Bitmap orig = Bitmap.createBitmap(spec.getBitmapWindow(index), 0, 1, 1, samplesPerWindow, Bitmap.Config.ARGB_8888); //TODO check if null
 		Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, samplesPerWindow * VERTICAL_STRETCH);
 		bufferCanvas.drawBitmap(scaled, xCoord, 0f, null);
-		/*System.out.println("Window " + index
-					+ " drawn with (left, top) coordinate at ("
-					+ xCoord + "," + 0 + "), density "
-					+ scaled.getDensity());*/
+//		System.out.println("Window " + index
+//				+ " drawn with (left, top) coordinate at ("
+//				+ xCoord + "," + 0 + "), density "
+//				+ scaled.getDensity());
 	}
 
 	private void drawNextBitmap(int xCoord) {
