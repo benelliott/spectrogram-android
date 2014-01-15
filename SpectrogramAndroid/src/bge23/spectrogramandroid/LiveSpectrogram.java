@@ -1,5 +1,8 @@
 package bge23.spectrogramandroid;
-//TODO ask Isak about cappedValue 1 and 2, ask about memory usage (keeping two ArrayLists in memory is costly and leads to a huge heap after not much time)
+//TODO ask Isak about:
+//cappedValue 1 and 2
+//memory usage (keeping two ArrayLists in memory is costly and leads to a huge heap after not much time)
+//semaphores?
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
@@ -26,7 +29,7 @@ public class LiveSpectrogram {
 	private short[][] micBuffers; //array of buffers so that different frames can be being processed while others are read in 
 	private int numBuffers = 100; //number of buffers to maintain at once
 	private int readSize;
-	private int samplesPerWindow = 800; //usually around 1000
+	private int samplesPerWindow = 400; //usually around 1000
 	private AudioRecord mic;
 	private int audioWindowsAdded = 0;
 	private int bitmapWindowsAdded = 0;

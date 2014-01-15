@@ -1,6 +1,5 @@
 package bge23.spectrogramandroid;
 
-import java.io.IOException;
 import java.util.Locale;
 
 import android.app.ActionBar;
@@ -10,14 +9,13 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewPager;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 public class SpectroActivity extends FragmentActivity implements
@@ -158,6 +156,9 @@ public class SpectroActivity extends FragmentActivity implements
 	}
 
 	public static class SpectroFragment extends Fragment {
+		
+		private Button resumeButton;
+		private LiveSpectrogramSurfaceView lssv;
 
 		public SpectroFragment() {
 		}
@@ -165,10 +166,18 @@ public class SpectroActivity extends FragmentActivity implements
 		@Override
 		public View onCreateView(LayoutInflater inflater, ViewGroup container,
 				Bundle savedInstanceState) {
-			LiveSpectrogramSurfaceView toReturn = null;//TODO
-			//toReturn = new SpectrogramSurfaceView(this.getActivity(), "lapwing.wav");
-			toReturn = new LiveSpectrogramSurfaceView(this.getActivity());
-			return toReturn;
+			View rootView = inflater.inflate(
+					R.layout.fragment_record,
+					container, false);
+			lssv = (LiveSpectrogramSurfaceView)rootView.findViewById(R.id.lssv);
+			resumeButton = (Button)rootView.findViewById(R.id.button_resume);
+			resumeButton.setOnClickListener(new OnClickListener() {
+				@Override 
+				public void onClick(View arg0) {
+					lssv.resumeScrolling();
+				}
+			});
+			return rootView;
 		}
 	}
 	
