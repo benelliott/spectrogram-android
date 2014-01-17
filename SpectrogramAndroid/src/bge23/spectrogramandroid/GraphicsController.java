@@ -12,7 +12,7 @@ import android.view.SurfaceHolder;
 
 class GraphicsController {
 	private final int HORIZONTAL_STRETCH = 2;
-	private final int VERTICAL_STRETCH = 2;
+	private final float VERTICAL_STRETCH; //TODO rem?
 	private final ReentrantLock scrollingLock = new ReentrantLock(false);
 	private LiveSpectrogram spec;
 	private SurfaceHolder sh;
@@ -33,14 +33,15 @@ class GraphicsController {
 	private int SELECT_RECT_COLOUR = Color.argb(128, 255, 255, 255);
 
 	public GraphicsController(SurfaceHolder sh, Canvas displayCanvas, int width, int height) {
-		System.out.println("Width: "+width+" height: "+height);
 		this.sh = sh;
 		this.displayCanvas = displayCanvas;
 		this.width = width;
 		this.height = height;
-		spec = new LiveSpectrogram(true);
+		spec = new LiveSpectrogram(1);
 		spec.start();
 		samplesPerWindow = spec.getSamplesPerWindow();
+		VERTICAL_STRETCH = ((float)height)/((float)samplesPerWindow); // stretch spectrogram to all of available height
+		//Log.d("dim","Height: "+height+", samples per window: "+samplesPerWindow+", VERTICAL_STRETCH: "+VERTICAL_STRETCH);
 		buffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 		bufferCanvas = new Canvas(buffer);
 		buffer2 = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);

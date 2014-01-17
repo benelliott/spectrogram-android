@@ -1,14 +1,12 @@
 package bge23.spectrogramandroid;
-//TODO ask Isak about:
-//cappedValue 1 and 2
-//memory usage (keeping two ArrayLists in memory is costly and leads to a huge heap after not much time)
-//semaphores?
+
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.util.Log;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
 public class LiveSpectrogram {
@@ -24,12 +22,13 @@ public class LiveSpectrogram {
 	private ArrayList<int[]> bitmapWindows = new ArrayList<int[]>(); //list of 1D arrays of pixel values for the bitmap. each element of this list represents the array of pixel values for one [composite] window
 
 	private boolean running = false;
-	public static final int SAMPLE_RATE = 11025; //default 44100
+	public static final int SAMPLE_RATE = 16000; //default 44100, 11025, 22050
+	private int CONTRAST = 400;
 	private double maxAmplitude = 1; //max amplitude seen so far
 	private short[][] micBuffers; //array of buffers so that different frames can be being processed while others are read in 
 	private int numBuffers = 100; //number of buffers to maintain at once
 	private int readSize;
-	private int samplesPerWindow = 400; //usually around 1000
+	private int samplesPerWindow = 300; //usually around 1000
 	private AudioRecord mic;
 	private int audioWindowsAdded = 0;
 	private int bitmapWindowsAdded = 0;
@@ -40,11 +39,18 @@ public class LiveSpectrogram {
 	private int nextBitmap = 0;
 
 
-	public LiveSpectrogram(boolean inColour) {
+	public LiveSpectrogram(int colourMap) {
 		bitmapsReady = new Semaphore(0);
 		colours = new int[256];
-		if (inColour) colours = heatMap1();
-		else colours = greyscale();
+	
+		switch (colourMap) {
+		case 0: colours = greyscale(); break;
+		case 1: colours = blueGreenRed(); break;
+		case 2: colours = bluePinkRed(); break;
+		case 3: colours = blueOrangeYellow(); break;
+		case 4: colours = yellowOrangeBlue(); break;
+		case 5: colours = blackGreen(); break;
+		}
 		
 		readSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 		
@@ -193,8 +199,27 @@ public class LiveSpectrogram {
 		
 	}
 	
+	private int[] greyscale() {
+		/*
+		 * A method which fills the 'colours' array with greyscale values.
+		 */
+		
+		//Fill backwards because (255, 255, 255) is white, and want white to be low
+		int[] toReturn = new int[256];
+		for (int i = 0; i < 256; i++) {
+		toReturn[255-i] = 255;
+		toReturn[255-i] <<= 8;
+		toReturn[255-i] += i; 
+		toReturn[255-i] <<= 8; 
+		toReturn[255-i] += i;
+		toReturn[255-i] <<= 8;
+		toReturn[255-i] += i; 
+		//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
+		}
+		return toReturn;
+	}
 
-	private int[] heatMap1() {
+	private int[] blueGreenRed() {
 		/*
 		 * A first implementation for a method which fills the 'colours' array with a heatmap-like set of RGB
 		 * values.
@@ -208,6 +233,84 @@ public class LiveSpectrogram {
 		toReturn[i] += (int)(2*(127.5f-Math.abs(i-127.5f))); //green is 127.5 - |i-127.5| (draw it - peak at 127.5)
 		toReturn[i] <<= 8;
 		toReturn[i] += 255-i; //blue
+		//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
+		}
+		return toReturn;
+	}
+	
+	private int[] bluePinkRed() {
+		/*
+		 * A first implementation for a method which fills the 'colours' array with a heatmap-like set of RGB
+		 * values.
+		 */
+		int[] toReturn = new int[256];
+		for (int i = 0; i < 256; i++) {
+		toReturn[i] = 255; //alpha
+		toReturn[i] <<= 8;
+		if (i < 127) toReturn[i] += 2*i; //red
+		else toReturn[i] += 255;
+		toReturn[i] <<= 16; //skip green as always 0
+		if (i < 127) toReturn[i] += 255; //blue
+		toReturn[i] += 2*(255-i);
+		//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
+		}
+		return toReturn;
+	}
+	
+	private int[] blueOrangeYellow() {
+		/*
+		 * A first implementation for a method which fills the 'colours' array with a heatmap-like set of RGB
+		 * values.
+		 */
+		int[] toReturn = new int[256];
+		for (int i = 0; i < 256; i++) {
+		toReturn[i] = 255; //alpha
+		toReturn[i] <<= 8;
+		if (i < 127) toReturn[i] += 2*i; //red
+		else toReturn[i] += 255;
+		toReturn[i] <<= 8;
+		toReturn[i] += i; //green
+		toReturn[i] <<= 8;
+		if (i < 127) toReturn[i] += 255; //blue
+		toReturn[i] += 2*(255-i);
+		//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
+		}
+		return toReturn;
+	}
+	
+	private int[] yellowOrangeBlue() {
+		/*
+		 * A first implementation for a method which fills the 'colours' array with a heatmap-like set of RGB
+		 * values.
+		 */
+		int[] toReturn = new int[256];
+		for (int i = 0; i < 256; i++) {
+		toReturn[255 - i] = 255; //alpha
+		toReturn[255 - i] <<= 8;
+		if (i < 127) toReturn[255 - i] += 2*i; //red
+		else toReturn[255 - i] += 255;
+		toReturn[255 - i] <<= 8; 
+		toReturn[255 - i] += i; //green
+		toReturn[255 - i] <<= 8;
+		if (i < 127) toReturn[255 - i] += 255; //blue
+		toReturn[255 - i] += 2*(255-i);
+		//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
+		}
+		return toReturn;
+	}
+	
+	private int[] blackGreen() {
+		/*
+		 * A first implementation for a method which fills the 'colours' array with a heatmap-like set of RGB
+		 * values.
+		 */
+		int[] toReturn = new int[256];
+		for (int i = 0; i < 256; i++) {
+		toReturn[i] = 255; //alpha
+		toReturn[i] <<= 8;
+		toReturn[i] <<= 8;
+		toReturn[i] += i; //green
+		toReturn[i] <<= 8;
 		//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
 		}
 		return toReturn;
@@ -253,41 +356,7 @@ public class LiveSpectrogram {
 		
 	}
 	
-	private int[] greyscale() {
-		/*
-		 * A method which fills the 'colours' array with greyscale values.
-		 */
-		int[] toReturn = new int[256];
-		for (int i = 0; i < 256; i++) {
-		toReturn[i] = 255;
-		toReturn[i] <<= 8;
-		toReturn[i] += i; 
-		toReturn[i] <<= 8; 
-		toReturn[i] += i;
-		toReturn[i] <<= 8;
-		toReturn[i] += i; 
-		//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
-		}
-		return toReturn;
-	}
 
-	private int cappedValue(double d) {
-		/*
-		 * This method will return an integer capped at 255 representing the magnitude of the
-		 * given double value, d, relative to the highest amplitude seen so far. The amplitude values
-		 * provided use a logarithmic scale but this method converts these back to a linear scale, 
-		 * more appropriate for pixel colouring.
-		 */
-		if (d > maxAmplitude) {
-			maxAmplitude = d;
-			return 255;
-		}
-		if (d < 1) return 0;
-		double ml = Math.log1p(maxAmplitude);
-		double dl = Math.log1p(d);
-		return (int)(dl*255/ml);
-	}
-	
 	private int cappedValue2(double d) {
 		/*
 		 * This method will return an integer capped at 255 representing the magnitude of the
@@ -297,10 +366,26 @@ public class LiveSpectrogram {
 		 */
 		if (d > maxAmplitude) {
 			maxAmplitude = d;
+		}
+		int ret = (int)(CONTRAST*(Math.log1p(Math.abs(d))/Math.log1p(Math.abs(maxAmplitude))));
+		if (ret < 0) return 0;
+		if (ret > 255) return 255;
+		return ret;
+	}
+	
+	private int cappedValue(double d) {
+		/*
+		 * This method will return an integer capped at 255 representing the magnitude of the
+		 * given double value, d, relative to the highest amplitude seen so far. The amplitude values
+		 * provided use a logarithmic scale but this method converts these back to a linear scale, 
+		 * more appropriate for pixel colouring.
+		 */
+		if (d < 0) return 0;
+		if (d > maxAmplitude) {
+			maxAmplitude = d;
 			return 255;
 		}
-		if (d < 1) return 0;
-		return (int)(255*(d/maxAmplitude));
+		return (int)(255*(Math.log1p(d)/Math.log1p(maxAmplitude)));
 	}
 
 	private void hammingWindow(double[] samples) {

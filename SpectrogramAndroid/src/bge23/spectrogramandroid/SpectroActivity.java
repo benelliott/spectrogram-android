@@ -177,6 +177,8 @@ public class SpectroActivity extends FragmentActivity implements
 					lssv.resumeScrolling();
 				}
 			});
+			resumeButton.setVisibility(View.GONE);
+			lssv.setResumeButton(resumeButton);
 			return rootView;
 		}
 	}

@@ -9,6 +9,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.widget.Button;
 
 public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
@@ -25,7 +27,8 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private float centreY;
 	private boolean selecting = false; //true if user has entered the selection state
 	private int selectedCorner; // indicates which corner is being dragged; 0 is top-left, 1 is top-right, 2 is bottom-left, 3 is bottom-right
-
+	private Button resumeButton = null;
+	
 	//left, right, top and bottom edge locations for the select-area rectangle:
 	private float selectRectL;
 	private float selectRectR;
@@ -70,6 +73,10 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			}
 		};
 	}
+	
+	public void setResumeButton(Button resumeButton) {
+		this.resumeButton = resumeButton;
+	}
 
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)  {      
 		gc.setSurfaceSize(width, height);
@@ -96,6 +103,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		switch (action) { 
 		case MotionEvent.ACTION_DOWN: { //finger pressed on screen
 			gc.pauseScrolling();
+			resumeButton.setVisibility(View.VISIBLE);
 			final int pointerIndex = MotionEventCompat.getActionIndex(ev); 
 			final float x = MotionEventCompat.getX(ev, pointerIndex); 
 			centreX = MotionEventCompat.getX(ev, pointerIndex);
@@ -143,7 +151,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			// Calculate the distance moved
 			final float dx = x - lastTouchX;
 			if (!selecting) { //don't allow for scrolling if user is trying to select an area of the spectrogram
-				if (dx > 10 || dx < -10) { //only if moved more than 20 pixels
+				if (dx > 5 || dx < -5) { //only if moved more than 5 pixels
 					handler.removeCallbacks(onLongPress); //cancel long-press runnable
 					System.out.println("Long-press timer cancelled 1.");
 					System.out.println("Last touch x: " + lastTouchX + " x: " + x
@@ -226,5 +234,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	
 	public void resumeScrolling() {
 		gc.resumeScrolling();
+		resumeButton.setVisibility(View.GONE);
 	}
 }
