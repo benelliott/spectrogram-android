@@ -1,5 +1,7 @@
 package bge23.spectrogramandroid;
 
+import java.math.BigDecimal;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.os.Handler;
@@ -11,12 +13,11 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
-	private SurfaceHolder sh;
 	private GraphicsController gc;
-	private Canvas displayCanvas;
 	//private ScaleGestureDetector sgd;
 	private int mActivePointerId = MotionEvent.INVALID_POINTER_ID;
 	private float lastTouchX;
@@ -27,7 +28,9 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private float centreY;
 	private boolean selecting = false; //true if user has entered the selection state
 	private int selectedCorner; // indicates which corner is being dragged; 0 is top-left, 1 is top-right, 2 is bottom-left, 3 is bottom-right
-	private Button resumeButton = null;
+	private Button resumeButton;
+	private TextView leftTimeTextView;
+	private TextView topFreqTextView;
 	
 	//left, right, top and bottom edge locations for the select-area rectangle:
 	private float selectRectL;
@@ -57,10 +60,8 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 
 	private void init(Context context) { //Constructor for displaying audio from microphone
-		displayCanvas = null;
-		sh = getHolder();
-		sh.addCallback(this);
 		handler = new Handler();
+		getHolder().addCallback(this);
 		onLongPress = new Runnable() {
 			public void run() {
 				Log.d("", "Long press detected.");
@@ -77,6 +78,15 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	public void setResumeButton(Button resumeButton) {
 		this.resumeButton = resumeButton;
 	}
+	
+	public void setLeftTimeTextView(TextView leftTimeTextView) {
+		this.leftTimeTextView = leftTimeTextView;
+	}
+	
+	public void setTopFreqTextView(TextView topFreqTextView) {
+		this.topFreqTextView = topFreqTextView;
+	}
+
 
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)  {      
 		gc.setSurfaceSize(width, height);
@@ -84,7 +94,10 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 	@Override
 	public void surfaceCreated(SurfaceHolder arg0) {
-		gc = new GraphicsController(sh,displayCanvas, getWidth(), getHeight());
+		gc = new GraphicsController(this);
+		updateLeftTimeText();
+		updateTopFreqText();
+		Log.d("","SURFACE CREATED");
 	}
 
 	@Override
@@ -102,8 +115,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 		switch (action) { 
 		case MotionEvent.ACTION_DOWN: { //finger pressed on screen
-			gc.pauseScrolling();
-			resumeButton.setVisibility(View.VISIBLE);
+			pauseScrolling();
 			final int pointerIndex = MotionEventCompat.getActionIndex(ev); 
 			final float x = MotionEventCompat.getX(ev, pointerIndex); 
 			centreX = MotionEventCompat.getX(ev, pointerIndex);
@@ -232,8 +244,29 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		gc.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);		
 	}
 	
+	protected void pauseScrolling() {
+		gc.pauseScrolling();
+		resumeButton.setVisibility(View.VISIBLE);
+	}
+	
 	public void resumeScrolling() {
 		gc.resumeScrolling();
 		resumeButton.setVisibility(View.GONE);
 	}
+	
+	public void resumeFromPause() {
+		//if (gc != null) gc.resumeFromPause(); //TODO bit messy
+	}
+	
+	private void updateLeftTimeText() {
+	        BigDecimal bd = new BigDecimal(Float.toString(gc.getScreenFillTime()));
+	        bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
+			leftTimeTextView.setText("-"+bd.floatValue()+" sec");
+	}
+	
+	private void updateTopFreqText() {
+        BigDecimal bd = new BigDecimal(Float.toString(gc.getMaxFrequency()/1000));
+        bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
+		topFreqTextView.setText(bd.floatValue()+" kHz");
+}
 }

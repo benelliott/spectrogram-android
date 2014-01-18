@@ -10,12 +10,11 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 
 public class SpectroActivity extends FragmentActivity implements
@@ -101,7 +100,7 @@ public class SpectroActivity extends FragmentActivity implements
 	public void onTabReselected(ActionBar.Tab tab,
 			FragmentTransaction fragmentTransaction) {
 	}
-
+	
 	/**
 	 * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
 	 * one of the sections/tabs/pages.
@@ -153,38 +152,12 @@ public class SpectroActivity extends FragmentActivity implements
 			}
 			return null;
 		}
-	}
-
-	public static class SpectroFragment extends Fragment {
 		
-		private Button resumeButton;
-		private LiveSpectrogramSurfaceView lssv;
-
-		public SpectroFragment() {
-		}
-
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container,
-				Bundle savedInstanceState) {
-			View rootView = inflater.inflate(
-					R.layout.fragment_record,
-					container, false);
-			lssv = (LiveSpectrogramSurfaceView)rootView.findViewById(R.id.lssv);
-			resumeButton = (Button)rootView.findViewById(R.id.button_resume);
-			resumeButton.setOnClickListener(new OnClickListener() {
-				@Override 
-				public void onClick(View arg0) {
-					lssv.resumeScrolling();
-				}
-			});
-			resumeButton.setVisibility(View.GONE);
-			lssv.setResumeButton(resumeButton);
-			return rootView;
+		protected void pauseSpectrogram() {
+			
 		}
 	}
-	
 
-	
 	public static class DummySectionFragment extends Fragment {
 		/**
 		 * The fragment argument representing the section number for this

@@ -2,13 +2,14 @@
 <GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:columnCount="1" >
+    android:background="#000000"
+    android:columnCount="2" >
 
     <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_column="0"
-        android:layout_gravity="left|top"
+        android:layout_width="0dp"
+        android:layout_height="450dp"
+        android:layout_column="1"
+        android:layout_gravity="fill_horizontal"
         android:layout_row="0" >
         
 	    <bge23.spectrogramandroid.LiveSpectrogramSurfaceView
@@ -29,5 +30,40 @@
 	        android:text="Resume" />
 
     </FrameLayout>
+
+    <TextView
+        android:id="@+id/freq_text_top"
+        android:layout_column="0"
+        android:layout_gravity="left|top"
+        android:layout_row="0"
+        android:text="top"
+        android:textColor="#FFFFFF"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+    <TextView
+        android:id="@+id/freq_text_bottom"
+        android:layout_column="0"
+        android:layout_gravity="left|bottom"
+        android:layout_row="0"
+        android:text="bot"
+        android:textColor="#FFFFFF"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+    
+    <TextView
+        android:id="@+id/time_text_left"
+        android:layout_column="1"
+        android:layout_gravity="left|top"
+        android:layout_row="1"
+        android:text="left"
+        android:textColor="#FFFFFF"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+    <TextView
+        android:id="@+id/time_text_right"
+        android:layout_column="1"
+        android:layout_gravity="right|top"
+        android:layout_row="1"
+        android:text="right"
+        android:textColor="#FFFFFF"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
 
 </GridLayout>

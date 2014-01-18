@@ -423,6 +423,10 @@ public class LiveSpectrogram {
 			paddedSamples[i] *= paddedSamples[i];
 		}
 	}
+	
+	public int getSampleRate(){
+		return SAMPLE_RATE;
+	}
 
 
 }
