@@ -10,14 +10,13 @@ import android.graphics.Paint;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
-class GraphicsController {
+class SpectrogramDrawer {
 	private final int HORIZONTAL_STRETCH = 2;
 	private final float VERTICAL_STRETCH; //TODO rem?
 	private final ReentrantLock scrollingLock = new ReentrantLock(false);
-	private LiveSpectrogram spec;
+	private BitmapGenerator bg;
 	private LiveSpectrogramSurfaceView lssv;
 	private Thread scrollingThread;
-	private boolean run = true;
 	private Canvas displayCanvas;
 	private Bitmap buffer;
 	private Canvas bufferCanvas;
@@ -32,13 +31,13 @@ class GraphicsController {
 	
 	private int SELECT_RECT_COLOUR = Color.argb(128, 255, 255, 255);
 
-	public GraphicsController(LiveSpectrogramSurfaceView lssv) {
+	public SpectrogramDrawer(LiveSpectrogramSurfaceView lssv) {
 		this.lssv = lssv;
 		this.width = lssv.getWidth();
 		this.height = lssv.getHeight();
-		spec = new LiveSpectrogram(1);
-		spec.start();
-		samplesPerWindow = spec.getSamplesPerWindow();
+		bg = new BitmapGenerator(1);
+		bg.start();
+		samplesPerWindow = bg.getSamplesPerWindow();
 		VERTICAL_STRETCH = ((float)height)/((float)samplesPerWindow); // stretch spectrogram to all of available height
 		Log.d("dim","Height: "+height+", samples per window: "+samplesPerWindow+", VERTICAL_STRETCH: "+VERTICAL_STRETCH);
 		buffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -74,16 +73,12 @@ class GraphicsController {
 			
 		}
 	}
-	
-	public void setRunning(boolean b) {
-		run = b;
-	}
 
 	public void fillScreenFrom(int leftmostBitmap) {
 		/*
 		 * Fill the screen with bitmaps from the leftmost bitmap specified to the right edge of the display.
 		 */
-		int windowsAvailable = spec.getBitmapWindowsAdded();
+		int windowsAvailable = bg.getBitmapWindowsAdded();
 		int rightmostBitmap = (leftmostBitmap+(width/HORIZONTAL_STRETCH) > windowsAvailable) ? windowsAvailable : leftmostBitmap+(width/HORIZONTAL_STRETCH);
 		drawBitmapGroup(leftmostBitmap,rightmostBitmap); //update buffer bitmap
 		SurfaceHolder sh = lssv.getHolder();
@@ -148,34 +143,12 @@ class GraphicsController {
 		}
 	}
 
-
-	private void progress() {
-		/*
-		 * While recording, scroll the display as new samples come in without any user input
-		 */
-		int windowsAvailable = spec.getBitmapWindowsAdded(); //concurrency - only read once
-		if (windowsDrawn < windowsAvailable) { //new bitmap available to draw
-			int difference = windowsAvailable - windowsDrawn;
-			//System.out.println("Difference: "+difference+", windows drawn: "+windowsDrawn);
-			if (windowsAvailable * HORIZONTAL_STRETCH < width) { //still room to draw new bitmaps without scrolling
-				drawBitmapGroup(leftmostWindow, windowsDrawn+difference); //draw from first window to newest window
-			}
-			else { //no room, must scroll
-				leftmostWindow += difference;
-				drawBitmapGroup(leftmostWindow, windowsDrawn+difference);
-			}
-			windowsDrawn+= difference;
-		}
-
-	}
-
 	private void quickProgress() {
 		/*
-		 * A better-performing version of the progress() method. The existing progress() method redraws every
-		 * bitmap window that will be displayed, while this version simply shifts the bitmap displayed in the previous frame
+		 * This method shifts the bitmap displayed in the previous frame
 		 * and then draws the new windows on the right hand side.
 		 */
-		int windowsAvailable = spec.getBitmapWindowsAdded(); //concurrency - only read once
+		int windowsAvailable = bg.getBitmapWindowsAdded(); //concurrency - only read once
 		if (windowsDrawn < windowsAvailable) { //new bitmap available to draw
 			int difference = windowsAvailable - windowsDrawn;
 			//System.out.println("Difference: "+difference+", windows drawn: "+ (windowsDrawn-1) +", windows available: "+windowsAvailable); //NOTE number of windows drawn is actually windowsDrawn-1 as windowsDrawn is "most recent window drawn"
@@ -203,24 +176,6 @@ class GraphicsController {
 		//else System.out.println("No windows to draw.");
 	}
 
-	private void quickProgress2() {
-		/*
-		 * Semaphore-based implementation //TODO
-		 */
-		if ((windowsDrawn) * HORIZONTAL_STRETCH < width) { //still room to draw new bitmaps without scrolling
-			drawNextBitmap(windowsDrawn);
-		}
-		else { //no room, must scroll (shift what is currently displayed then draw new windows)
-			canScroll = true;
-			System.out.println("Must scroll to draw since (windowsDrawn) * HORIZONTAL_STRETCH is "+(windowsDrawn * HORIZONTAL_STRETCH )+" and width is "+width+". Scrolling current display back by "+HORIZONTAL_STRETCH+" pixels.");
-			bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH, 0, null);
-			//System.out.println("FOR loop: drawing window "+(windowsDrawn+i)+" at "+(width-HORIZONTAL_STRETCH*difference+i));
-			drawNextBitmap(width-HORIZONTAL_STRETCH);
-		}
-
-		windowsDrawn++;
-	}	
-
 	private void drawBitmapGroup(int leftmostBitmap, int rightmostBitmap) {
 		/*
 		 * Replace the entire display with the bitmaps in the interval
@@ -230,7 +185,7 @@ class GraphicsController {
 
 		System.out.println("Drawing bitmaps from "+leftmostBitmap+" to "+(rightmostBitmap-1));
 		for (int i = 0; leftmostBitmap + i < rightmostBitmap; i++) { //don't worry about if this will fit as checks on 'width' are done in the progress() method
-			Bitmap orig = Bitmap.createBitmap(spec.getBitmapWindow(leftmostBitmap+i), 0, 1, 1, samplesPerWindow, Bitmap.Config.ARGB_8888); //TODO check if null
+			Bitmap orig = Bitmap.createBitmap(bg.getBitmapWindow(leftmostBitmap+i), 0, 1, 1, samplesPerWindow, Bitmap.Config.ARGB_8888); //TODO check if null
 			Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, samplesPerWindow * VERTICAL_STRETCH);
 			bufferCanvas.drawBitmap(scaled, i*HORIZONTAL_STRETCH, 0f, null);
 		}
@@ -242,28 +197,13 @@ class GraphicsController {
 		 * stretching according to the HORIZONTAL_STRETCH and VERTICAL_STRETCH parameters.
 		 */
 
-		Bitmap orig = Bitmap.createBitmap(spec.getBitmapWindow(index), 0, 1, 1, samplesPerWindow, Bitmap.Config.ARGB_8888);
+		Bitmap orig = Bitmap.createBitmap(bg.getBitmapWindow(index), 0, 1, 1, samplesPerWindow, Bitmap.Config.ARGB_8888);
 		Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, samplesPerWindow * VERTICAL_STRETCH);
 		bufferCanvas.drawBitmap(scaled, xCoord, 0f, null);
 //		System.out.println("Window " + index
 //				+ " drawn with (left, top) coordinate at ("
 //				+ xCoord + "," + 0 + "), density "
 //				+ scaled.getDensity());
-	}
-
-	private void drawNextBitmap(int xCoord) {
-		/*
-		 * Draw the bitmap specified by the provided index from the top of the screen at the provided x-coordinate, 
-		 * stretching according to the HORIZONTAL_STRETCH and VERTICAL_STRETCH parameters.
-		 */
-
-		Bitmap orig = Bitmap.createBitmap(spec.getNextBitmapWindow(), 0, 1, 1, samplesPerWindow, Bitmap.Config.ARGB_8888);
-		Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, samplesPerWindow * VERTICAL_STRETCH);
-		bufferCanvas.drawBitmap(scaled, xCoord, 0f, null);
-		/*System.out.println("Window " + index
-					+ " drawn with (left, top) coordinate at ("
-					+ xCoord + "," + 0 + "), density "
-					+ scaled.getDensity());*/
 	}
 	
 	public void drawSelectRect(float selectRectL, float selectRectR, float selectRectT, float selectRectB) {
@@ -306,7 +246,7 @@ class GraphicsController {
 	
 	public void resumeScrolling() {
 			//find how many new windows there are, and fill the screen up to the new one, then resume scrolling
-			int windowsAvailable = spec.getBitmapWindowsAdded(); //concurrency - only read once
+			int windowsAvailable = bg.getBitmapWindowsAdded(); //concurrency - only read once
 			leftmostWindow = (windowsAvailable - width/HORIZONTAL_STRETCH < 0) ? 0 : windowsAvailable - width/HORIZONTAL_STRETCH;
 			windowsDrawn = windowsAvailable;
 			fillScreenFrom(leftmostWindow);
@@ -345,7 +285,7 @@ class GraphicsController {
 		//no. windows on screen = width/HORIZONTAL_STRETCH,
 		//no. samples on screen = no. windows * samplesPerWindow
 		//time on screen = no. samples / samples per second [sample rate]
-		return ((float)width/(float)HORIZONTAL_STRETCH*(float)samplesPerWindow)/(float)spec.getSampleRate();
+		return ((float)width/(float)HORIZONTAL_STRETCH*(float)samplesPerWindow)/(float)bg.getSampleRate();
 	}
 
 	public float getMaxFrequency() {
@@ -353,18 +293,12 @@ class GraphicsController {
 		 * Returns the maximum frequency that can be displayed on the spectrogram, which, due
 		 * to the Nyquist limit, is half the sample rate.
 		 */
-		return 0.5f*spec.getSampleRate();
+		return 0.5f*bg.getSampleRate();
 	}
 
 	public Bitmap rotateBitmap(Bitmap source, float angle){
 		Matrix matrix = new Matrix();
 		matrix.postRotate(angle);
 		return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-	}
-
-
-	public void setSurfaceSize(int width, int height) {
-		this.width = width;
-		this.height = height;		
 	}
 }

@@ -3,7 +3,6 @@ package bge23.spectrogramandroid;
 import java.math.BigDecimal;
 
 import android.content.Context;
-import android.graphics.Canvas;
 import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
@@ -17,7 +16,7 @@ import android.widget.TextView;
 
 public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
-	private GraphicsController gc;
+	private SpectrogramDrawer sd;
 	//private ScaleGestureDetector sgd;
 	private int mActivePointerId = MotionEvent.INVALID_POINTER_ID;
 	private float lastTouchX;
@@ -70,7 +69,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				selectRectR = centreX + SELECT_RECT_WIDTH/2;
 				selectRectT = centreY - SELECT_RECT_HEIGHT/2;
 				selectRectB = centreY + SELECT_RECT_HEIGHT/2;
-				gc.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
+				sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
 			}
 		};
 	}
@@ -88,13 +87,13 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 
 
-	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)  {      
-		gc.setSurfaceSize(width, height);
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)  {
+		//TODO
 	}
 
 	@Override
 	public void surfaceCreated(SurfaceHolder arg0) {
-		gc = new GraphicsController(this);
+		sd = new SpectrogramDrawer(this);
 		updateLeftTimeText();
 		updateTopFreqText();
 		Log.d("","SURFACE CREATED");
@@ -102,7 +101,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder arg0) {
-		gc.setRunning(false);
 		//TODO: worry about interrupted something something something
 	}
 
@@ -168,7 +166,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 					System.out.println("Long-press timer cancelled 1.");
 					System.out.println("Last touch x: " + lastTouchX + " x: " + x
 							+ " dx: " + dx + " (int)dx: " + (int) dx);
-					gc.quickSlide((int) dx);
+					sd.quickSlide((int) dx);
 					// Remember this touch position for the next move event
 				}
 			} else { 
@@ -241,16 +239,16 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			selectRectB += dy;
 			break;
 		}
-		gc.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);		
+		sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);		
 	}
 	
 	protected void pauseScrolling() {
-		gc.pauseScrolling();
+		sd.pauseScrolling();
 		resumeButton.setVisibility(View.VISIBLE);
 	}
 	
 	public void resumeScrolling() {
-		gc.resumeScrolling();
+		sd.resumeScrolling();
 		resumeButton.setVisibility(View.GONE);
 	}
 	
@@ -259,13 +257,13 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 	
 	private void updateLeftTimeText() {
-	        BigDecimal bd = new BigDecimal(Float.toString(gc.getScreenFillTime()));
+	        BigDecimal bd = new BigDecimal(Float.toString(sd.getScreenFillTime()));
 	        bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
 			leftTimeTextView.setText("-"+bd.floatValue()+" sec");
 	}
 	
 	private void updateTopFreqText() {
-        BigDecimal bd = new BigDecimal(Float.toString(gc.getMaxFrequency()/1000));
+        BigDecimal bd = new BigDecimal(Float.toString(sd.getMaxFrequency()/1000));
         bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
 		topFreqTextView.setText(bd.floatValue()+" kHz");
 }
