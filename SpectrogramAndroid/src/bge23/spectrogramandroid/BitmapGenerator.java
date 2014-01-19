@@ -140,7 +140,7 @@ public class BitmapGenerator {
 			offset += samplesRead;
 		}
 	}
-	
+
 	public void fillBitmapList() { 
 		/*
 		 * When some audio data is ready, perform the short-time Fourier transform on it and 
@@ -162,25 +162,25 @@ public class BitmapGenerator {
 	}
 
 	private void processAudioWindow(double[] samples) { //TODO prev and next
-		
+
 		double[] fftSamples = new double[SAMPLES_PER_WINDOW*2]; //need half the array to be empty for FFT
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			fftSamples[i] = samples[i];
 		}
 		hammingWindow(fftSamples); //apply Hamming window before performing STFT
 		spectroTransform(fftSamples); //do the STFT on the copied data
-		
+
 		double[] combinedWindow = new double[SAMPLES_PER_WINDOW];
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			combinedWindow[i] = fftSamples[i] + previousWindow[i];
 		}
-		
+
 		int[] bitmapToAdd = new int[SAMPLES_PER_WINDOW];
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			int val = cappedValue(combinedWindow[i]);
 			bitmapToAdd[SAMPLES_PER_WINDOW-i-1] = colours[val]; //fill upside-down because y=0 is at top of screen
 		}
-		
+
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			previousWindow[i] = fftSamples[i];
 		}
@@ -188,13 +188,11 @@ public class BitmapGenerator {
 		bitmapWindowsA[bitmapCurrentIndex] = bitmapToAdd;
 		bitmapCurrentIndex++;
 		bitmapsReady.release();
-		
+
 		if (bitmapCurrentIndex == bitmapWindowsA.length) {
 			bitmapCurrentIndex = 0;
 			arraysLooped = true;
 		}
-		
-		previousWindow = samples;
 	}
 
 	private int cappedValue(double d) {
@@ -255,7 +253,7 @@ public class BitmapGenerator {
 	protected int getBitmapWindowsAvailable() {
 		return bitmapsReady.availablePermits();
 	}
-	
+
 	protected int getLeftmostBitmapAvailable() {
 		/*
 		 * Will return the index of the leftmost bitmap still in memory.
@@ -263,14 +261,14 @@ public class BitmapGenerator {
 		if (!arraysLooped) return 0;
 		return WINDOW_LIMIT-bitmapCurrentIndex; //if array has looped, leftmost window is at array size - current index
 	}
-	
+
 	protected int getRightmostBitmapAvailable() {
 		/*
 		 * Will return the index of the rightmost bitmap still in memory.
 		 */
 		return bitmapCurrentIndex; //just return the index of the last bitmap to have been processed
 	}
-	
+
 	protected int[] getBitmapWindow(int index) {
 		return bitmapWindowsA[index];
 	}
