@@ -1,8 +1,8 @@
 package bge23.spectrogramandroid;
 
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 public class SpectroFragment extends Fragment {
 	
+	private View rootView;
 	private Button resumeButton;
 	private LiveSpectrogramSurfaceView lssv;
 	private TextView leftTimeTextView;
@@ -25,10 +26,39 @@ public class SpectroFragment extends Fragment {
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		View rootView = inflater.inflate(
+		rootView = inflater.inflate(
 				R.layout.fragment_record,
 				container, false);
-		Log.d("", "LSSV INFLATED");
+		init();
+		return rootView;
+	}
+	
+	@Override
+	public void onPause() {
+		super.onPause();
+		lssv.pauseScrolling();
+	}
+	
+	@Override
+	public void onResume() {
+		super.onResume();
+		lssv.resumeFromPause();
+	}
+	
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        LayoutInflater inflater = LayoutInflater.from(getActivity());
+        populateViewForOrientation(inflater, (ViewGroup) getView());
+    }
+    
+    private void populateViewForOrientation(LayoutInflater inflater, ViewGroup viewGroup) {
+        viewGroup.removeAllViewsInLayout();
+        View subview = inflater.inflate(R.layout.fragment_record, viewGroup);
+        init();
+    }
+    
+    private void init() {
 		lssv = (LiveSpectrogramSurfaceView)rootView.findViewById(R.id.lssv);
 		
 		resumeButton = (Button)rootView.findViewById(R.id.button_resume);
@@ -51,19 +81,5 @@ public class SpectroFragment extends Fragment {
 		lssv.setLeftTimeTextView(leftTimeTextView);
 		lssv.setTopFreqTextView(topFreqTextView);
 		lssv.setResumeButton(resumeButton);
-		
-		return rootView;
-	}
-	
-	@Override
-	public void onPause() {
-		super.onPause();
-		lssv.pauseScrolling();
-	}
-	
-	@Override
-	public void onResume() {
-		super.onResume();
-		lssv.resumeFromPause();
-	}
+    }
 }

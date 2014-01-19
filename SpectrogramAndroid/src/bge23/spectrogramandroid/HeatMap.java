@@ -120,7 +120,6 @@ public class HeatMap {
 		return toReturn;
 	}
 	
-	@SuppressWarnings("unused")
 	static int[] heatMap2() {
 		//Functions for R,G,B obtained through observation of a colour picker
 		int[] toReturn = new int[256];

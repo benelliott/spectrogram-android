@@ -1,6 +1,5 @@
 package bge23.spectrogramandroid;
 
-import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
 import android.media.AudioFormat;
@@ -46,8 +45,7 @@ public class BitmapGenerator {
 	private int[] colours;
 	private Integer audioCurrentIndex = 0; //keep track of where in the audioWindows array we have most recently written to
 	private int bitmapCurrentIndex = 0;
-	private boolean audioHasLooped = false; //true if we have filled the entire audioWindows array and are now looping round, hence old values can be read from later in the array
-	private boolean bitmapHasLooped = false; //same as above, for bitmapWindows array
+	private boolean arraysLooped = false; //true if we have filled the entire array and are now looping round, hence old values can be read from later in the array
 	private Semaphore audioReady = new Semaphore(0);
 	private Semaphore bitmapsReady = new Semaphore(0);
 	private int lastBitmapRequested = 0; //keeps track of the most recently requested bitmap window
@@ -116,7 +114,6 @@ public class BitmapGenerator {
 				synchronized(audioCurrentIndex) {
 					audioCurrentIndex = 0;
 				}
-				audioHasLooped = true;
 			}
 			synchronized(audioWindowsA) {
 				audioWindowsA[audioCurrentIndex] = toAdd;
@@ -194,7 +191,7 @@ public class BitmapGenerator {
 		
 		if (bitmapCurrentIndex == bitmapWindowsA.length) {
 			bitmapCurrentIndex = 0;
-			bitmapHasLooped = true;
+			arraysLooped = true;
 		}
 		
 		previousWindow = samples;
@@ -263,7 +260,7 @@ public class BitmapGenerator {
 		/*
 		 * Will return the index of the leftmost bitmap still in memory.
 		 */
-		if (!bitmapHasLooped) return 0;
+		if (!arraysLooped) return 0;
 		return WINDOW_LIMIT-bitmapCurrentIndex; //if array has looped, leftmost window is at array size - current index
 	}
 	
