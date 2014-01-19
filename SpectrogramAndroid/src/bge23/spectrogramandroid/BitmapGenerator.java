@@ -70,6 +70,10 @@ public class BitmapGenerator {
 	}
 
 	public void start() {
+		/*
+		 * Start the two threads responsible fro bringing in audio samples and for processing them to generate bitmaps.
+		 */
+		
 		mic.startRecording();
 		running = true;
 		audioThread = new Thread(new Runnable(){
@@ -90,6 +94,9 @@ public class BitmapGenerator {
 	}
 
 	public void stop() {
+		/*
+		 * Stop bringing in and processing audio samples.
+		 */
 		running = false;
 		mic.stop();
 	}
@@ -97,7 +104,7 @@ public class BitmapGenerator {
 	public void fillAudioList() {
 		/*
 		 * When audio data becomes available from the microphone, convert it into a double-array, ready
-		 * for the FFT. Store it in a list so that it remains available in case the user chooses to replay 
+		 * for the FFT. Store it in a 2D array so that it remains available in case the user chooses to replay 
 		 * certain sections.
 		 */
 		while (running) {
@@ -144,7 +151,7 @@ public class BitmapGenerator {
 	public void fillBitmapList() { 
 		/*
 		 * When some audio data is ready, perform the short-time Fourier transform on it and 
-		 * then convert the results to a bitmap, which is then stored in a list, ready to be displayed.
+		 * then convert the results to a bitmap, which is then stored in a 2D array, ready to be displayed.
 		 */
 		while (running) {
 
@@ -162,6 +169,12 @@ public class BitmapGenerator {
 	}
 
 	private void processAudioWindow(double[] samples) { //TODO prev and next
+		/*
+		 * Take the raw audio samples, apply a Hamming window, then perform the Short-Time
+		 * Fourier Transform and square the result. Combine the output with that from the previous window
+		 * for a smoothing effect. Insert the result into a 2D array and signal completion by adding a permit to
+		 * the appropriate semaphore.
+		 */
 
 		double[] fftSamples = new double[SAMPLES_PER_WINDOW*2]; //need half the array to be empty for FFT
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
@@ -197,7 +210,7 @@ public class BitmapGenerator {
 
 	private int cappedValue(double d) {
 		/*
-		 * This method will return an integer capped at 255 representing the magnitude of the
+		 * Returns an integer capped at 255 representing the magnitude of the
 		 * given double value, d, relative to the highest amplitude seen so far. The amplitude values
 		 * provided use a logarithmic scale but this method converts these back to a linear scale, 
 		 * more appropriate for pixel colouring.
@@ -251,12 +264,15 @@ public class BitmapGenerator {
 	}
 
 	protected int getBitmapWindowsAvailable() {
+		/*
+		 * Returns the number of bitmaps ready to be drawn.
+		 */
 		return bitmapsReady.availablePermits();
 	}
 
 	protected int getLeftmostBitmapAvailable() {
 		/*
-		 * Will return the index of the leftmost bitmap still in memory.
+		 * Returns the index of the leftmost bitmap still in memory.
 		 */
 		if (!arraysLooped) return 0;
 		return WINDOW_LIMIT-bitmapCurrentIndex; //if array has looped, leftmost window is at array size - current index
@@ -264,12 +280,15 @@ public class BitmapGenerator {
 
 	protected int getRightmostBitmapAvailable() {
 		/*
-		 * Will return the index of the rightmost bitmap still in memory.
+		 *Returns the index of the rightmost bitmap still in memory.
 		 */
 		return bitmapCurrentIndex; //just return the index of the last bitmap to have been processed
 	}
 
 	protected int[] getBitmapWindow(int index) {
+		/*
+		 * Returns the bitmap corresponding to the provided index into the array of bitmaps. No bounds checking.
+		 */
 		return bitmapWindowsA[index];
 	}
 

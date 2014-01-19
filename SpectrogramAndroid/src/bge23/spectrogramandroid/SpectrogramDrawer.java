@@ -57,6 +57,9 @@ class SpectrogramDrawer {
 	}
 	
 	private void clearCanvas() {
+		/*
+		 * Clear the display by painting it black.
+		 */
 		SurfaceHolder sh = lssv.getHolder();
 		displayCanvas = sh.lockCanvas(null);
 		try {
@@ -72,6 +75,9 @@ class SpectrogramDrawer {
 	}
 
 	public void scroll() {
+		/*
+		 * Repeatedly run the quickProgress() method to look for new bitmaps, then draw the result to the display
+		 */
 		while (true) {
 			if (scrollingLock.tryLock()) {
 				SurfaceHolder sh = lssv.getHolder();
@@ -175,6 +181,9 @@ class SpectrogramDrawer {
 		}
 
 	private void drawNextBitmap(int xCoord) {
+		/*
+		 * Retreive and draw the next bitmap, determined by the BitmapGenerator itself.
+		 */
 		Bitmap orig = Bitmap.createBitmap(bg.getNextBitmap(), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888);
 		Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, SAMPLES_PER_WINDOW * VERTICAL_STRETCH);
 		bufferCanvas.drawBitmap(scaled, xCoord, 0f, null);
@@ -182,10 +191,9 @@ class SpectrogramDrawer {
 
 	private void drawSingleBitmap(int index, int xCoord) {
 		/*
-		 * Draw the bitmap specified by the provided index  from the top of the screen at the provided x-coordinate, 
+		 * Draw the bitmap specified by the provided index from the top of the screen at the provided x-coordinate, 
 		 * stretching according to the HORIZONTAL_STRETCH and VERTICAL_STRETCH parameters.
 		 */
-
 		Bitmap orig = Bitmap.createBitmap(bg.getBitmapWindow(index), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888);
 		Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, SAMPLES_PER_WINDOW * VERTICAL_STRETCH);
 		bufferCanvas.drawBitmap(scaled, xCoord, 0f, null);
@@ -196,6 +204,10 @@ class SpectrogramDrawer {
 	}
 	
 	public void drawSelectRect(float selectRectL, float selectRectR, float selectRectT, float selectRectB) {
+		/*
+		 * Draw the select-area rectangle with left, right, top and bottom coordinates at selectRectL, selectRectR, 
+		 * selectRectT and selectRectB respectively. Colour according to the SELECT_RECT_COLOUR value.
+		 */
 		Bitmap buf = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 		Canvas bufCanvas = new Canvas(buf);
 		Paint rectPaint = new Paint();
@@ -228,6 +240,10 @@ class SpectrogramDrawer {
 	}
 	
 	public void pauseScrolling() {
+	/*
+	 * When this method is called, scrolling of the display is halted, as are the threads which bring in and
+	 * process audio samples to generate bitmaps.
+	 */
 				if (!scrollingLock.isHeldByCurrentThread()) {
 					scrollingLock.lock();
 				}
@@ -236,7 +252,10 @@ class SpectrogramDrawer {
 				rightmostBitmapAvailable = bg.getRightmostBitmapAvailable();
 	}
 
-	public Bitmap scaleBitmap(Bitmap bitmapToScale, float newWidth, float newHeight) {   
+	public Bitmap scaleBitmap(Bitmap bitmapToScale, float newWidth, float newHeight) {
+		/*
+		 * Returns the provided bitmap, scaled to fit the new width and height parameters.
+		 */
 		if(bitmapToScale == null)
 			return null;
 		//get the original width and height
@@ -269,11 +288,5 @@ class SpectrogramDrawer {
 		 * to the Nyquist limit, is half the sample rate.
 		 */
 		return 0.5f*bg.getSampleRate();
-	}
-
-	public Bitmap rotateBitmap(Bitmap source, float angle){
-		Matrix matrix = new Matrix();
-		matrix.postRotate(angle);
-		return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
 	}
 }
