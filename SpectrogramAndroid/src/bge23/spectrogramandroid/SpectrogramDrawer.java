@@ -12,7 +12,9 @@ import android.view.SurfaceHolder;
 
 class SpectrogramDrawer {
 	private final int HORIZONTAL_STRETCH = 2;
-	private final float VERTICAL_STRETCH; //TODO rem?
+	private final float VERTICAL_STRETCH;
+	private final int SAMPLES_PER_WINDOW;
+	private final int SCROLL_LIMIT; //number of windows that are held in memory either side of current window 
 	private final ReentrantLock scrollingLock = new ReentrantLock(false);
 	private BitmapGenerator bg;
 	private LiveSpectrogramSurfaceView lssv;
@@ -24,12 +26,11 @@ class SpectrogramDrawer {
 	private Canvas buffer2Canvas;
 	private int width;
 	private int height;
-	private int samplesPerWindow;
 	private int windowsDrawn;
 	private int leftmostWindow;
 	private boolean canScroll = false;
 	
-	private int SELECT_RECT_COLOUR = Color.argb(128, 255, 255, 255);
+	private int SELECT_RECT_COLOUR = Color.argb(255, 255, 255, 255);
 
 	public SpectrogramDrawer(LiveSpectrogramSurfaceView lssv) {
 		this.lssv = lssv;
@@ -37,9 +38,10 @@ class SpectrogramDrawer {
 		this.height = lssv.getHeight();
 		bg = new BitmapGenerator(1);
 		bg.start();
-		samplesPerWindow = bg.getSamplesPerWindow();
-		VERTICAL_STRETCH = ((float)height)/((float)samplesPerWindow); // stretch spectrogram to all of available height
-		Log.d("dim","Height: "+height+", samples per window: "+samplesPerWindow+", VERTICAL_STRETCH: "+VERTICAL_STRETCH);
+		SAMPLES_PER_WINDOW = BitmapGenerator.SAMPLES_PER_WINDOW;
+		SCROLL_LIMIT = BitmapGenerator.WINDOW_LIMIT/2; 
+		VERTICAL_STRETCH = ((float)height)/((float)SAMPLES_PER_WINDOW); // stretch spectrogram to all of available height
+		Log.d("dim","Height: "+height+", samples per window: "+SAMPLES_PER_WINDOW+", VERTICAL_STRETCH: "+VERTICAL_STRETCH);
 		buffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 		bufferCanvas = new Canvas(buffer);
 		buffer2 = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -75,26 +77,30 @@ class SpectrogramDrawer {
 	}
 
 	public void fillScreenFrom(int leftmostBitmap) {
-		/*
-		 * Fill the screen with bitmaps from the leftmost bitmap specified to the right edge of the display.
-		 */
-		int windowsAvailable = bg.getBitmapWindowsAdded();
-		int rightmostBitmap = (leftmostBitmap+(width/HORIZONTAL_STRETCH) > windowsAvailable) ? windowsAvailable : leftmostBitmap+(width/HORIZONTAL_STRETCH);
-		drawBitmapGroup(leftmostBitmap,rightmostBitmap); //update buffer bitmap
-		SurfaceHolder sh = lssv.getHolder();
-		displayCanvas = sh.lockCanvas(); //TODO
-		try {
-			synchronized (sh) {
-				displayCanvas.drawBitmap(buffer, 0, 0, null); //draw buffer to display
-			}
-		} finally {
-			if (displayCanvas != null) {
-				sh.unlockCanvasAndPost(displayCanvas);
-			}
-		}
+//		/*
+//		 * Fill the screen with bitmaps from the leftmost bitmap specified to the right edge of the display.
+//		 */
+//		int windowsAvailable = bg.getBitmapWindowsAdded();
+//		int rightmostBitmap = (leftmostBitmap+(width/HORIZONTAL_STRETCH) > windowsAvailable) ? windowsAvailable : leftmostBitmap+(width/HORIZONTAL_STRETCH);
+//		drawBitmapGroup(leftmostBitmap,rightmostBitmap); //update buffer bitmap
+//		SurfaceHolder sh = lssv.getHolder();
+//		displayCanvas = sh.lockCanvas(); //TODO
+//		try {
+//			synchronized (sh) {
+//				displayCanvas.drawBitmap(buffer, 0, 0, null); //draw buffer to display
+//			}
+//		} finally {
+//			if (displayCanvas != null) {
+//				sh.unlockCanvasAndPost(displayCanvas);
+//			}
+//		}
 	}
 
 	public void quickSlide(int offset) {
+		/*
+		 * Takes a pixel offset, converts it into a number of windows by which to scroll the screen,
+		 * then scrolls the screen so long as the appropriate windows are available.
+		 */
 		if (canScroll) { //only scroll if there are more than a screen's worth of windows
 			 //stop new windows from coming in immediately
 				offset /= HORIZONTAL_STRETCH; //convert from pixel offset to window offset 
@@ -148,62 +154,65 @@ class SpectrogramDrawer {
 		 * This method shifts the bitmap displayed in the previous frame
 		 * and then draws the new windows on the right hand side.
 		 */
-		int windowsAvailable = bg.getBitmapWindowsAdded(); //concurrency - only read once
-		if (windowsDrawn < windowsAvailable) { //new bitmap available to draw
-			int difference = windowsAvailable - windowsDrawn;
-			//System.out.println("Difference: "+difference+", windows drawn: "+ (windowsDrawn-1) +", windows available: "+windowsAvailable); //NOTE number of windows drawn is actually windowsDrawn-1 as windowsDrawn is "most recent window drawn"
-			if (windowsAvailable * HORIZONTAL_STRETCH < width) { //still room to draw new bitmaps without scrolling
+		int windowsAvailable = bg.getBitmapWindowsAvailable();
+		
+			if ((windowsDrawn+windowsAvailable) * HORIZONTAL_STRETCH < width) { //still room to draw new bitmaps without scrolling
 				//leave the existing bitmap intact and just draw the new windows on the portion of the screen that is still blank
-				//System.out.println("Room to draw without scrolling.");
-				for (int i = windowsDrawn; i < windowsDrawn+difference; i++) {
-					//System.out.println("FOR loop: drawing window "+i+" at "+i*HORIZONTAL_STRETCH);
-					drawSingleBitmap(i,i*HORIZONTAL_STRETCH);
+				for (int i = 0; i < windowsAvailable; i++) {
+					drawNextBitmap((windowsDrawn+i)*HORIZONTAL_STRETCH);
+					Log.d("Spectro","Drawn next bitmap at "+(windowsDrawn+i)*HORIZONTAL_STRETCH);
 				}
 			}
 			else { //no room, must scroll (shift what is currently displayed then draw new windows)
 				canScroll = true;
-				//System.out.println("Must scroll to draw since windowsAvailable*HORIZONTAL_STRETCH is "+windowsAvailable * HORIZONTAL_STRETCH+" and width is "+width+". Scrolling current display back by "+HORIZONTAL_STRETCH*difference+" pixels.");
-				bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH*difference, 0, null);//shift what is currently displayed by (number of new windows ready to be drawn)*HORIZONTAL_STRETCH
-				for (int i = 0; i < difference; i++) {
-					//System.out.println("FOR loop: drawing window "+(windowsDrawn+i)+" at "+(width-HORIZONTAL_STRETCH*difference+i));
-					drawSingleBitmap(windowsDrawn+i,width+HORIZONTAL_STRETCH*(i-difference)); //draw new window at width - HORIZONTAL_STRETCH * difference [start of blank area] + i*HORIZONTAL_STRETCH [offset for current window]
+				bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH*windowsAvailable, 0, null);//shift what is currently displayed by (number of new windows ready to be drawn)*HORIZONTAL_STRETCH
+				for (int i = 0; i < windowsAvailable; i++) {
+					drawNextBitmap(width+HORIZONTAL_STRETCH*(i-windowsAvailable)); //draw new window at width - HORIZONTAL_STRETCH * difference [start of blank area] + i*HORIZONTAL_STRETCH [offset for current window]
 				}
-				leftmostWindow += difference;
+				leftmostWindow += windowsAvailable;
 			}
-			windowsDrawn+= difference;
+			windowsDrawn += windowsAvailable;
 
 		}
-		//else System.out.println("No windows to draw.");
+
+	private void drawNextBitmap(int xCoord) {
+		// TODO Auto-generated method stub
+		Bitmap orig = Bitmap.createBitmap(bg.getNextBitmap(), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888);
+		Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, SAMPLES_PER_WINDOW * VERTICAL_STRETCH);
+		bufferCanvas.drawBitmap(scaled, xCoord, 0f, null);
 	}
+	
 
 	private void drawBitmapGroup(int leftmostBitmap, int rightmostBitmap) {
-		/*
-		 * Replace the entire display with the bitmaps in the interval
-		 * [leftmostBitmap, rightmostBitmap-1],
-		 * each drawn vertically from the top of the screen.
-		 */
-
-		System.out.println("Drawing bitmaps from "+leftmostBitmap+" to "+(rightmostBitmap-1));
-		for (int i = 0; leftmostBitmap + i < rightmostBitmap; i++) { //don't worry about if this will fit as checks on 'width' are done in the progress() method
-			Bitmap orig = Bitmap.createBitmap(bg.getBitmapWindow(leftmostBitmap+i), 0, 1, 1, samplesPerWindow, Bitmap.Config.ARGB_8888); //TODO check if null
-			Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, samplesPerWindow * VERTICAL_STRETCH);
-			bufferCanvas.drawBitmap(scaled, i*HORIZONTAL_STRETCH, 0f, null);
-		}
+//		/*
+//		 * Replace the entire display with the bitmaps in the interval
+//		 * [leftmostBitmap, rightmostBitmap-1],
+//		 * each drawn vertically from the top of the screen.
+//		 */
+//		if (leftmostBitmap < windowsDrawn-SCROLL_LIMIT || rightmostBitmap > windowsDrawn + SCROLL_LIMIT) {
+//			Log.d("","One or more of requested bitmaps "+leftmostBitmap+" to "+rightmostBitmap+" no longer in memory!");
+//			return;
+//		}
+//		for (int i = 0; leftmostBitmap + i < rightmostBitmap; i++) { 
+//			Bitmap orig = Bitmap.createBitmap(bg.getBitmapWindow(leftmostBitmap+i), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888); //TODO check if null
+//			Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, SAMPLES_PER_WINDOW * VERTICAL_STRETCH);
+//			bufferCanvas.drawBitmap(scaled, i*HORIZONTAL_STRETCH, 0f, null);
+//		}
 	}
 
 	private void drawSingleBitmap(int index, int xCoord) {
-		/*
-		 * Draw the bitmap specified by the provided index  from the top of the screen at the provided x-coordinate, 
-		 * stretching according to the HORIZONTAL_STRETCH and VERTICAL_STRETCH parameters.
-		 */
-
-		Bitmap orig = Bitmap.createBitmap(bg.getBitmapWindow(index), 0, 1, 1, samplesPerWindow, Bitmap.Config.ARGB_8888);
-		Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, samplesPerWindow * VERTICAL_STRETCH);
-		bufferCanvas.drawBitmap(scaled, xCoord, 0f, null);
-//		System.out.println("Window " + index
-//				+ " drawn with (left, top) coordinate at ("
-//				+ xCoord + "," + 0 + "), density "
-//				+ scaled.getDensity());
+//		/*
+//		 * Draw the bitmap specified by the provided index  from the top of the screen at the provided x-coordinate, 
+//		 * stretching according to the HORIZONTAL_STRETCH and VERTICAL_STRETCH parameters.
+//		 */
+//
+//		Bitmap orig = Bitmap.createBitmap(bg.getBitmapWindow(index), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888);
+//		Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, SAMPLES_PER_WINDOW * VERTICAL_STRETCH);
+//		bufferCanvas.drawBitmap(scaled, xCoord, 0f, null);
+////		System.out.println("Window " + index
+////				+ " drawn with (left, top) coordinate at ("
+////				+ xCoord + "," + 0 + "), density "
+////				+ scaled.getDensity());
 	}
 	
 	public void drawSelectRect(float selectRectL, float selectRectR, float selectRectT, float selectRectB) {
@@ -242,17 +251,18 @@ class SpectrogramDrawer {
 				if (!scrollingLock.isHeldByCurrentThread()) {
 					scrollingLock.lock();
 				}
+				bg.stop(); //stop taking in and processing new samples since this will overwrite those you are trying to scroll through
 	}
 	
 	public void resumeScrolling() {
-			//find how many new windows there are, and fill the screen up to the new one, then resume scrolling
-			int windowsAvailable = bg.getBitmapWindowsAdded(); //concurrency - only read once
-			leftmostWindow = (windowsAvailable - width/HORIZONTAL_STRETCH < 0) ? 0 : windowsAvailable - width/HORIZONTAL_STRETCH;
-			windowsDrawn = windowsAvailable;
-			fillScreenFrom(leftmostWindow);
-			if (scrollingLock.isHeldByCurrentThread()) {
-				scrollingLock.unlock();
-			}
+//			//find how many new windows there are, and fill the screen up to the new one, then resume scrolling
+//			int windowsAvailable = bg.getBitmapWindowsAdded(); //concurrency - only read once
+//			leftmostWindow = (windowsAvailable - width/HORIZONTAL_STRETCH < 0) ? 0 : windowsAvailable - width/HORIZONTAL_STRETCH;
+//			windowsDrawn = windowsAvailable;
+//			fillScreenFrom(leftmostWindow);
+//			if (scrollingLock.isHeldByCurrentThread()) {
+//				scrollingLock.unlock();
+//			}
 	}
 	
 	protected void resumeFromPause() {
@@ -285,7 +295,7 @@ class SpectrogramDrawer {
 		//no. windows on screen = width/HORIZONTAL_STRETCH,
 		//no. samples on screen = no. windows * samplesPerWindow
 		//time on screen = no. samples / samples per second [sample rate]
-		return ((float)width/(float)HORIZONTAL_STRETCH*(float)samplesPerWindow)/(float)bg.getSampleRate();
+		return ((float)width/(float)HORIZONTAL_STRETCH*(float)SAMPLES_PER_WINDOW)/(float)bg.getSampleRate();
 	}
 
 	public float getMaxFrequency() {

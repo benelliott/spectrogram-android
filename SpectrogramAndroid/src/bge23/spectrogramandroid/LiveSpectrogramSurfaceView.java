@@ -156,11 +156,11 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			// Find the index of the active pointer and fetch its position
 			final int pointerIndex = MotionEventCompat.findPointerIndex(ev,
 					mActivePointerId);
-			final float x = MotionEventCompat.getX(ev, pointerIndex); //Note: never care about y axis
 			//final float x = ev.getRawX(); //Note: never care about y axis
 			// Calculate the distance moved
-			final float dx = x - lastTouchX;
 			if (!selecting) { //don't allow for scrolling if user is trying to select an area of the spectrogram
+				final float x = MotionEventCompat.getX(ev, pointerIndex); //Note: never care about y axis
+				final float dx = x - lastTouchX;
 				if (dx > 5 || dx < -5) { //only if moved more than 5 pixels
 					handler.removeCallbacks(onLongPress); //cancel long-press runnable
 					System.out.println("Long-press timer cancelled 1.");
@@ -169,16 +169,30 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 					sd.quickSlide((int) dx);
 					// Remember this touch position for the next move event
 				}
+				lastTouchX = x;
 			} else { 
-				//if selectiong mode entered, allow user to move corners to adjust select-area rectangle size
-				final float y = MotionEventCompat.getY(ev, pointerIndex); //Note: never care about y axis
-				final float dy = y - lastTouchY;
-
+				//if selecting mode entered, allow user to move corners to adjust select-area rectangle size
+				
+				//first do historical movements
+//				for (int i = 0; i < ev.getHistorySize(); i++) {
+//					float x = ev.getHistoricalX(pointerIndex, i);
+//					float y = ev.getHistoricalX(pointerIndex, i);
+//					float dx = x - lastTouchX;
+//					float dy = y - lastTouchX;
+//					moveCorner(selectedCorner, dx, dy);				
+//					lastTouchX = x;
+//					lastTouchY = y;
+//				}
+				
+				//then do current movement
+				float x = MotionEventCompat.getX(ev, pointerIndex);
+				float y = MotionEventCompat.getY(ev, pointerIndex);
+				float dx = x - lastTouchX;
+				float dy = y - lastTouchY;
 				moveCorner(selectedCorner, dx, dy);				
-
+				lastTouchX = x;
 				lastTouchY = y;
 			}
-			lastTouchX = x;
 			break;
 
 		}
