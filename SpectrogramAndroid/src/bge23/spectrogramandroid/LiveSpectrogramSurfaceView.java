@@ -262,7 +262,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 	
 	public void resumeScrolling() {
-		sd.resumeScrolling();
+		sd = new SpectrogramDrawer(this);
 		resumeButton.setVisibility(View.GONE);
 	}
 	

@@ -18,8 +18,6 @@ public class BitmapGenerator {
 	 * another to convert this data into a bitmap as soon as it becomes available ('bitmapThread').
 	 */
 
-	private ArrayList<double[]> audioWindows = new ArrayList<double[]>();//list of 1D double arrays, each representing a window worth of audio samples
-	private ArrayList<int[]> bitmapWindows = new ArrayList<int[]>(); //list of 1D arrays of pixel values for the bitmap. each element of this list represents the array of pixel values for one [composite] window
 	public static final int SAMPLE_RATE = 16000; //options are 11025, 22050, 16000, 44100
 	public static final int SAMPLES_PER_WINDOW = 300; //usually around 300
 	private final int MIC_BUFFERS = 100; //number of buffers to maintain at once
@@ -43,8 +41,6 @@ public class BitmapGenerator {
 	private double maxAmplitude = 1; //max amplitude seen so far
 	private short[][] micBuffers = new short[MIC_BUFFERS][SAMPLES_PER_WINDOW];; //array of buffers so that different frames can be being processed while others are read in 
 	private AudioRecord mic;
-	private int audioWindowsAdded = 0; //TODO needed?
-	private int bitmapWindowsAdded = 0;
 	private Thread audioThread;
 	private Thread bitmapThread;
 	private int[] colours;
@@ -55,6 +51,7 @@ public class BitmapGenerator {
 	private Semaphore audioReady = new Semaphore(0);
 	private Semaphore bitmapsReady = new Semaphore(0);
 	private int lastBitmapRequested = 0; //keeps track of the most recently requested bitmap window
+	private double[] previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
 
 
 	public BitmapGenerator(int colourMap) {
@@ -106,7 +103,7 @@ public class BitmapGenerator {
 		 * certain sections.
 		 */
 		while (running) {
-			int currentBuffer = audioWindowsAdded % MIC_BUFFERS;
+			int currentBuffer = audioCurrentIndex % MIC_BUFFERS;
 			readUntilFull(micBuffers[currentBuffer], 0, SAMPLES_PER_WINDOW); //request samplesPerWindow shorts be written into the next free microphone buffer
 			double[] toAdd = new double[SAMPLES_PER_WINDOW]; //create a new double-array to store the double-converted data
 			for (int i = 0; i < SAMPLES_PER_WINDOW; i++) { //convert the short data into double
@@ -146,49 +143,6 @@ public class BitmapGenerator {
 			offset += samplesRead;
 		}
 	}
-
-	public void fillBitmapListOld() { 
-		/*
-		 * When some audio data is ready, perform the short-time Fourier transform on it and 
-		 * then convert the results to a bitmap, which is then stored in a list, ready to be displayed.
-		 */
-		while (running) {
-			int windowsAvailable;
-			int newestWindow;
-			synchronized(audioCurrentIndex) {
-				windowsAvailable = audioReady.availablePermits();
-				newestWindow = audioCurrentIndex-1; //audioCurrentIndex itself won't have been filled yet, so -1
-			}
-			try {
-				Log.d("Bitmap thread", windowsAvailable+" permits available. Newest window is "+newestWindow);
-				audioReady.acquire(windowsAvailable);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			if (windowsAvailable > newestWindow) {
-				//has looped, must read from end of the array
-				int startingIndex = audioWindowsA.length-(windowsAvailable-newestWindow)+1; //+1 because of <= in second part
-				for (int i = 0; i < windowsAvailable-newestWindow-1; i++) {
-					processAudioWindow(audioWindowsA[startingIndex+i]);
-					Log.d("Bitmap thread","Audio window "+(startingIndex+i)+ " processed. ");
-				}
-				windowsAvailable = newestWindow;
-
-
-				for (int i = 0; i <= newestWindow; i++) {
-					processAudioWindow(audioWindowsA[i]);
-					Log.d("Bitmap thread","Audio window "+i+ " processed. ");
-				}
-			}
-
-			for (int i = newestWindow - windowsAvailable+1; i <= newestWindow; i++) {
-				processAudioWindow(audioWindowsA[i]);
-				Log.d("Bitmap thread","Audio window "+i+ " processed. ");
-			}
-
-		}
-	}
 	
 	public void fillBitmapList() { 
 		/*
@@ -211,7 +165,6 @@ public class BitmapGenerator {
 	}
 
 	private void processAudioWindow(double[] samples) { //TODO prev and next
-		//double[] previousTransformWindow = new double[SAMPLES_PER_WINDOW];
 		
 		double[] fftSamples = new double[SAMPLES_PER_WINDOW*2]; //need half the array to be empty for FFT
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
@@ -219,13 +172,21 @@ public class BitmapGenerator {
 		}
 		hammingWindow(fftSamples); //apply Hamming window before performing STFT
 		spectroTransform(fftSamples); //do the STFT on the copied data
-
+		
+		double[] combinedWindow = new double[SAMPLES_PER_WINDOW];
+		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
+			combinedWindow[i] = fftSamples[i] + previousWindow[i];
+		}
+		
 		int[] bitmapToAdd = new int[SAMPLES_PER_WINDOW];
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
-			int val = cappedValue(fftSamples[i]);
+			int val = cappedValue(combinedWindow[i]);
 			bitmapToAdd[SAMPLES_PER_WINDOW-i-1] = colours[val]; //fill upside-down because y=0 is at top of screen
 		}
-
+		
+		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
+			previousWindow[i] = fftSamples[i];
+		}
 
 		bitmapWindowsA[bitmapCurrentIndex] = bitmapToAdd;
 		bitmapCurrentIndex++;
@@ -235,23 +196,9 @@ public class BitmapGenerator {
 			bitmapCurrentIndex = 0;
 			bitmapHasLooped = true;
 		}
+		
+		previousWindow = samples;
 	}
-
-	public boolean isRunning() {
-		return running;
-	}
-
-	public void setRunning(boolean b) { //TODO need?
-		running = b;
-	}
-
-	//	public int[] getBitmapWindow(int index) { TODO
-	//		/*
-	//		 * This method returns a reference to the bitmap in the list which corresponds to the given index,
-	//		 * allowing other classes (e.g. LiveSpectrogramSurfaceView) to retrieve individual generated bitmaps.
-	//		 */
-	//		if ()
-	//	}
 
 	private int cappedValue(double d) {
 		/*
@@ -310,6 +257,25 @@ public class BitmapGenerator {
 
 	protected int getBitmapWindowsAvailable() {
 		return bitmapsReady.availablePermits();
+	}
+	
+	protected int getLeftmostBitmapAvailable() {
+		/*
+		 * Will return the index of the leftmost bitmap still in memory.
+		 */
+		if (!bitmapHasLooped) return 0;
+		return WINDOW_LIMIT-bitmapCurrentIndex; //if array has looped, leftmost window is at array size - current index
+	}
+	
+	protected int getRightmostBitmapAvailable() {
+		/*
+		 * Will return the index of the rightmost bitmap still in memory.
+		 */
+		return bitmapCurrentIndex; //just return the index of the last bitmap to have been processed
+	}
+	
+	protected int[] getBitmapWindow(int index) {
+		return bitmapWindowsA[index];
 	}
 
 	protected int[] getNextBitmap() {
