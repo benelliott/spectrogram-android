@@ -20,7 +20,7 @@ public class BitmapGenerator {
 	public static final int SAMPLE_RATE = 16000; //options are 11025, 22050, 16000, 44100
 	public static final int SAMPLES_PER_WINDOW = 300; //usually around 300
 	private final int MIC_BUFFERS = 100; //number of buffers to maintain at once
-
+	private final float CONTRAST = 2.0f;
 
 	//number of windows that can be held in the arrays at once before older ones are deleted. Time this represents is
 	// WINDOW_LIMIT*SAMPLES_PER_WINDOW/SAMPLE_RATE, e.g. 10000*300/16000 = 187.5 seconds.
@@ -63,6 +63,8 @@ public class BitmapGenerator {
 		case 3: colours = HeatMap.blueOrangeYellow(); break;
 		case 4: colours = HeatMap.yellowOrangeBlue(); break;
 		case 5: colours = HeatMap.blackGreen(); break;
+		case 6: colours = HeatMap.heatMap2(); break;
+		case 7: colours = HeatMap.whiteBlue(); break;
 		}
 
 		int readSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
@@ -220,7 +222,7 @@ public class BitmapGenerator {
 			maxAmplitude = d;
 			return 255;
 		}
-		return (int)(255*(Math.log1p(d)/Math.log1p(maxAmplitude)));
+		return (int)( 255*Math.pow((Math.log1p(d)/Math.log1p(maxAmplitude)),CONTRAST));
 	}
 
 	private void hammingWindow(double[] samples) {

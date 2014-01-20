@@ -31,7 +31,7 @@ class SpectrogramDrawer {
 	private boolean canScroll = false;
 	private int leftmostBitmapAvailable;
 	private int rightmostBitmapAvailable;
-	
+
 
 	public SpectrogramDrawer(LiveSpectrogramSurfaceView lssv) {
 		this.lssv = lssv;
@@ -55,7 +55,7 @@ class SpectrogramDrawer {
 		clearCanvas();
 		scrollingThread.start();
 	}
-	
+
 	private void clearCanvas() {
 		/*
 		 * Clear the display by painting it black.
@@ -94,7 +94,7 @@ class SpectrogramDrawer {
 					scrollingLock.unlock();
 				}
 			}
-			
+
 		}
 	}
 
@@ -104,45 +104,45 @@ class SpectrogramDrawer {
 		 * then scrolls the screen so long as the appropriate windows are available.
 		 */
 		if (canScroll) { //only scroll if there are more than a screen's worth of windows
-			 //stop new windows from coming in immediately
-				offset /= HORIZONTAL_STRETCH; //convert from pixel offset to window offset 
-				
-				Log.d("Scrolling","Offset: "+offset);
-				
-				int leftmostWindowAsIndex = leftmostWindow % BitmapGenerator.WINDOW_LIMIT;
-				int newLeftmostWindow = leftmostWindowAsIndex - offset;
-				if (newLeftmostWindow < leftmostBitmapAvailable) offset = leftmostWindowAsIndex - leftmostBitmapAvailable;
-				
-				int rightmostWindowAsIndex = (leftmostWindow + width/HORIZONTAL_STRETCH) % BitmapGenerator.WINDOW_LIMIT;
-				int newRightmostWindow = rightmostWindowAsIndex - offset;
-				if (newRightmostWindow > rightmostBitmapAvailable) offset = rightmostBitmapAvailable - rightmostWindowAsIndex;
-				
-				Log.d("Scrolling","Adjusted offset: "+offset+", leftmost window before scroll: "+leftmostWindow+", as index: "+leftmostWindowAsIndex);
+			//stop new windows from coming in immediately
+			offset /= HORIZONTAL_STRETCH; //convert from pixel offset to window offset 
 
-				
-				if (offset > 0) { //slide leftwards
-					buffer2Canvas.drawBitmap(buffer, HORIZONTAL_STRETCH
-							* offset, 0, null);//shift current display to the right by HORIZONTAL_STRETCH*offset pixels
-					bufferCanvas.drawBitmap(buffer2, 0, 0, null); //must copy to a second buffer first due to a bug in Android source
-					leftmostWindowAsIndex -= offset;
-					for (int i = 0; i < offset; i++) {
-						drawSingleBitmap(leftmostWindowAsIndex + i, i
-								* HORIZONTAL_STRETCH); //draw windows from x = 0 to x = HORIZONTAL_STRETCH*offset
-					}
-					leftmostWindow -= offset;
-				} else { //slide rightwards
-					offset = -offset; //change to positive for convenience
-					bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH
-							* offset, 0, null);//shift current display to the left by HORIZONTAL_STRETCH*offset pixels
-					for (int i = 0; i < offset; i++) {
-						drawSingleBitmap(rightmostWindowAsIndex + i, width
-								+ HORIZONTAL_STRETCH * (i - offset)); //draw windows from x=width+HORIZONTAL_STRETCH*(i-offset).
-					}
-					leftmostWindow += offset;
+			Log.d("Scrolling","Offset: "+offset);
+
+			int leftmostWindowAsIndex = leftmostWindow % BitmapGenerator.WINDOW_LIMIT;
+			int newLeftmostWindow = leftmostWindowAsIndex - offset;
+			if (newLeftmostWindow < leftmostBitmapAvailable) offset = leftmostWindowAsIndex - leftmostBitmapAvailable;
+
+			int rightmostWindowAsIndex = (leftmostWindow + width/HORIZONTAL_STRETCH) % BitmapGenerator.WINDOW_LIMIT;
+			int newRightmostWindow = rightmostWindowAsIndex - offset;
+			if (newRightmostWindow > rightmostBitmapAvailable) offset = rightmostBitmapAvailable - rightmostWindowAsIndex;
+
+			Log.d("Scrolling","Adjusted offset: "+offset+", leftmost window before scroll: "+leftmostWindow+", as index: "+leftmostWindowAsIndex);
+
+
+			if (offset > 0) { //slide leftwards
+				buffer2Canvas.drawBitmap(buffer, HORIZONTAL_STRETCH
+						* offset, 0, null);//shift current display to the right by HORIZONTAL_STRETCH*offset pixels
+				bufferCanvas.drawBitmap(buffer2, 0, 0, null); //must copy to a second buffer first due to a bug in Android source
+				leftmostWindowAsIndex -= offset;
+				for (int i = 0; i < offset; i++) {
+					drawSingleBitmap(leftmostWindowAsIndex + i, i
+							* HORIZONTAL_STRETCH); //draw windows from x = 0 to x = HORIZONTAL_STRETCH*offset
 				}
-				SurfaceHolder sh = lssv.getHolder();
-				displayCanvas = sh.lockCanvas(null);
-				try {
+				leftmostWindow -= offset;
+			} else { //slide rightwards
+				offset = -offset; //change to positive for convenience
+				bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH
+						* offset, 0, null);//shift current display to the left by HORIZONTAL_STRETCH*offset pixels
+				for (int i = 0; i < offset; i++) {
+					drawSingleBitmap(rightmostWindowAsIndex + i, width
+							+ HORIZONTAL_STRETCH * (i - offset)); //draw windows from x=width+HORIZONTAL_STRETCH*(i-offset).
+				}
+				leftmostWindow += offset;
+			}
+			SurfaceHolder sh = lssv.getHolder();
+			displayCanvas = sh.lockCanvas(null);
+			try {
 				synchronized (sh) {
 					displayCanvas.drawBitmap(buffer, 0, 0, null); //draw buffer to display
 				}
@@ -160,25 +160,18 @@ class SpectrogramDrawer {
 		 * and then draws the new windows on the right hand side.
 		 */
 		int windowsAvailable = bg.getBitmapWindowsAvailable();
-		
-			if ((windowsDrawn+windowsAvailable) * HORIZONTAL_STRETCH < width) { //still room to draw new bitmaps without scrolling
-				//leave the existing bitmap intact and just draw the new windows on the portion of the screen that is still blank
-				for (int i = 0; i < windowsAvailable; i++) {
-					drawNextBitmap((windowsDrawn+i)*HORIZONTAL_STRETCH);
-					Log.d("Spectro","Drawn next bitmap at "+(windowsDrawn+i)*HORIZONTAL_STRETCH);
-				}
-			}
-			else { //no room, must scroll (shift what is currently displayed then draw new windows)
-				canScroll = true;
-				bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH*windowsAvailable, 0, null);//shift what is currently displayed by (number of new windows ready to be drawn)*HORIZONTAL_STRETCH
-				for (int i = 0; i < windowsAvailable; i++) {
-					drawNextBitmap(width+HORIZONTAL_STRETCH*(i-windowsAvailable)); //draw new window at width - HORIZONTAL_STRETCH * difference [start of blank area] + i*HORIZONTAL_STRETCH [offset for current window]
-				}
-				leftmostWindow += windowsAvailable;
-			}
-			windowsDrawn += windowsAvailable;
 
+		if ((windowsDrawn+windowsAvailable) * HORIZONTAL_STRETCH >= width) { 
+			canScroll = true; //can only scroll if whole screen has been filled
+			leftmostWindow += windowsAvailable;
 		}
+		bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH*windowsAvailable, 0, null);//shift what is currently displayed by (number of new windows ready to be drawn)*HORIZONTAL_STRETCH
+		for (int i = 0; i < windowsAvailable; i++) {
+			drawNextBitmap(width+HORIZONTAL_STRETCH*(i-windowsAvailable)); //draw new window at width - HORIZONTAL_STRETCH * difference [start of blank area] + i*HORIZONTAL_STRETCH [offset for current window]
+		}
+
+		windowsDrawn += windowsAvailable;
+	}
 
 	private void drawNextBitmap(int xCoord) {
 		/*
@@ -202,7 +195,7 @@ class SpectrogramDrawer {
 				+ xCoord + "," + 0 + "), density "
 				+ scaled.getDensity());
 	}
-	
+
 	public void drawSelectRect(float selectRectL, float selectRectR, float selectRectT, float selectRectB) {
 		/*
 		 * Draw the select-area rectangle with left, right, top and bottom coordinates at selectRectL, selectRectR, 
@@ -211,12 +204,12 @@ class SpectrogramDrawer {
 		Bitmap buf = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 		Canvas bufCanvas = new Canvas(buf);
 		Paint rectPaint = new Paint();
-		
+
 		//draw select-area rectangle
 		rectPaint.setColor(SELECT_RECT_COLOUR);
 
 		bufCanvas.drawRect(selectRectL, selectRectT, selectRectR, selectRectB, rectPaint);
-		
+
 		//draw draggable corners
 		Paint circPaint = new Paint();
 		circPaint.setColor(Color.rgb(255,255,255));
@@ -224,7 +217,7 @@ class SpectrogramDrawer {
 		bufCanvas.drawCircle(selectRectL, selectRectT, 10, circPaint);
 		bufCanvas.drawCircle(selectRectR, selectRectB, 10, circPaint);
 		bufCanvas.drawCircle(selectRectR, selectRectT, 10, circPaint);
-		
+
 		SurfaceHolder sh = lssv.getHolder();
 		displayCanvas = sh.lockCanvas(null);
 		try {
@@ -238,18 +231,18 @@ class SpectrogramDrawer {
 			}
 		}
 	}
-	
+
 	public void pauseScrolling() {
-	/*
-	 * When this method is called, scrolling of the display is halted, as are the threads which bring in and
-	 * process audio samples to generate bitmaps.
-	 */
-				if (!scrollingLock.isHeldByCurrentThread()) {
-					scrollingLock.lock();
-				}
-				bg.stop(); //stop taking in and processing new samples since this will overwrite those you are trying to scroll through
-				leftmostBitmapAvailable = bg.getLeftmostBitmapAvailable();
-				rightmostBitmapAvailable = bg.getRightmostBitmapAvailable();
+		/*
+		 * When this method is called, scrolling of the display is halted, as are the threads which bring in and
+		 * process audio samples to generate bitmaps.
+		 */
+		if (!scrollingLock.isHeldByCurrentThread()) {
+			scrollingLock.lock();
+		}
+		bg.stop(); //stop taking in and processing new samples since this will overwrite those you are trying to scroll through
+		leftmostBitmapAvailable = bg.getLeftmostBitmapAvailable();
+		rightmostBitmapAvailable = bg.getRightmostBitmapAvailable();
 	}
 
 	public Bitmap scaleBitmap(Bitmap bitmapToScale, float newWidth, float newHeight) {
@@ -270,12 +263,12 @@ class SpectrogramDrawer {
 		// recreate the new Bitmap and set it back
 		return Bitmap.createBitmap(bitmapToScale, 0, 0, bitmapToScale.getWidth(), bitmapToScale.getHeight(), matrix, true);
 	}
-	
+
 	public float getScreenFillTime() {
 		/*
 		 * Returns the amount of time it takes to fill the entire width of the screen with bitmap windows.
 		 */
-		
+
 		//no. windows on screen = width/HORIZONTAL_STRETCH,
 		//no. samples on screen = no. windows * samplesPerWindow
 		//time on screen = no. samples / samples per second [sample rate]

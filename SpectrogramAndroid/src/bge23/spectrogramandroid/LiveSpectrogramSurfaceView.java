@@ -30,7 +30,9 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private Button resumeButton;
 	private TextView leftTimeTextView;
 	private TextView topFreqTextView;
-	
+	private TextView selectRectTextView;
+
+
 	//left, right, top and bottom edge locations for the select-area rectangle:
 	private float selectRectL;
 	private float selectRectR;
@@ -44,18 +46,18 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private float CORNER_CIRCLE_RADIUS = 30; //when setting, must think about how large the target can be for the user to hit it accurately 
 
 	public LiveSpectrogramSurfaceView(Context context) {
-	    super(context);
-	    init(context);
+		super(context);
+		init(context);
 	}
 
 	public LiveSpectrogramSurfaceView(Context context, AttributeSet attrs) {
-	    this(context, attrs,0);
-	    init(context);
+		this(context, attrs,0);
+		init(context);
 	}
 
 	public LiveSpectrogramSurfaceView(Context context, AttributeSet attrs, int defStyle) {
-	    super(context, attrs, defStyle);
-	    init(context);
+		super(context, attrs, defStyle);
+		init(context);
 	}
 
 	private void init(Context context) { //Constructor for displaying audio from microphone
@@ -70,22 +72,27 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				selectRectT = centreY - SELECT_RECT_HEIGHT/2;
 				selectRectB = centreY + SELECT_RECT_HEIGHT/2;
 				sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
+				selectRectTextView.setVisibility(View.VISIBLE);
+				updateSelectRectText();
 			}
 		};
 	}
-	
+
 	public void setResumeButton(Button resumeButton) {
 		this.resumeButton = resumeButton;
 	}
-	
+
 	public void setLeftTimeTextView(TextView leftTimeTextView) {
 		this.leftTimeTextView = leftTimeTextView;
 	}
-	
+
 	public void setTopFreqTextView(TextView topFreqTextView) {
 		this.topFreqTextView = topFreqTextView;
 	}
 
+	public void setSelectRectTextView(TextView selectRectTextView) {
+		this.selectRectTextView = selectRectTextView;
+	}
 
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)  {
 		//TODO
@@ -119,34 +126,36 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			centreX = MotionEventCompat.getX(ev, pointerIndex);
 			centreY = MotionEventCompat.getY(ev, pointerIndex);
 			Log.d("","ACTION_DOWN");
-			handler.postDelayed(onLongPress,1000); //run the long-press runnable if not cancelled by move event (1 second timeout)
+			if (!selecting) handler.postDelayed(onLongPress,1000); //run the long-press runnable if not cancelled by move event (1 second timeout) [only if not already selecting]
 			System.out.println("Long-press timer started.");
 			// Remember where we started (for dragging)
 			lastTouchX = x;
+			lastTouchY = MotionEventCompat.getY(ev, pointerIndex);
 			System.out.println("Last touch x set to "+x);
 			// Save the ID of this pointer [finger], in case of drag 
 			mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
 			if (selecting) {
 				//decide which corner is being dragged based on proximity
+				selectedCorner = 0;
 				if (Math.abs(centreX-selectRectL) <= CORNER_CIRCLE_RADIUS && Math.abs(centreY-selectRectT) <= CORNER_CIRCLE_RADIUS) {
 					//user touched top-left corner
 					Log.d("","Top left");
-					selectedCorner = 0;
+					selectedCorner = 1;
 				}
 				if (Math.abs(centreX-selectRectR) <= CORNER_CIRCLE_RADIUS && Math.abs(centreY-selectRectT) <= CORNER_CIRCLE_RADIUS) {
 					//user touched top-right corner
 					Log.d("","Top right");
-					selectedCorner = 1;
+					selectedCorner = 2;
 				}
 				if (Math.abs(centreX-selectRectL) <= CORNER_CIRCLE_RADIUS && Math.abs(centreY-selectRectB) <= CORNER_CIRCLE_RADIUS) {
 					//user touched bottom-left corner
 					Log.d("","Bottom left");
-					selectedCorner = 2;
+					selectedCorner = 3;
 				}
 				if (Math.abs(centreX-selectRectR) <= CORNER_CIRCLE_RADIUS && Math.abs(centreY-selectRectB) <= CORNER_CIRCLE_RADIUS) {
 					//user touched bottom-right corner
 					Log.d("","Bottom right");
-					selectedCorner = 3;
+					selectedCorner = 4;
 				}
 			}
 			break;
@@ -172,19 +181,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				lastTouchX = x;
 			} else { 
 				//if selecting mode entered, allow user to move corners to adjust select-area rectangle size
-				
-				//first do historical movements
-//				for (int i = 0; i < ev.getHistorySize(); i++) {
-//					float x = ev.getHistoricalX(pointerIndex, i);
-//					float y = ev.getHistoricalX(pointerIndex, i);
-//					float dx = x - lastTouchX;
-//					float dy = y - lastTouchX;
-//					moveCorner(selectedCorner, dx, dy);				
-//					lastTouchX = x;
-//					lastTouchY = y;
-//				}
-				
-				//then do current movement
 				float x = MotionEventCompat.getX(ev, pointerIndex);
 				float y = MotionEventCompat.getY(ev, pointerIndex);
 				float dx = x - lastTouchX;
@@ -232,53 +228,61 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 	public void moveCorner(int cornerIndex, float dx, float dy) {
 		switch(cornerIndex) {
-		case 0:
+		// if 0 then not near any corner
+		case 1:
 			//top-left corner moved
 			selectRectL += dx;
 			selectRectT += dy;
 			break;
-		case 1:
+		case 2:
 			//top-right corner moved
 			selectRectR += dx;
 			selectRectT += dy;
 			break;
-		case 2:
+		case 3:
 			//bottom-left corner moved
 			selectRectL += dx;
 			selectRectB += dy;
 			break;
-		case 3:
+		case 4:
 			//bottom-right corner moved
 			selectRectR += dx;
 			selectRectB += dy;
 			break;
 		}
-		sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);		
+		sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
+		updateSelectRectText();
 	}
-	
+
 	protected void pauseScrolling() {
 		sd.pauseScrolling();
 		resumeButton.setVisibility(View.VISIBLE);
 	}
-	
+
 	public void resumeScrolling() {
 		sd = new SpectrogramDrawer(this);
 		resumeButton.setVisibility(View.GONE);
+		selectRectTextView.setVisibility(View.GONE);
+		selecting = false;
 	}
-	
+
 	public void resumeFromPause() {
 		//if (gc != null) gc.resumeFromPause(); //TODO bit messy
 	}
-	
+
 	private void updateLeftTimeText() {
-	        BigDecimal bd = new BigDecimal(Float.toString(sd.getScreenFillTime()));
-	        bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
-			leftTimeTextView.setText("-"+bd.floatValue()+" sec");
+		BigDecimal bd = new BigDecimal(Float.toString(sd.getScreenFillTime()));
+		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
+		leftTimeTextView.setText("-"+bd.floatValue()+" sec");
+	}
+
+	private void updateTopFreqText() {
+		BigDecimal bd = new BigDecimal(Float.toString(sd.getMaxFrequency()/1000));
+		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
+		topFreqTextView.setText(bd.floatValue()+" kHz");
 	}
 	
-	private void updateTopFreqText() {
-        BigDecimal bd = new BigDecimal(Float.toString(sd.getMaxFrequency()/1000));
-        bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
-		topFreqTextView.setText(bd.floatValue()+" kHz");
-}
+	private void updateSelectRectText() {
+		selectRectTextView.setText("x0: "+(int)selectRectL+" x1: "+(int)selectRectR+" y0: "+(int)selectRectT+" y1: "+(int)selectRectB);
+	}
 }

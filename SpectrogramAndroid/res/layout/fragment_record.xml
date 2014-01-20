@@ -26,6 +26,15 @@
 	        android:layout_gravity="right|center_vertical"
 	        android:text="Resume" />
 
+	    <TextView
+	        android:id="@+id/text_select_rect"
+	        android:layout_gravity="center|bottom"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="sr"
+	        android:textColor="#FFFFFF"
+	        android:textAppearance="?android:attr/textAppearanceSmall" />
+
     </FrameLayout>
 
     <TextView

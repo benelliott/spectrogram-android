@@ -158,5 +158,25 @@ public class HeatMap {
 		return toReturn;
 		
 	}
+	
+	static int[] whiteBlue() {
+		/*
+		 * A method which fills the 'colours' array with greyscale values.
+		 */
+		
+		//Fill backwards because (255, 255, 255) is white, and want white to be low
+		int[] toReturn = new int[256];
+		for (int i = 0; i < 256; i++) {
+		toReturn[255-i] = 255;
+		toReturn[255-i] <<= 8;
+		toReturn[255-i] += i; //red
+		toReturn[255-i] <<= 8; 
+		toReturn[255-i] += i; //green
+		toReturn[255-i] <<= 8;
+		toReturn[255-i] += 255; //blue
+		//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
+		}
+		return toReturn;
+	}
 
 }

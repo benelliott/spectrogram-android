@@ -19,6 +19,8 @@ public class SpectroFragment extends Fragment {
 	private TextView rightTimeTextView;
 	private TextView bottomFreqTextView;
 	private TextView topFreqTextView;
+	private TextView selectRectTextView;
+
 
 	public SpectroFragment() {
 	}
@@ -74,6 +76,9 @@ public class SpectroFragment extends Fragment {
 		rightTimeTextView = (TextView)rootView.findViewById(R.id.time_text_right);
 		bottomFreqTextView = (TextView)rootView.findViewById(R.id.freq_text_bottom);
 		topFreqTextView = (TextView)rootView.findViewById(R.id.freq_text_top);
+		selectRectTextView = (TextView)rootView.findViewById(R.id.text_select_rect);
+		selectRectTextView.setVisibility(View.GONE);
+
 
 		bottomFreqTextView.setText("0 kHz");
 		rightTimeTextView.setText("0 sec");
@@ -81,5 +86,6 @@ public class SpectroFragment extends Fragment {
 		lssv.setLeftTimeTextView(leftTimeTextView);
 		lssv.setTopFreqTextView(topFreqTextView);
 		lssv.setResumeButton(resumeButton);
+		lssv.setSelectRectTextView(selectRectTextView);
     }
 }
