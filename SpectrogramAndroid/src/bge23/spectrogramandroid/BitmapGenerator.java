@@ -2,6 +2,8 @@ package bge23.spectrogramandroid;
 
 import java.util.concurrent.Semaphore;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -29,9 +31,14 @@ public class BitmapGenerator {
 	//Storage for audio and bitmap windows is pre-allocated, and the quantity is determined by
 	// WINDOW_LIMIT*SAMPLES_PER_WINDOW*(bytes per int + bytes per double),
 	// e.g. 10000*300*(4+8) = 34MB
+	
+	
+	protected static final int BITMAP_STORE_WIDTH_ADJ = 2;
+	protected static final int BITMAP_STORE_HEIGHT_ADJ = 2;
+	protected static final int BITMAP_STORE_QUALITY = 90; //compression quality parameter for storage
 
-	private double[][] audioWindowsA = new double[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
-	private int[][] bitmapWindowsA = new int[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
+	private double[][] audioWindows = new double[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
+	private int[][] bitmapWindows = new int[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
 
 	private boolean running = false;
 
@@ -117,15 +124,15 @@ public class BitmapGenerator {
 				toAdd[i] = (double)micBuffers[currentBuffer][i];
 			}
 
-			if (audioCurrentIndex == audioWindowsA.length) {
+			if (audioCurrentIndex == audioWindows.length) {
 				//if entire array has been filled, loop and start filling from the start
 				Log.d("", "Adding audio item "+audioCurrentIndex+" and array full, so looping back to start");
 				synchronized(audioCurrentIndex) {
 					audioCurrentIndex = 0;
 				}
 			}
-			synchronized(audioWindowsA) {
-				audioWindowsA[audioCurrentIndex] = toAdd;
+			synchronized(audioWindows) {
+				audioWindows[audioCurrentIndex] = toAdd;
 			}
 			synchronized(audioCurrentIndex) { //don't modify this when it might be being read by another thread
 				audioCurrentIndex++;
@@ -164,18 +171,24 @@ public class BitmapGenerator {
 				e.printStackTrace();
 			}
 
-			processAudioWindow(audioWindowsA[bitmapCurrentIndex]);
+			int[] bitmapToAdd = processAudioWindow(audioWindows[bitmapCurrentIndex]);
 			Log.d("Bitmap thread","Audio window "+(bitmapCurrentIndex)+ " processed. ");
+			bitmapCurrentIndex++;
+			bitmapsReady.release();
+
+			if (bitmapCurrentIndex == bitmapWindows.length) {
+				bitmapCurrentIndex = 0;
+				arraysLooped = true;
+			}
 		}
 
 	}
 
-	private void processAudioWindow(double[] samples) { //TODO prev and next
+	private int[] processAudioWindow(double[] samples) { //TODO prev and next
 		/*
 		 * Take the raw audio samples, apply a Hamming window, then perform the Short-Time
 		 * Fourier Transform and square the result. Combine the output with that from the previous window
-		 * for a smoothing effect. Insert the result into a 2D array and signal completion by adding a permit to
-		 * the appropriate semaphore.
+		 * for a smoothing effect. Return the resulting bitmap.
 		 */
 
 		double[] fftSamples = new double[SAMPLES_PER_WINDOW*2]; //need half the array to be empty for FFT
@@ -190,24 +203,20 @@ public class BitmapGenerator {
 			combinedWindow[i] = fftSamples[i] + previousWindow[i];
 		}
 
-		int[] bitmapToAdd = new int[SAMPLES_PER_WINDOW];
+		int[] ret = new int[SAMPLES_PER_WINDOW];
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			int val = cappedValue(combinedWindow[i]);
-			bitmapToAdd[SAMPLES_PER_WINDOW-i-1] = colours[val]; //fill upside-down because y=0 is at top of screen
+			ret[SAMPLES_PER_WINDOW-i-1] = colours[val]; //fill upside-down because y=0 is at top of screen
 		}
 
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			previousWindow[i] = fftSamples[i];
 		}
-
-		bitmapWindowsA[bitmapCurrentIndex] = bitmapToAdd;
-		bitmapCurrentIndex++;
-		bitmapsReady.release();
-
-		if (bitmapCurrentIndex == bitmapWindowsA.length) {
-			bitmapCurrentIndex = 0;
-			arraysLooped = true;
+		
+		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
+			bitmapWindows[bitmapCurrentIndex][i] = ret[i];
 		}
+		return ret;
 	}
 
 	private int cappedValue(double d) {
@@ -291,7 +300,7 @@ public class BitmapGenerator {
 		/*
 		 * Returns the bitmap corresponding to the provided index into the array of bitmaps. No bounds checking.
 		 */
-		return bitmapWindowsA[index];
+		return bitmapWindows[index];
 	}
 
 	protected int[] getNextBitmap() {
@@ -306,10 +315,46 @@ public class BitmapGenerator {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if (lastBitmapRequested == bitmapWindowsA.length) lastBitmapRequested = 0; //loop if necessary
+		if (lastBitmapRequested == bitmapWindows.length) lastBitmapRequested = 0; //loop if necessary
 		Log.d("Spectro","Bitmap "+lastBitmapRequested+" requested");
-		int[] ret = bitmapWindowsA[lastBitmapRequested];
+		int[] ret = bitmapWindows[lastBitmapRequested];
 		lastBitmapRequested++;
+		return ret;
+	}
+	
+	protected Bitmap createEntireBitmap(int startWindow, int endWindow, int bottomFreq, int topFreq) {
+		/*
+		 * Returns a stand-alone bitmap with time from startWindow to endWindow and band-pass-filtered
+		 * from bottomFreq to topFreq.
+		 */
+		
+		//convert frequency range into array indices
+		bottomFreq = (int) ((2f*(float)bottomFreq/(float)SAMPLE_RATE)*SAMPLES_PER_WINDOW);
+		topFreq = (int) ((2f*(float)topFreq/(float)SAMPLE_RATE)*SAMPLES_PER_WINDOW);
+
+		int bitmapWidth = BITMAP_STORE_WIDTH_ADJ * (endWindow - startWindow);
+		int bitmapHeight = BITMAP_STORE_HEIGHT_ADJ * (topFreq - bottomFreq);
+		
+		Bitmap ret = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888);
+		Canvas retCanvas = new Canvas(ret);
+		
+		//TODO filter
+
+		int[] scaledBitmapWindow = new int[bitmapHeight];
+		
+		Log.d("", "Start window: "+startWindow+", end window: "+endWindow+", bottom freq as array index: "+bottomFreq+", top freq: "+topFreq);
+		
+		for (int i = startWindow; i < endWindow; i++) { //TODO < or <=?
+			for (int j = 0; j < BITMAP_STORE_WIDTH_ADJ; j++) { //scaling
+				int[] orig = processAudioWindow(audioWindows[i]);
+				for (int k = bottomFreq; k < topFreq; k++) {
+					for (int l = 0; l < BITMAP_STORE_HEIGHT_ADJ; l++) {
+						scaledBitmapWindow[k-bottomFreq+l] = orig[k];
+						retCanvas.drawBitmap(scaledBitmapWindow, 0, 1, i-startWindow+j, 0, 1, bitmapHeight, false, null);
+					}
+				}
+			}
+		}
 		return ret;
 	}
 

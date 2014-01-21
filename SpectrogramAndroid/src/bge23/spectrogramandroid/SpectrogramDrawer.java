@@ -283,7 +283,7 @@ class SpectrogramDrawer {
 		return 0.5f*bg.getSampleRate();
 	}
 	
-	protected int windowAt(float pixelOffset) {
+	protected int getWindowAtPixel(float pixelOffset) {
 		/*
 		 * Returns the window number associated with the horizontal pixel 
 		 * offset (pixelOffset = 0 at the left side of the spectrogram)
@@ -294,7 +294,7 @@ class SpectrogramDrawer {
 		
 	}
 	
-	protected float timeAt(float pixelOffset) {
+	protected float getTimeAtPixel(float pixelOffset) {
 		/*
 		 * Returns the time offset associated with the horizontal pixel 
 		 * offset (pixelOffset = 0 at the left side of the spectrogram)
@@ -304,12 +304,57 @@ class SpectrogramDrawer {
 		
 	}
 	
-	protected int frequencyAt(float pixelOffset) {
+	protected int getFrequencyAtPixel(float pixelOffset) {
 		/*
 		 * Returns the frequency associated with the vertical pixel 
 		 * offset (pixelOffset = 0 at the top of the spectrogram)
 		 */
 		if (pixelOffset < 0 || pixelOffset > height) return 0;
 		return (int)(getMaxFrequency() - (pixelOffset/height)*getMaxFrequency());
+	}
+
+	public void hideSelectRect() {
+		SurfaceHolder sh = lssv.getHolder();
+		displayCanvas = sh.lockCanvas(null);
+		try {
+			synchronized (sh) {
+				displayCanvas.drawBitmap(buffer, 0, 0, null); //clean any rectangles away
+			}
+		} finally {
+			if (displayCanvas != null) {
+				sh.unlockCanvasAndPost(displayCanvas);
+			}
+		}
+		
+	}
+
+	protected Bitmap getBitmapToStore(float x0, float x1, float y0, float y1) {
+		
+		int startWindow;
+		int endWindow;
+		if (x0 < x1) {
+			startWindow = getWindowAtPixel(x0);
+			endWindow = getWindowAtPixel(x1);
+		} else {
+			startWindow = getWindowAtPixel(x1);
+			endWindow = getWindowAtPixel(x0);
+		}
+		
+		int topFreq;
+		int bottomFreq;
+		
+		if (y0 < y1) {
+			//remember that for y-coordinates, higher means lower down screen
+			topFreq = getFrequencyAtPixel(y0);
+			bottomFreq = getFrequencyAtPixel(y1);
+		} else {
+			topFreq = getFrequencyAtPixel(y1);
+			bottomFreq = getFrequencyAtPixel(y0);
+		}
+		
+		//don't copy directly from the display canvas since that bitmap has been stretched depending on
+		//device screen size, and also since we want to filter		
+
+		return bg.createEntireBitmap(startWindow, endWindow, bottomFreq, topFreq);
 	}
 }

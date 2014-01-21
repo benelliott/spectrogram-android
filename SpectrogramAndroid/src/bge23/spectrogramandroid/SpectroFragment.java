@@ -14,6 +14,8 @@ public class SpectroFragment extends Fragment {
 	
 	private View rootView;
 	private Button resumeButton;
+	private Button selectionConfirmButton;
+	private Button selectionCancelButton;
 	private LiveSpectrogramSurfaceView lssv;
 	private TextView leftTimeTextView;
 	private TextView rightTimeTextView;
@@ -72,6 +74,24 @@ public class SpectroFragment extends Fragment {
 		});
 		resumeButton.setVisibility(View.GONE);
 		
+		selectionConfirmButton = (Button)rootView.findViewById(R.id.selection_confirm);
+		selectionConfirmButton.setOnClickListener(new OnClickListener() {
+			@Override 
+			public void onClick(View arg0) {
+				lssv.confirmSelection();
+			}
+		});
+		selectionConfirmButton.setEnabled(false);
+		
+		selectionCancelButton = (Button)rootView.findViewById(R.id.selection_cancel);
+		selectionCancelButton.setOnClickListener(new OnClickListener() {
+			@Override 
+			public void onClick(View arg0) {
+				lssv.cancelSelection();
+			}
+		});
+		selectionCancelButton.setEnabled(false);
+		
 		leftTimeTextView = (TextView)rootView.findViewById(R.id.time_text_left);
 		rightTimeTextView = (TextView)rootView.findViewById(R.id.time_text_right);
 		bottomFreqTextView = (TextView)rootView.findViewById(R.id.freq_text_bottom);
@@ -87,5 +107,7 @@ public class SpectroFragment extends Fragment {
 		lssv.setTopFreqTextView(topFreqTextView);
 		lssv.setResumeButton(resumeButton);
 		lssv.setSelectRectTextView(selectRectTextView);
+		lssv.setSelectionConfirmButton(selectionConfirmButton);
+		lssv.setSelectionCancelButton(selectionCancelButton);
     }
 }

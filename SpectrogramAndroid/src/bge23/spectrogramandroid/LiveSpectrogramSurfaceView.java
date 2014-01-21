@@ -1,8 +1,13 @@
 package bge23.spectrogramandroid;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.math.BigDecimal;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
@@ -16,6 +21,7 @@ import android.widget.TextView;
 
 public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
+	private final String PICTURE_ALBUM_NAME = "Spectrogram captures";
 	private SpectrogramDrawer sd;
 	//private ScaleGestureDetector sgd;
 	private int mActivePointerId = MotionEvent.INVALID_POINTER_ID;
@@ -28,6 +34,8 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private boolean selecting = false; //true if user has entered the selection state
 	private int selectedCorner; // indicates which corner is being dragged; 0 is top-left, 1 is top-right, 2 is bottom-left, 3 is bottom-right
 	private Button resumeButton;
+	private Button selectionConfirmButton;
+	private Button selectionCancelButton;
 	private TextView leftTimeTextView;
 	private TextView topFreqTextView;
 	private TextView selectRectTextView;
@@ -73,6 +81,8 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				selectRectB = centreY + SELECT_RECT_HEIGHT/2;
 				sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
 				selectRectTextView.setVisibility(View.VISIBLE);
+				selectionConfirmButton.setEnabled(true);
+				selectionCancelButton.setEnabled(true);
 				updateSelectRectText();
 			}
 		};
@@ -283,6 +293,61 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 	
 	private void updateSelectRectText() {
-		selectRectTextView.setText("t0: "+sd.timeAt(selectRectL)+" t1: "+sd.timeAt(selectRectR)+" f0: "+sd.frequencyAt(selectRectT)+" f1: "+sd.frequencyAt(selectRectB));
+		selectRectTextView.setText("t0: "+sd.getTimeAtPixel(selectRectL)+" t1: "+sd.getTimeAtPixel(selectRectR)+" f0: "+sd.getFrequencyAtPixel(selectRectT)+" f1: "+sd.getFrequencyAtPixel(selectRectB));
+	}
+
+	public void confirmSelection() {
+		Bitmap toStore = sd.getBitmapToStore(selectRectL, selectRectR, selectRectT, selectRectB);
+		String filename = "test.bmp"; //TODO
+		if (isExternalStorageWritable()) {
+			File picsFolder = getAlbumStorageDir(PICTURE_ALBUM_NAME);
+			try {
+				File bmpFile = new File(picsFolder.getAbsolutePath()+"/"+filename);
+				FileOutputStream fos = new FileOutputStream(bmpFile);
+				toStore.compress(Bitmap.CompressFormat.PNG, BitmapGenerator.BITMAP_STORE_QUALITY, fos);
+				Log.d("","Bitmap stored successfully at path "+bmpFile.getAbsolutePath());
+			} catch (FileNotFoundException e) {
+				Log.d("","File not found. Path: "+picsFolder.getAbsolutePath()+"/"+filename);
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	
+	/* FROM ANDROID DEV DOCUMENTATION */
+	public boolean isExternalStorageWritable() {
+	    String state = Environment.getExternalStorageState();
+	    if (Environment.MEDIA_MOUNTED.equals(state)) {
+	        return true;
+	    }
+	    return false;
+	}
+	
+	public File getAlbumStorageDir(String albumName) {
+	    // Get the directory for the user's public pictures directory.
+	    File file = new File(Environment.getExternalStoragePublicDirectory(
+	            Environment.DIRECTORY_PICTURES), albumName);
+	    if (!file.mkdirs()) {
+	        Log.e("", "Directory not created");
+	    }
+	    return file;
+	}
+	/* 		*/
+
+	public void cancelSelection() {
+		sd.hideSelectRect();
+		selectionConfirmButton.setEnabled(false);
+		selectionCancelButton.setEnabled(false);
+		selecting = false;
+	}
+
+	public void setSelectionConfirmButton(Button selectionConfirmButton) {
+		this.selectionConfirmButton = selectionConfirmButton;
+		
+	}
+
+	public void setSelectionCancelButton(Button selectionCancelButton) {
+		this.selectionCancelButton = selectionCancelButton;
+		
 	}
 }
