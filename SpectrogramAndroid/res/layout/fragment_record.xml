@@ -32,7 +32,7 @@
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:text="sr"
-	        android:textColor="#FFFFFF"
+	        android:textColor="#000000"
 	        android:textAppearance="?android:attr/textAppearanceSmall" />
 
     </FrameLayout>

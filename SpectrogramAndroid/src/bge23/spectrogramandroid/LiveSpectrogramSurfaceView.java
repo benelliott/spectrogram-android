@@ -283,6 +283,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 	
 	private void updateSelectRectText() {
-		selectRectTextView.setText("x0: "+(int)selectRectL+" x1: "+(int)selectRectR+" y0: "+(int)selectRectT+" y1: "+(int)selectRectB);
+		selectRectTextView.setText("t0: "+sd.timeAt(selectRectL)+" t1: "+sd.timeAt(selectRectR)+" f0: "+sd.frequencyAt(selectRectT)+" f1: "+sd.frequencyAt(selectRectB));
 	}
 }

@@ -282,4 +282,34 @@ class SpectrogramDrawer {
 		 */
 		return 0.5f*bg.getSampleRate();
 	}
+	
+	protected int windowAt(float pixelOffset) {
+		/*
+		 * Returns the window number associated with the horizontal pixel 
+		 * offset (pixelOffset = 0 at the left side of the spectrogram)
+		 */
+		if (pixelOffset < 0 || pixelOffset > width) return 0;
+		float windowsOnScreen = ((float)width)/((float)HORIZONTAL_STRETCH);
+		return (int)(leftmostWindow + (pixelOffset/width * windowsOnScreen));
+		
+	}
+	
+	protected float timeAt(float pixelOffset) {
+		/*
+		 * Returns the time offset associated with the horizontal pixel 
+		 * offset (pixelOffset = 0 at the left side of the spectrogram)
+		 */
+		if (pixelOffset < 0 || pixelOffset > width) return 0;
+		return -(getScreenFillTime()*(width-pixelOffset)/width);
+		
+	}
+	
+	protected int frequencyAt(float pixelOffset) {
+		/*
+		 * Returns the frequency associated with the vertical pixel 
+		 * offset (pixelOffset = 0 at the top of the spectrogram)
+		 */
+		if (pixelOffset < 0 || pixelOffset > height) return 0;
+		return (int)(getMaxFrequency() - (pixelOffset/height)*getMaxFrequency());
+	}
 }
