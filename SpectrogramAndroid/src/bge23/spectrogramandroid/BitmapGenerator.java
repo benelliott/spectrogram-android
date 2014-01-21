@@ -343,16 +343,24 @@ public class BitmapGenerator {
 		int[] scaledBitmapWindow = new int[bitmapHeight];
 		
 		Log.d("", "Start window: "+startWindow+", end window: "+endWindow+", bottom freq as array index: "+bottomFreq+", top freq: "+topFreq);
+		Log.d("", "Bitmap width: "+bitmapWidth+" bitmap height: "+bitmapHeight);
 		
+		maxAmplitude = 0;
+		
+		int h = 0;
 		for (int i = startWindow; i < endWindow; i++) { //TODO < or <=?
 			for (int j = 0; j < BITMAP_STORE_WIDTH_ADJ; j++) { //scaling
 				int[] orig = processAudioWindow(audioWindows[i]);
+				int m = 0;
 				for (int k = bottomFreq; k < topFreq; k++) {
 					for (int l = 0; l < BITMAP_STORE_HEIGHT_ADJ; l++) {
-						scaledBitmapWindow[k-bottomFreq+l] = orig[k];
-						retCanvas.drawBitmap(scaledBitmapWindow, 0, 1, i-startWindow+j, 0, 1, bitmapHeight, false, null);
+						Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
+						scaledBitmapWindow[m] = orig[k];
+						retCanvas.drawBitmap(scaledBitmapWindow, 0, 1, h, 0, 1, bitmapHeight, false, null);
+						m++;
 					}
 				}
+				h++;
 			}
 		}
 		return ret;

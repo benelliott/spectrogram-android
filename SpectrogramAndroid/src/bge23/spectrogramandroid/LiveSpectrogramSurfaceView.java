@@ -298,11 +298,16 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 	public void confirmSelection() {
 		Bitmap toStore = sd.getBitmapToStore(selectRectL, selectRectR, selectRectT, selectRectB);
-		String filename = "test.bmp"; //TODO
+		String filename = "test_bitmap"; //TODO
 		if (isExternalStorageWritable()) {
 			File picsFolder = getAlbumStorageDir(PICTURE_ALBUM_NAME);
 			try {
-				File bmpFile = new File(picsFolder.getAbsolutePath()+"/"+filename);
+				int suffix = 0;
+				File bmpFile = new File(picsFolder.getAbsolutePath()+"/"+filename+suffix+".png");
+				 while(bmpFile.exists()) {             
+				        suffix++;
+						bmpFile = new File(picsFolder.getAbsolutePath()+"/"+filename+suffix+".png");
+				   }
 				FileOutputStream fos = new FileOutputStream(bmpFile);
 				toStore.compress(Bitmap.CompressFormat.PNG, BitmapGenerator.BITMAP_STORE_QUALITY, fos);
 				Log.d("","Bitmap stored successfully at path "+bmpFile.getAbsolutePath());
