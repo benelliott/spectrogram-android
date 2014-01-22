@@ -352,6 +352,7 @@ class SpectrogramDrawer {
 			bottomFreq = getFrequencyAtPixel(y0);
 		}
 		
+		Log.d("SD","Top freq: "+topFreq+" bottomFreq: "+bottomFreq+" y0: "+y0+" y1: "+y1);
 		//don't copy directly from the display canvas since that bitmap has been stretched depending on
 		//device screen size, and also since we want to filter		
 

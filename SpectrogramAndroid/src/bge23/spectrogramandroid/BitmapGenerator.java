@@ -174,6 +174,10 @@ public class BitmapGenerator {
 
 			int[] bitmapToAdd = processAudioWindow(audioWindows[bitmapCurrentIndex]);
 			Log.d("Bitmap thread","Audio window "+(bitmapCurrentIndex)+ " processed. ");
+			for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
+				bitmapWindows[bitmapCurrentIndex][i] = bitmapToAdd[i];
+			}
+			
 			bitmapCurrentIndex++;
 			bitmapsReady.release();
 
@@ -181,6 +185,7 @@ public class BitmapGenerator {
 				bitmapCurrentIndex = 0;
 				arraysLooped = true;
 			}
+			
 		}
 
 	}
@@ -214,9 +219,7 @@ public class BitmapGenerator {
 			previousWindow[i] = fftSamples[i];
 		}
 		
-		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
-			bitmapWindows[bitmapCurrentIndex][i] = ret[i];
-		}
+
 		return ret;
 	}
 
@@ -343,20 +346,20 @@ public class BitmapGenerator {
 
 		int[] scaledBitmapWindow = new int[bitmapHeight];
 		
-		Log.d("", "Start window: "+startWindow+", end window: "+endWindow+", bottom freq as array index: "+bottomFreq+", top freq: "+topFreq);
-		Log.d("", "Bitmap width: "+bitmapWidth+" bitmap height: "+bitmapHeight);
+		Log.d("BG", "Start window: "+startWindow+", end window: "+endWindow+", bottom freq as array index: "+bottomFreq+", top freq: "+topFreq);
+		Log.d("BG", "Bitmap width: "+bitmapWidth+" bitmap height: "+bitmapHeight);
 		
 		maxAmplitude = 0;
 		
 		int h = 0;
-		for (int i = startWindow; i < endWindow; i++) { //TODO < or <=?
+		for (int i = startWindow; i < endWindow; i++) {
 			for (int j = 0; j < BITMAP_STORE_WIDTH_ADJ; j++) { //scaling
 				int[] orig = processAudioWindow(audioWindows[i]);
 				int m = 0;
 				for (int k = bottomFreq; k < topFreq; k++) {
 					for (int l = 0; l < BITMAP_STORE_HEIGHT_ADJ; l++) {
-						Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
-						scaledBitmapWindow[m] = orig[k];
+						//Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
+						scaledBitmapWindow[bitmapHeight-m-1] = orig[SAMPLES_PER_WINDOW-k-1]; //remember that array had been filled backwards, and new one should be too
 						retCanvas.drawBitmap(scaledBitmapWindow, 0, 1, h, 0, 1, bitmapHeight, false, null);
 						m++;
 					}
@@ -374,7 +377,7 @@ public class BitmapGenerator {
 		short[] toReturn = new short[(endWindow-startWindow)*SAMPLES_PER_WINDOW];
 		for (int i = startWindow; i < endWindow; i++) {
 			for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
-				Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
+				//Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
 				toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = Short.reverseBytes(audioWindows[i][j]); //must be little-endian for WAV
 			}
 		}
