@@ -348,9 +348,7 @@ public class BitmapGenerator {
 		
 		Log.d("BG", "Start window: "+startWindow+", end window: "+endWindow+", bottom freq as array index: "+bottomFreq+", top freq: "+topFreq);
 		Log.d("BG", "Bitmap width: "+bitmapWidth+" bitmap height: "+bitmapHeight);
-		
-		maxAmplitude = 0;
-		
+				
 		int h = 0;
 		for (int i = startWindow; i < endWindow; i++) {
 			for (int j = 0; j < BITMAP_STORE_WIDTH_ADJ; j++) { //scaling
