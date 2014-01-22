@@ -2,11 +2,14 @@ package bge23.spectrogramandroid;
 
 import java.math.BigDecimal;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
+import android.text.InputType;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -14,6 +17,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,6 +41,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private TextView leftTimeTextView;
 	private TextView topFreqTextView;
 	private TextView selectRectTextView;
+	private String filename;
 
 
 	//left, right, top and bottom edge locations for the select-area rectangle:
@@ -296,7 +301,28 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 
 	public void confirmSelection() {
-		new AsyncCaptureTask(context).execute();
+		
+		//create and display an AlertDialog requesting a filename
+		AlertDialog.Builder builder = new AlertDialog.Builder(context);
+		builder.setTitle("What did you hear? Please set a filename.");
+		final EditText inputText = new EditText(context);
+		inputText.setInputType(InputType.TYPE_CLASS_TEXT);
+		builder.setView(inputText);
+		
+		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
+		    @Override
+		    public void onClick(DialogInterface dialog, int which) {
+		        filename = inputText.getText().toString();
+				new AsyncCaptureTask(context).execute(); //execute the capture operations
+		    }
+		});
+		builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+		    @Override
+		    public void onClick(DialogInterface dialog, int which) {
+		        dialog.cancel();
+		    }
+		});
+		builder.show();
 	}
 	
 	public void cancelSelection() {
@@ -335,7 +361,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		protected Void doInBackground(Void... arg0) {
         	Bitmap bitmapToStore = sd.getBitmapToStore(selectRectL, selectRectR, selectRectT, selectRectB);
     		short[] audioToStore = sd.getAudioToStore(selectRectL, selectRectR, selectRectT, selectRectB);
-    		StoredBitmapAudio sba = new StoredBitmapAudio(STORE_DIR_NAME,bitmapToStore,audioToStore);
+    		StoredBitmapAudio sba = new StoredBitmapAudio(filename,STORE_DIR_NAME,bitmapToStore,audioToStore);
     		sba.store();
 			return null;
 		}

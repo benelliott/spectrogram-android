@@ -19,7 +19,8 @@ public class StoredBitmapAudio {
 	private Bitmap bitmap;
 	private int sampleRate;
 	
-	protected StoredBitmapAudio(String directory, Bitmap bitmap, short[] audioData) {
+	protected StoredBitmapAudio(String filename, String directory, Bitmap bitmap, short[] audioData) {
+		this.filename = filename;
 		this.directory = directory;
 		this.bitmap = bitmap;
 		this.audioData = audioData;
@@ -39,7 +40,12 @@ public class StoredBitmapAudio {
 			File dir = getAlbumStorageDir(directory);
 			FileOutputStream fos = null;
 			try {
+				int suffix = 0;
 				File bmpFile = new File(dir.getAbsolutePath()+"/"+filename+".jpg");
+				while (bmpFile.exists()) {
+					filename = filename+suffix;
+					bmpFile = new File(dir.getAbsolutePath()+"/"+filename+".jpg");
+				}
 				fos = new FileOutputStream(bmpFile);
 				bitmap.compress(Bitmap.CompressFormat.JPEG, BitmapGenerator.BITMAP_STORE_QUALITY, fos);
 				Log.d("","Bitmap stored successfully at path "+bmpFile.getAbsolutePath());
