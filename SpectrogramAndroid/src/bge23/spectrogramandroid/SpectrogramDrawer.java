@@ -357,4 +357,25 @@ class SpectrogramDrawer {
 
 		return bg.createEntireBitmap(startWindow, endWindow, bottomFreq, topFreq);
 	}
+
+	protected short[] getAudioToStore(float x0, float x1,
+			float y0, float y1) {
+		// TODO filtering
+		int startWindow;
+		int endWindow;
+		if (x0 < x1) {
+			startWindow = getWindowAtPixel(x0);
+			endWindow = getWindowAtPixel(x1);
+		} else {
+			startWindow = getWindowAtPixel(x1);
+			endWindow = getWindowAtPixel(x0);
+		}
+		return bg.getAudioChunk(startWindow, endWindow);
+	}
+	
+	public int getSampleRate() {
+		return bg.getSampleRate();
+	}
+	
+	
 }

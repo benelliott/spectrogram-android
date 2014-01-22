@@ -37,7 +37,7 @@ public class BitmapGenerator {
 	protected static final int BITMAP_STORE_HEIGHT_ADJ = 2;
 	protected static final int BITMAP_STORE_QUALITY = 90; //compression quality parameter for storage
 
-	private double[][] audioWindows = new double[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
+	private short[][] audioWindows = new short[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
 	private int[][] bitmapWindows = new int[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
 
 	private boolean running = false;
@@ -112,16 +112,15 @@ public class BitmapGenerator {
 
 	public void fillAudioList() {
 		/*
-		 * When audio data becomes available from the microphone, convert it into a double-array, ready
-		 * for the FFT. Store it in a 2D array so that it remains available in case the user chooses to replay 
-		 * certain sections.
+		 * When audio data becomes available from the microphone, store it in a 2D array so
+		 * that it remains available in case the user chooses to replay certain sections.
 		 */
 		while (running) {
 			int currentBuffer = audioCurrentIndex % MIC_BUFFERS;
 			readUntilFull(micBuffers[currentBuffer], 0, SAMPLES_PER_WINDOW); //request samplesPerWindow shorts be written into the next free microphone buffer
-			double[] toAdd = new double[SAMPLES_PER_WINDOW]; //create a new double-array to store the double-converted data
+			short[] toAdd = new short[SAMPLES_PER_WINDOW]; //create a new double-array to store the double-converted data
 			for (int i = 0; i < SAMPLES_PER_WINDOW; i++) { //convert the short data into double
-				toAdd[i] = (double)micBuffers[currentBuffer][i];
+				toAdd[i] = micBuffers[currentBuffer][i];
 			}
 
 			if (audioCurrentIndex == audioWindows.length) {
@@ -132,7 +131,9 @@ public class BitmapGenerator {
 				}
 			}
 			synchronized(audioWindows) {
-				audioWindows[audioCurrentIndex] = toAdd;
+				for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
+					audioWindows[audioCurrentIndex][i] = toAdd[i];
+				}
 			}
 			synchronized(audioCurrentIndex) { //don't modify this when it might be being read by another thread
 				audioCurrentIndex++;
@@ -184,7 +185,7 @@ public class BitmapGenerator {
 
 	}
 
-	private int[] processAudioWindow(double[] samples) { //TODO prev and next
+	private int[] processAudioWindow(short[] samples) { //TODO prev and next
 		/*
 		 * Take the raw audio samples, apply a Hamming window, then perform the Short-Time
 		 * Fourier Transform and square the result. Combine the output with that from the previous window
@@ -193,7 +194,7 @@ public class BitmapGenerator {
 
 		double[] fftSamples = new double[SAMPLES_PER_WINDOW*2]; //need half the array to be empty for FFT
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
-			fftSamples[i] = samples[i];
+			fftSamples[i] = (double)(samples[i]);
 		}
 		hammingWindow(fftSamples); //apply Hamming window before performing STFT
 		spectroTransform(fftSamples); //do the STFT on the copied data
@@ -364,6 +365,20 @@ public class BitmapGenerator {
 			}
 		}
 		return ret;
+	}
+	
+	protected short[] getAudioChunk(int startWindow, int endWindow) {
+		/*
+		 * Returns an array of PCM audio data based on the window interval supplied to the function.
+		 */
+		short[] toReturn = new short[(endWindow-startWindow)*SAMPLES_PER_WINDOW];
+		for (int i = startWindow; i < endWindow; i++) {
+			for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
+				Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
+				toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = Short.reverseBytes(audioWindows[i][j]); //must be little-endian for WAV
+			}
+		}
+		return toReturn;
 	}
 
 }
