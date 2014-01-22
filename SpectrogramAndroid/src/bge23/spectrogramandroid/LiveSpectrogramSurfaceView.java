@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
@@ -295,19 +296,9 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 
 	public void confirmSelection() {
-		Toast progressToast = Toast.makeText(context, "Capture in progress...", Toast.LENGTH_LONG);
-		progressToast.show();
-		Bitmap bitmapToStore = sd.getBitmapToStore(selectRectL, selectRectR, selectRectT, selectRectB);
-		short[] audioToStore = sd.getAudioToStore(selectRectL, selectRectR, selectRectT, selectRectB);
-		StoredBitmapAudio sba = new StoredBitmapAudio(STORE_DIR_NAME,bitmapToStore,audioToStore);
-		sba.store();
-		Toast completionToast = Toast.makeText(context, "Capture complete!", Toast.LENGTH_SHORT);
-		completionToast.show();
+		new AsyncCaptureTask(context).execute();
 	}
 	
-
-
-
 	public void cancelSelection() {
 		sd.hideSelectRect();
 		selectionConfirmButton.setEnabled(false);
@@ -324,4 +315,29 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		this.selectionCancelButton = selectionCancelButton;
 		
 	}
+	
+    private class AsyncCaptureTask extends AsyncTask<Void, Void, Void> {
+        private Context context;
+        public AsyncCaptureTask(Context context) {
+            this.context = context;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            super.onPostExecute(result);
+            Toast.makeText(context, "Capture completed!", Toast.LENGTH_SHORT).show();        }
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            Toast.makeText(context, "Capture in progress...", Toast.LENGTH_LONG).show();
+        }
+		@Override
+		protected Void doInBackground(Void... arg0) {
+        	Bitmap bitmapToStore = sd.getBitmapToStore(selectRectL, selectRectR, selectRectT, selectRectB);
+    		short[] audioToStore = sd.getAudioToStore(selectRectL, selectRectR, selectRectT, selectRectB);
+    		StoredBitmapAudio sba = new StoredBitmapAudio(STORE_DIR_NAME,bitmapToStore,audioToStore);
+    		sba.store();
+			return null;
+		}
+    }
 }
