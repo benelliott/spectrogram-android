@@ -24,7 +24,7 @@ public class BitmapGenerator {
 	public static final int SAMPLE_RATE = 16000; //options are 11025, 22050, 16000, 44100
 	public static final int SAMPLES_PER_WINDOW = 300; //usually around 300
 	private final int MIC_BUFFERS = 100; //number of buffers to maintain at once
-	private final float CONTRAST = 2.0f;
+	private final float CONTRAST = 3.0f;
 
 	//number of windows that can be held in the arrays at once before older ones are deleted. Time this represents is
 	// WINDOW_LIMIT*SAMPLES_PER_WINDOW/SAMPLE_RATE, e.g. 10000*300/16000 = 187.5 seconds.

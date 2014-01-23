@@ -1,12 +1,16 @@
 package bge23.spectrogramandroid;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
+import android.media.MediaPlayer;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
 import android.text.InputType;
@@ -45,6 +49,8 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private TextView selectRectTextView;
 	private String filename;
 	private LocationClient lc;
+	private MediaPlayer player;
+	private String soundFilename = "Bush_Warbler_Mixed.wav";
 
 
 	//left, right, top and bottom edge locations for the select-area rectangle:
@@ -117,10 +123,32 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 	@Override
 	public void surfaceCreated(SurfaceHolder arg0) {
-		sd = new SpectrogramDrawer(this);
+		String soundPath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+soundFilename;
+		player = new MediaPlayer();
+		File f = new File(soundPath);
+		f.setReadable(true,false); //need to set permissions so that it can be read by the media player
+		try {
+			player.setDataSource(soundPath);
+			player.prepare();
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		player.start();
+		sd = new SpectrogramDrawer(this); //provide the SD with the player so it can start it as late as possible
 		updateLeftTimeText();
 		updateTopFreqText();
 		Log.d("","SURFACE CREATED");
+
 	}
 
 	@Override
@@ -274,6 +302,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	protected void pauseScrolling() {
 		sd.pauseScrolling();
 		resumeButton.setVisibility(View.VISIBLE);
+		player.stop();
 	}
 
 	public void resumeScrolling() {

@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.media.MediaPlayer;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
@@ -37,7 +38,7 @@ class SpectrogramDrawer {
 		this.lssv = lssv;
 		this.width = lssv.getWidth();
 		this.height = lssv.getHeight();
-		bg = new BitmapGenerator(9);
+		bg = new BitmapGenerator(8);
 		bg.start();
 		SAMPLES_PER_WINDOW = BitmapGenerator.SAMPLES_PER_WINDOW;
 		VERTICAL_STRETCH = ((float)height)/((float)SAMPLES_PER_WINDOW); // stretch spectrogram to all of available height
