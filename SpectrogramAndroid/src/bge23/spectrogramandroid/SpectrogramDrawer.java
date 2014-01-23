@@ -37,7 +37,7 @@ class SpectrogramDrawer {
 		this.lssv = lssv;
 		this.width = lssv.getWidth();
 		this.height = lssv.getHeight();
-		bg = new BitmapGenerator(1);
+		bg = new BitmapGenerator(9);
 		bg.start();
 		SAMPLES_PER_WINDOW = BitmapGenerator.SAMPLES_PER_WINDOW;
 		VERTICAL_STRETCH = ((float)height)/((float)SAMPLES_PER_WINDOW); // stretch spectrogram to all of available height
@@ -302,8 +302,14 @@ class SpectrogramDrawer {
 		 * offset (pixelOffset = 0 at the left side of the spectrogram)
 		 */
 		if (pixelOffset < 0 || pixelOffset > width) return 0;
-		return -(getScreenFillTime()*(width-pixelOffset)/width);
-		
+		int windowOffset = getWindowAtPixel(pixelOffset)-windowsDrawn;
+		float windowsOnScreen = ((float)width)/((float)HORIZONTAL_STRETCH); //number of windows that can fit on entire screen
+		return (getScreenFillTime()/windowsOnScreen)*(float)windowOffset; //time per window * windows difference
+	}
+	
+	protected float getTimeFromStartAtPixel(float pixelOffset) {
+		float windowsOnScreen = ((float)width)/((float)HORIZONTAL_STRETCH); //number of windows that can fit on entire screen
+		return (getScreenFillTime()/windowsOnScreen)*getWindowAtPixel(pixelOffset);
 	}
 	
 	protected int getFrequencyAtPixel(float pixelOffset) {

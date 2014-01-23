@@ -301,14 +301,14 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 	
 	private void updateSelectRectText() {
-		selectRectTextView.setText("t0: "+sd.getTimeAtPixel(selectRectL)+" t1: "+sd.getTimeAtPixel(selectRectR)+" f0: "+sd.getFrequencyAtPixel(selectRectT)+" f1: "+sd.getFrequencyAtPixel(selectRectB));
+		selectRectTextView.setText("t0: "+sd.getTimeFromStartAtPixel(selectRectL)+" t1: "+sd.getTimeFromStartAtPixel(selectRectR)+" f0: "+sd.getFrequencyAtPixel(selectRectT)+" f1: "+sd.getFrequencyAtPixel(selectRectB));
 	}
 
 	public void confirmSelection() {
 		
 		//create and display an AlertDialog requesting a filename
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
-		builder.setTitle("What did you hear? Please set a filename.");
+		builder.setTitle("What did you hear?");
 		final EditText inputText = new EditText(context);
 		inputText.setInputType(InputType.TYPE_CLASS_TEXT);
 		builder.setView(inputText);

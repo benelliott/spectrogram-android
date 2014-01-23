@@ -73,8 +73,10 @@ public class BitmapGenerator {
 		case 3: colours = HeatMap.blueOrangeYellow(); break;
 		case 4: colours = HeatMap.yellowOrangeBlue(); break;
 		case 5: colours = HeatMap.blackGreen(); break;
-		case 6: colours = HeatMap.heatMap2(); break;
+		case 6: colours = HeatMap.blueGreenRed2(); break;
 		case 7: colours = HeatMap.whiteBlue(); break;
+		case 8: colours = HeatMap.hotMetal(); break;
+		case 9: colours = HeatMap.whitePurpleGrouped(); break;
 		}
 
 		int readSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);

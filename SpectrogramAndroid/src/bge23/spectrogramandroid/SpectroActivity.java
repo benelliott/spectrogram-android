@@ -16,7 +16,6 @@ import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
@@ -247,7 +246,7 @@ public class SpectroActivity extends FragmentActivity implements
 	@Override
 	public void onConnected(Bundle connectionHint) {
 		//TODO
-        Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
 		if (lssv != null) {
 			lssv.setLocationClient(lc);
 		}
@@ -261,8 +260,7 @@ public class SpectroActivity extends FragmentActivity implements
     public void onDisconnected() {
         // Display the connection status
     	//TODO
-        Toast.makeText(this, "Disconnected. Please re-connect.",
-                Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "Disconnected. Please re-connect.",Toast.LENGTH_SHORT).show();
     }
     
     protected void setLiveSpectrogramSurfaceView(LiveSpectrogramSurfaceView lssv) {
