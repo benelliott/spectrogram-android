@@ -6,7 +6,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
-import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
@@ -310,7 +309,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle("What did you hear?");
 		final EditText inputText = new EditText(context);
-		inputText.setInputType(InputType.TYPE_CLASS_TEXT);
+		inputText.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_CAP_SENTENCES|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		builder.setView(inputText);
 		
 		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
