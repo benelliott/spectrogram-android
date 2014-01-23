@@ -4,6 +4,7 @@ import java.util.Locale;
 
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
+import android.content.IntentSender;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -15,9 +16,16 @@ import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.location.LocationClient;
 
 public class SpectroActivity extends FragmentActivity implements
-		ActionBar.TabListener {
+		ActionBar.TabListener, GooglePlayServicesClient.ConnectionCallbacks,
+        GooglePlayServicesClient.OnConnectionFailedListener {
 
 	/**
 	 * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -33,7 +41,10 @@ public class SpectroActivity extends FragmentActivity implements
 	 * The {@link ViewPager} that will host the section contents.
 	 */
 	ViewPager mViewPager;
-
+	private final int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+	private LocationClient lc;
+	private LiveSpectrogramSurfaceView lssv;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -72,7 +83,22 @@ public class SpectroActivity extends FragmentActivity implements
 					.setTabListener(this));
 		}
 		mViewPager.setCurrentItem(1); //start on middle item (record screen)
+		lc = new LocationClient(this,this,this);
 	}
+	
+   @Override
+    protected void onStart() {
+        super.onStart();
+        // Connect the location client
+        lc.connect();
+    }
+   
+   @Override
+   protected void onStop() {
+       // Disconnecting the client invalidates it.
+       lc.disconnect();
+       super.onStop();
+   }
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -151,9 +177,6 @@ public class SpectroActivity extends FragmentActivity implements
 			return null;
 		}
 		
-		protected void pauseSpectrogram() {
-			
-		}
 	}
 
 	public static class DummySectionFragment extends Fragment {
@@ -178,5 +201,71 @@ public class SpectroActivity extends FragmentActivity implements
 			return rootView;
 		}
 	}
-
+	
+	/*
+     * Called by Location Services if the attempt to
+     * Location Services fails.
+     */
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        /*
+         * Google Play services can resolve some errors it detects.
+         * If the error has a resolution, try sending an Intent to
+         * start a Google Play services activity that can resolve
+         * error.
+         */
+        if (connectionResult.hasResolution()) {
+            try {
+                // Start an Activity that tries to resolve the error
+                connectionResult.startResolutionForResult(
+                        this,
+                        CONNECTION_FAILURE_RESOLUTION_REQUEST);
+                /*
+                 * Thrown if Google Play services canceled the original
+                 * PendingIntent
+                 */
+            } catch (IntentSender.SendIntentException e) {
+                // Log the error
+                e.printStackTrace();
+            }
+        } else {
+            /*
+             * If no resolution is available, display a dialog to the
+             * user with the error.
+             */
+        	int errorCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+        	if (errorCode != ConnectionResult.SUCCESS) {
+        	  GooglePlayServicesUtil.getErrorDialog(errorCode, this, 0).show();
+        	}
+        }
+    }
+    /*
+     * Called by Location Services when the request to connect the
+     * client finishes successfully. At this point, you can
+     * request the current location or start periodic updates
+     */
+	@Override
+	public void onConnected(Bundle connectionHint) {
+		//TODO
+        Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+		if (lssv != null) {
+			lssv.setLocationClient(lc);
+		}
+	}
+	
+	 /*
+     * Called by Location Services if the connection to the
+     * location client drops because of an error.
+     */
+    @Override
+    public void onDisconnected() {
+        // Display the connection status
+    	//TODO
+        Toast.makeText(this, "Disconnected. Please re-connect.",
+                Toast.LENGTH_SHORT).show();
+    }
+    
+    protected void setLiveSpectrogramSurfaceView(LiveSpectrogramSurfaceView lssv) {
+    	this.lssv = lssv;
+    }
 }

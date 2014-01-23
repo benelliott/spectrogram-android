@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
+import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
@@ -20,6 +21,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.gms.location.LocationClient;
 
 public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
@@ -42,6 +45,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private TextView topFreqTextView;
 	private TextView selectRectTextView;
 	private String filename;
+	private LocationClient lc;
 
 
 	//left, right, top and bottom edge locations for the select-area rectangle:
@@ -342,6 +346,10 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		
 	}
 	
+	protected void setLocationClient(LocationClient lc) {
+		this.lc = lc;
+	}
+	
     private class AsyncCaptureTask extends AsyncTask<Void, Void, Void> {
         private Context context;
         public AsyncCaptureTask(Context context) {
@@ -361,7 +369,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		protected Void doInBackground(Void... arg0) {
         	Bitmap bitmapToStore = sd.getBitmapToStore(selectRectL, selectRectR, selectRectT, selectRectB);
     		short[] audioToStore = sd.getAudioToStore(selectRectL, selectRectR, selectRectT, selectRectB);
-    		StoredBitmapAudio sba = new StoredBitmapAudio(filename,STORE_DIR_NAME,bitmapToStore,audioToStore);
+    		StoredBitmapAudio sba = new StoredBitmapAudio(filename,STORE_DIR_NAME,bitmapToStore,audioToStore,lc.getLastLocation());
     		sba.store();
 			return null;
 		}

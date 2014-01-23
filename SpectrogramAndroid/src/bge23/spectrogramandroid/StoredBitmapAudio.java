@@ -7,8 +7,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import android.graphics.Bitmap;
+import android.location.Location;
+import android.media.ExifInterface;
 import android.os.Environment;
-import android.text.format.Time;
 import android.util.Log;
 
 public class StoredBitmapAudio {
@@ -18,20 +19,20 @@ public class StoredBitmapAudio {
 	private short[] audioData;
 	private Bitmap bitmap;
 	private int sampleRate;
+	private Location loc;
 	
-	protected StoredBitmapAudio(String filename, String directory, Bitmap bitmap, short[] audioData) {
+	protected StoredBitmapAudio(String filename, String directory, Bitmap bitmap, short[] audioData, Location loc) {
 		this.filename = filename;
 		this.directory = directory;
 		this.bitmap = bitmap;
 		this.audioData = audioData;
+		this.loc = loc;
 		sampleRate = BitmapGenerator.SAMPLE_RATE;
-		Time time = new Time();
-		time.setToNow();
-		filename = "Spectrogram-"+time.format("%F")+"-"+time.format("%T");
 	}
 	
 	protected void store() {
 		writeBitmapToJPEG();
+		geotagJPEG();
 		writeAudioToWAV();
 	}
 	
@@ -89,6 +90,28 @@ public class StoredBitmapAudio {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+			}
+		}
+	}
+	
+	private void geotagJPEG() {
+		if (loc != null) {
+			File dir = getAlbumStorageDir(directory);
+			String jpegFilepath = dir.getAbsolutePath()+"//"+filename+".jpg";
+			try {
+				Log.d("StoredBitmapAudio","Opening EXIF data for "+jpegFilepath);
+				ExifInterface exif = new ExifInterface(jpegFilepath);
+				double latitude = loc.getLatitude();
+				double longitude = loc.getLongitude();
+				exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, convertDecToDMS(latitude));
+				exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, latitudeRef(latitude));
+
+				exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, convertDecToDMS(longitude));
+				exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, longitudeRef(longitude));
+				exif.saveAttributes();
+			} catch (IOException e) {
+				Log.e("StoredBitmapAudio","Error finding JPEG file for tagging, path: "+jpegFilepath);
+				e.printStackTrace();
 			}
 		}
 	}
@@ -186,5 +209,34 @@ public class StoredBitmapAudio {
 	    return file;
 	}
 	/* 		*/
+	
+    private String latitudeRef(double latitude) {
+        return (latitude < 0) ? "S" : "N";
+    }
+
+    public static String longitudeRef(double longitude) {
+        return (longitude <0) ? "W" : "E";
+    }
+
+    private String convertDecToDMS(double decDegreeCoord) {
+    	//decimal degree coordinate could be latitude or longitude.
+    	// see http://en.wikipedia.org/wiki/Geographic_coordinate_conversion#Conversion_from_Decimal_Degree_to_DMS
+    	if (decDegreeCoord < 0) decDegreeCoord = -decDegreeCoord;
+    	
+    	//Degrees = whole number portion of coordinate
+        int degrees = (int) decDegreeCoord;
+        
+        //Minutes = whole number portion of (remainder*60)
+        decDegreeCoord -= degrees;
+        decDegreeCoord *= 60;
+        int minutes = (int) decDegreeCoord;
+        
+        //Seconds = whole number portion of (remainder*60)
+        decDegreeCoord -= minutes;
+        decDegreeCoord *= 60;
+        int seconds = (int) (decDegreeCoord*1000); // convention is deg/1, min/1, sec/1000
+
+        return degrees+"/1,"+minutes+"/1,"+seconds+"/1000";
+    }
 
 }

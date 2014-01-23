@@ -64,6 +64,7 @@ public class SpectroFragment extends Fragment {
     
     private void init() {
 		lssv = (LiveSpectrogramSurfaceView)rootView.findViewById(R.id.lssv);
+		((SpectroActivity)getActivity()).setLiveSpectrogramSurfaceView(lssv); //pass the LSSV back to the activity for location updates
 		
 		resumeButton = (Button)rootView.findViewById(R.id.button_resume);
 		resumeButton.setOnClickListener(new OnClickListener() {
