@@ -218,6 +218,7 @@ public class StoredBitmapAudio {
         return (longitude <0) ? "W" : "E";
     }
 
+    //INSPIRED BY http://stackoverflow.com/questions/5280479/how-to-save-gps-coordinates-in-exif-data-on-android
     private String convertDecToDMS(double decDegreeCoord) {
     	//decimal degree coordinate could be latitude or longitude.
     	// see http://en.wikipedia.org/wiki/Geographic_coordinate_conversion#Conversion_from_Decimal_Degree_to_DMS
