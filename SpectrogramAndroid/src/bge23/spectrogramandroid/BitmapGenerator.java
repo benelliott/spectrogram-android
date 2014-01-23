@@ -28,7 +28,7 @@ public class BitmapGenerator {
 
 	//number of windows that can be held in the arrays at once before older ones are deleted. Time this represents is
 	// WINDOW_LIMIT*SAMPLES_PER_WINDOW/SAMPLE_RATE, e.g. 10000*300/16000 = 187.5 seconds.
-	protected static final int WINDOW_LIMIT = 5000; //usually around 10000 
+	protected static final int WINDOW_LIMIT = 1000; //usually around 10000 
 
 	//Storage for audio and bitmap windows is pre-allocated, and the quantity is determined by
 	// WINDOW_LIMIT*SAMPLES_PER_WINDOW*(bytes per int + bytes per double),
@@ -292,15 +292,15 @@ public class BitmapGenerator {
 
 	protected int getLeftmostBitmapAvailable() {
 		/*
-		 * Returns the index of the leftmost bitmap still in memory.
+		 * Returns the index of the leftmost chronologically usable bitmap still in memory.
 		 */
 		if (!arraysLooped) return 0;
-		return WINDOW_LIMIT-bitmapCurrentIndex; //if array has looped, leftmost window is at array size - current index
+		return bitmapCurrentIndex+1; //if array has looped, leftmost window is at current index + 1
 	}
 
 	protected int getRightmostBitmapAvailable() {
 		/*
-		 *Returns the index of the rightmost bitmap still in memory.
+		 *Returns the index of the rightmost chronologically usable bitmap still in memory.
 		 */
 		return bitmapCurrentIndex; //just return the index of the last bitmap to have been processed
 	}

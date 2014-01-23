@@ -109,36 +109,36 @@ class SpectrogramDrawer {
 
 			Log.d("Scrolling","Offset: "+offset);
 
+			if (offset > BitmapGenerator.WINDOW_LIMIT/2) offset = BitmapGenerator.WINDOW_LIMIT/2;
+			if (offset < -BitmapGenerator.WINDOW_LIMIT/2) offset = -BitmapGenerator.WINDOW_LIMIT/2;
 			int leftmostWindowAsIndex = leftmostWindow % BitmapGenerator.WINDOW_LIMIT;
-			int newLeftmostWindow = leftmostWindowAsIndex - offset;
-			if (newLeftmostWindow < leftmostBitmapAvailable) offset = leftmostWindowAsIndex - leftmostBitmapAvailable;
-
-			int rightmostWindowAsIndex = (leftmostWindow + width/HORIZONTAL_STRETCH) % BitmapGenerator.WINDOW_LIMIT;
-			int newRightmostWindow = rightmostWindowAsIndex - offset;
-			if (newRightmostWindow > rightmostBitmapAvailable) offset = rightmostBitmapAvailable - rightmostWindowAsIndex;
-
-			Log.d("Scrolling","Adjusted offset: "+offset+", leftmost window before scroll: "+leftmostWindow+", as index: "+leftmostWindowAsIndex);
-
-
+			int rightmostWindow = leftmostWindow + width/HORIZONTAL_STRETCH;
+			int rightmostWindowAsIndex = rightmostWindow % BitmapGenerator.WINDOW_LIMIT;
+			if (leftmostWindow - offset < 0) offset = leftmostWindow;
+			if (rightmostWindow - offset > windowsDrawn) offset = windowsDrawn - rightmostWindow;
 			if (offset > 0) { //slide leftwards
+				if (leftmostWindowAsIndex != leftmostBitmapAvailable) {
 				buffer2Canvas.drawBitmap(buffer, HORIZONTAL_STRETCH
 						* offset, 0, null);//shift current display to the right by HORIZONTAL_STRETCH*offset pixels
 				bufferCanvas.drawBitmap(buffer2, 0, 0, null); //must copy to a second buffer first due to a bug in Android source
-				leftmostWindowAsIndex -= offset;
+				leftmostWindowAsIndex = Math.abs(leftmostWindowAsIndex - offset);
 				for (int i = 0; i < offset; i++) {
-					drawSingleBitmap(leftmostWindowAsIndex + i, i
+					drawSingleBitmap((leftmostWindowAsIndex + i)%BitmapGenerator.WINDOW_LIMIT, i
 							* HORIZONTAL_STRETCH); //draw windows from x = 0 to x = HORIZONTAL_STRETCH*offset
 				}
 				leftmostWindow -= offset;
+				}
 			} else { //slide rightwards
+				if (rightmostWindowAsIndex != rightmostBitmapAvailable) {
 				offset = -offset; //change to positive for convenience
 				bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH
 						* offset, 0, null);//shift current display to the left by HORIZONTAL_STRETCH*offset pixels
 				for (int i = 0; i < offset; i++) {
-					drawSingleBitmap(rightmostWindowAsIndex + i, width
+					drawSingleBitmap((rightmostWindowAsIndex + i)%BitmapGenerator.WINDOW_LIMIT, width
 							+ HORIZONTAL_STRETCH * (i - offset)); //draw windows from x=width+HORIZONTAL_STRETCH*(i-offset).
 				}
 				leftmostWindow += offset;
+				}
 			}
 			SurfaceHolder sh = lssv.getHolder();
 			displayCanvas = sh.lockCanvas(null);
@@ -153,6 +153,8 @@ class SpectrogramDrawer {
 			}
 		}
 	}
+	
+	
 
 	private void quickProgress() {
 		/*
