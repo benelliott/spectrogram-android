@@ -4,6 +4,8 @@ import java.util.concurrent.Semaphore;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -36,6 +38,7 @@ public class BitmapGenerator {
 	protected static final int BITMAP_STORE_WIDTH_ADJ = 2;
 	protected static final int BITMAP_STORE_HEIGHT_ADJ = 2;
 	protected static final int BITMAP_STORE_QUALITY = 90; //compression quality parameter for storage
+	protected static final int BITMAP_FREQ_AXIS_WIDTH = 30; //number of pixels (subject to width adjustment) to use to display frequency axis on stored bitmaps
 
 	private short[][] audioWindows = new short[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
 	private int[][] bitmapWindows = new int[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
@@ -331,16 +334,20 @@ public class BitmapGenerator {
 		 * Returns a stand-alone bitmap with time from startWindow to endWindow and band-pass-filtered
 		 * from bottomFreq to topFreq.
 		 */
+		//Hold on to string versions of the frequency values to annotate the bitmap later
+		String bottomFreqText = Integer.toString(bottomFreq)+" Hz";
+		String topFreqText = Integer.toString(topFreq)+" Hz";
 		
 		//convert frequency range into array indices
 		bottomFreq = (int) ((2f*(float)bottomFreq/(float)SAMPLE_RATE)*SAMPLES_PER_WINDOW);
 		topFreq = (int) ((2f*(float)topFreq/(float)SAMPLE_RATE)*SAMPLES_PER_WINDOW);
 
-		int bitmapWidth = BITMAP_STORE_WIDTH_ADJ * (endWindow - startWindow);
+		int bitmapWidth = BITMAP_STORE_WIDTH_ADJ * (endWindow - startWindow + BITMAP_FREQ_AXIS_WIDTH);
 		int bitmapHeight = BITMAP_STORE_HEIGHT_ADJ * (topFreq - bottomFreq);
 		
 		Bitmap ret = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888);
 		Canvas retCanvas = new Canvas(ret);
+		retCanvas.drawColor(Color.BLACK);
 		
 		//TODO filter
 
@@ -356,15 +363,22 @@ public class BitmapGenerator {
 				int m = 0;
 				for (int k = bottomFreq; k < topFreq; k++) {
 					for (int l = 0; l < BITMAP_STORE_HEIGHT_ADJ; l++) {
-						//Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
+						Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
 						scaledBitmapWindow[bitmapHeight-m-1] = orig[SAMPLES_PER_WINDOW-k-1]; //remember that array had been filled backwards, and new one should be too
-						retCanvas.drawBitmap(scaledBitmapWindow, 0, 1, h, 0, 1, bitmapHeight, false, null);
+						retCanvas.drawBitmap(scaledBitmapWindow, 0, 1, BITMAP_FREQ_AXIS_WIDTH*BITMAP_STORE_WIDTH_ADJ + h, 0, 1, bitmapHeight, false, null);
 						m++;
 					}
 				}
 				h++;
 			}
 		}
+		//annotate bitmap with frequency range:
+		Paint textStyle = new Paint();
+		textStyle.setColor(Color.WHITE);
+		textStyle.setTextSize(BITMAP_FREQ_AXIS_WIDTH/3);
+		retCanvas.drawText(bottomFreqText, BITMAP_FREQ_AXIS_WIDTH/2, bitmapHeight-5*BITMAP_STORE_HEIGHT_ADJ, textStyle);
+		Log.d("Bitmap capture","bottomFreqText drawn at x:"+(BITMAP_FREQ_AXIS_WIDTH*BITMAP_STORE_WIDTH_ADJ/10)+" y: "+(bitmapHeight-5*BITMAP_STORE_HEIGHT_ADJ));
+		retCanvas.drawText(topFreqText, BITMAP_FREQ_AXIS_WIDTH/2, BITMAP_FREQ_AXIS_WIDTH/2, textStyle);
 		return ret;
 	}
 	
