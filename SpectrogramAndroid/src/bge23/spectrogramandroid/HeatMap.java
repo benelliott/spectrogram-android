@@ -250,5 +250,53 @@ public class HeatMap {
 		}
 		return toReturn;
 	}
+	
+	static int[] inverseGreyscale() {
+		/*
+		 * A method which fills the 'colours' array with greyscale values.
+		 */
+
+		//Fill backwards because (255, 255, 255) is white, and want white to be low
+		int[] toReturn = new int[256];
+		for (int i = 0; i < 256; i++) {
+			toReturn[i] = 255; //alpha
+			toReturn[i] <<= 8;
+			
+			//red
+			if (0 <= i && i <= 31) toReturn[i] += 255;
+			if (32 <= i && i <= 63) toReturn[i] += 240;
+			if (64 <= i && i <= 95) toReturn[i] += 220;
+			if (96 <= i && i <= 127) toReturn[i] += 190;
+			if (128 <= i && i <= 159) toReturn[i] += 150;
+			if (160 <= i && i <= 191) toReturn[i] += 100;
+			if (192 <= i && i <= 223) toReturn[i] += 50;
+			if (224 <= i && i <= 255) toReturn[i] += 0;
+			toReturn[i] <<= 8; 
+			
+			//green
+			
+			if (0 <= i && i <= 31) toReturn[i] += 255;
+			if (32 <= i && i <= 63) toReturn[i] += 240;
+			if (64 <= i && i <= 95) toReturn[i] += 220;
+			if (96 <= i && i <= 127) toReturn[i] += 190;
+			if (128 <= i && i <= 159) toReturn[i] += 150;
+			if (160 <= i && i <= 191) toReturn[i] += 100;
+			if (192 <= i && i <= 223) toReturn[i] += 50;
+			if (224 <= i && i <= 255) toReturn[i] += 0;
+			toReturn[i] <<= 8; 
+			
+			//blue
+			if (0 <= i && i <= 31) toReturn[i] += 255;
+			if (32 <= i && i <= 63) toReturn[i] += 240;
+			if (64 <= i && i <= 95) toReturn[i] += 220;
+			if (96 <= i && i <= 127) toReturn[i] += 190;
+			if (128 <= i && i <= 159) toReturn[i] += 150;
+			if (160 <= i && i <= 191) toReturn[i] += 100;
+			if (192 <= i && i <= 223) toReturn[i] += 50;
+			if (224 <= i && i <= 255) toReturn[i] += 0;
+			//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
+		}
+		return toReturn;
+	}
 
 }

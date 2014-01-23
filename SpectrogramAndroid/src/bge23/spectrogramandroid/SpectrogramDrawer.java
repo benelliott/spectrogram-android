@@ -37,7 +37,7 @@ class SpectrogramDrawer {
 		this.lssv = lssv;
 		this.width = lssv.getWidth();
 		this.height = lssv.getHeight();
-		bg = new BitmapGenerator(9);
+		bg = new BitmapGenerator(10);
 		bg.start();
 		SAMPLES_PER_WINDOW = BitmapGenerator.SAMPLES_PER_WINDOW;
 		VERTICAL_STRETCH = ((float)height)/((float)SAMPLES_PER_WINDOW); // stretch spectrogram to all of available height

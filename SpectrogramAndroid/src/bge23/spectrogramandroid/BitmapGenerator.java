@@ -73,6 +73,8 @@ public class BitmapGenerator {
 		case 7: colours = HeatMap.whiteBlue(); break;
 		case 8: colours = HeatMap.hotMetal(); break;
 		case 9: colours = HeatMap.whitePurpleGrouped(); break;
+		case 10: colours = HeatMap.inverseGreyscale(); break;
+
 		}
 
 		int readSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
@@ -117,9 +119,8 @@ public class BitmapGenerator {
 		 * that it remains available in case the user chooses to replay certain sections.
 		 */
 		while (running) {
-			synchronized(audioWindows) {
-				readUntilFull(audioWindows[audioCurrentIndex], 0, SAMPLES_PER_WINDOW); //request samplesPerWindow shorts be written into the next free microphone buffer
-			}
+			//note no locking on audioWindows - dangerous but crucial for responsiveness
+			readUntilFull(audioWindows[audioCurrentIndex], 0, SAMPLES_PER_WINDOW); //request samplesPerWindow shorts be written into the next free microphone buffer
 
 			synchronized(audioCurrentIndex) { //don't modify this when it might be being read by another thread
 				audioCurrentIndex++;
@@ -162,7 +163,6 @@ public class BitmapGenerator {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-
 			processAudioWindow(audioWindows[bitmapCurrentIndex], bitmapWindows[bitmapCurrentIndex]);
 			Log.d("Bitmap thread","Audio window "+(bitmapCurrentIndex)+ " processed. ");
 
@@ -216,7 +216,7 @@ public class BitmapGenerator {
 			maxAmplitude = d;
 			return 255;
 		}
-		return (int)( 255*Math.pow((Math.log1p(d)/Math.log1p(maxAmplitude)),CONTRAST));
+		return (int)(255*Math.pow((Math.log1p(d)/Math.log1p(maxAmplitude)),CONTRAST));
 	}
 
 	private void hammingWindow(double[] samples) {
