@@ -23,7 +23,6 @@ public class BitmapGenerator {
 
 	public static final int SAMPLE_RATE = 16000; //options are 11025, 22050, 16000, 44100
 	public static final int SAMPLES_PER_WINDOW = 300; //usually around 300
-	private final int MIC_BUFFERS = 100; //number of buffers to maintain at once
 	private final float CONTRAST = 2.0f;
 
 	//number of windows that can be held in the arrays at once before older ones are deleted. Time this represents is
@@ -45,10 +44,7 @@ public class BitmapGenerator {
 
 	private boolean running = false;
 
-
-	//	private int CONTRAST = 400;
 	private double maxAmplitude = 1; //max amplitude seen so far
-	private short[][] micBuffers = new short[MIC_BUFFERS][SAMPLES_PER_WINDOW];; //array of buffers so that different frames can be being processed while others are read in 
 	private AudioRecord mic;
 	private Thread audioThread;
 	private Thread bitmapThread;
@@ -114,35 +110,26 @@ public class BitmapGenerator {
 		running = false;
 		mic.stop();
 	}
-
+	
 	public void fillAudioList() {
 		/*
 		 * When audio data becomes available from the microphone, store it in a 2D array so
 		 * that it remains available in case the user chooses to replay certain sections.
 		 */
 		while (running) {
-			int currentBuffer = audioCurrentIndex % MIC_BUFFERS;
-			readUntilFull(micBuffers[currentBuffer], 0, SAMPLES_PER_WINDOW); //request samplesPerWindow shorts be written into the next free microphone buffer
-			short[] toAdd = new short[SAMPLES_PER_WINDOW]; //create a new double-array to store the double-converted data
-			for (int i = 0; i < SAMPLES_PER_WINDOW; i++) { //convert the short data into double
-				toAdd[i] = micBuffers[currentBuffer][i];
+			synchronized(audioWindows) {
+				readUntilFull(audioWindows[audioCurrentIndex], 0, SAMPLES_PER_WINDOW); //request samplesPerWindow shorts be written into the next free microphone buffer
 			}
 
-			if (audioCurrentIndex == audioWindows.length) {
-				//if entire array has been filled, loop and start filling from the start
-				Log.d("", "Adding audio item "+audioCurrentIndex+" and array full, so looping back to start");
-				synchronized(audioCurrentIndex) {
-					audioCurrentIndex = 0;
-				}
-			}
-			synchronized(audioWindows) {
-				for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
-					audioWindows[audioCurrentIndex][i] = toAdd[i];
-				}
-			}
 			synchronized(audioCurrentIndex) { //don't modify this when it might be being read by another thread
 				audioCurrentIndex++;
 				audioReady.release();
+				if (audioCurrentIndex == audioWindows.length) {
+					//if entire array has been filled, loop and start filling from the start
+					Log.d("", "Adding audio item "+audioCurrentIndex+" and array full, so looping back to start");
+						audioCurrentIndex = 0;
+					
+				}
 			}
 			Log.d("Audio thread","Audio window "+audioCurrentIndex+" added.");
 			//audioWindowsAdded++;
@@ -173,15 +160,11 @@ public class BitmapGenerator {
 			try {
 				audioReady.acquire();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
-			int[] bitmapToAdd = processAudioWindow(audioWindows[bitmapCurrentIndex]);
+			processAudioWindow(audioWindows[bitmapCurrentIndex], bitmapWindows[bitmapCurrentIndex]);
 			Log.d("Bitmap thread","Audio window "+(bitmapCurrentIndex)+ " processed. ");
-			for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
-				bitmapWindows[bitmapCurrentIndex][i] = bitmapToAdd[i];
-			}
 			
 			bitmapCurrentIndex++;
 			bitmapsReady.release();
@@ -195,7 +178,7 @@ public class BitmapGenerator {
 
 	}
 
-	private int[] processAudioWindow(short[] samples) { //TODO prev and next
+	private void processAudioWindow(short[] samples, int[] destArray) { //TODO prev and next
 		/*
 		 * Take the raw audio samples, apply a Hamming window, then perform the Short-Time
 		 * Fourier Transform and square the result. Combine the output with that from the previous window
@@ -214,18 +197,11 @@ public class BitmapGenerator {
 			combinedWindow[i] = fftSamples[i] + previousWindow[i];
 		}
 
-		int[] ret = new int[SAMPLES_PER_WINDOW];
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			int val = cappedValue(combinedWindow[i]);
-			ret[SAMPLES_PER_WINDOW-i-1] = colours[val]; //fill upside-down because y=0 is at top of screen
+			destArray[SAMPLES_PER_WINDOW-i-1] = colours[val]; //fill upside-down because y=0 is at top of screen
 		}
-
-		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
-			previousWindow[i] = fftSamples[i];
-		}
-		
-
-		return ret;
+		previousWindow = fftSamples; //keep reference to samples for next process
 	}
 
 	private int cappedValue(double d) {
@@ -248,7 +224,7 @@ public class BitmapGenerator {
 		 * This method applies an appropriately-sized Hamming window to the provided array of 
 		 * audio sample data.
 		 */
-		int m = samples.length/2;
+		int m = samples.length/4; //divide by 4 not 2 since input array is half-full
 		double[] hamming = new double[samples.length];
 		double r = Math.PI/(m+1);
 		for (int i = -m; i < m; i++) {
@@ -321,7 +297,6 @@ public class BitmapGenerator {
 		try {
 			bitmapsReady.acquire(); //block until there is a bitmap to return
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		if (lastBitmapRequested == bitmapWindows.length) lastBitmapRequested = 0; //loop if necessary
@@ -361,7 +336,8 @@ public class BitmapGenerator {
 		int h = 0;
 		for (int i = startWindow; i < endWindow; i++) {
 			for (int j = 0; j < BITMAP_STORE_WIDTH_ADJ; j++) { //scaling
-				int[] orig = processAudioWindow(audioWindows[i]);
+				int[] orig = new int[SAMPLES_PER_WINDOW];
+				processAudioWindow(audioWindows[i],orig);
 				int m = 0;
 				for (int k = bottomFreq; k < topFreq; k++) {
 					for (int l = 0; l < BITMAP_STORE_HEIGHT_ADJ; l++) {
