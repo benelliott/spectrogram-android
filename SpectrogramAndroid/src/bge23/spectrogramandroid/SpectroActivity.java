@@ -6,7 +6,10 @@ import android.app.ActionBar;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -26,8 +29,8 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationClient;
 
 public class SpectroActivity extends FragmentActivity implements
-		ActionBar.TabListener, GooglePlayServicesClient.ConnectionCallbacks,
-        GooglePlayServicesClient.OnConnectionFailedListener {
+ActionBar.TabListener, GooglePlayServicesClient.ConnectionCallbacks,
+GooglePlayServicesClient.OnConnectionFailedListener {
 
 	/**
 	 * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -45,12 +48,18 @@ public class SpectroActivity extends FragmentActivity implements
 	ViewPager mViewPager;
 	private final int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
 	private final int PREF_REQUEST_CODE = 600;
+	private final String PREF_PORTRAIT_KEY = "pref_portrait";
 	private LocationClient lc;
 	private LiveSpectrogramSurfaceView lssv;
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		boolean portrait = prefs.getBoolean(PREF_PORTRAIT_KEY, false);
+		if (portrait) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		else setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+
 		setContentView(R.layout.activity_spectro);
 
 		// Set up the action bar.
@@ -69,12 +78,12 @@ public class SpectroActivity extends FragmentActivity implements
 		// tab. We can also use ActionBar.Tab#select() to do this if we have
 		// a reference to the Tab.
 		mViewPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
-					@Override
-					public void onPageSelected(int position) {
-						if (position != 1) lssv.pauseScrolling();
-						actionBar.setSelectedNavigationItem(position);
-					}
-				});
+			@Override
+			public void onPageSelected(int position) {
+				if (position != 1) lssv.pauseScrolling();
+				actionBar.setSelectedNavigationItem(position);
+			}
+		});
 
 		// For each of the sections in the app, add a tab to the action bar.
 		for (int i = 0; i < mSectionsPagerAdapter.getCount(); i++) {
@@ -89,20 +98,20 @@ public class SpectroActivity extends FragmentActivity implements
 		mViewPager.setCurrentItem(1); //start on middle item (record screen)
 		lc = new LocationClient(this,this,this);
 	}
-	
-   @Override
-    protected void onStart() {
-        super.onStart();
-        // Connect the location client
-        lc.connect();
-    }
-   
-   @Override
-   protected void onStop() {
-       // Disconnecting the client invalidates it.
-       lc.disconnect();
-       super.onStop();
-   }
+
+	@Override
+	protected void onStart() {
+		super.onStart();
+		// Connect the location client
+		lc.connect();
+	}
+
+	@Override
+	protected void onStop() {
+		// Disconnecting the client invalidates it.
+		lc.disconnect();
+		super.onStop();
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -110,21 +119,21 @@ public class SpectroActivity extends FragmentActivity implements
 		getMenuInflater().inflate(R.menu.spectro, menu);
 		return true;
 	}
-	
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-	    // Handle item selection
-	    switch (item.getItemId()) {
-	        case R.id.action_settings:
-	        	lssv.pauseScrolling();
-	        	Intent openSettings = new Intent(SpectroActivity.this, SettingsActivity.class);
-	        	startActivityForResult(openSettings,PREF_REQUEST_CODE);
-	            return true;
-	        default:
-	            return super.onOptionsItemSelected(item);
-	    }
+		// Handle item selection
+		switch (item.getItemId()) {
+		case R.id.action_settings:
+			lssv.pauseScrolling();
+			Intent openSettings = new Intent(SpectroActivity.this, SettingsActivity.class);
+			startActivityForResult(openSettings,PREF_REQUEST_CODE);
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
-	
+
 	@Override
 	protected void onActivityResult (int requestCode, int resultCode, Intent data) {
 		//extract data from Intent URI and update values in spectrogram code accordingly
@@ -137,9 +146,16 @@ public class SpectroActivity extends FragmentActivity implements
 			if (key.equals(BitmapGenerator.PREF_COLOURMAP_KEY)) {
 				lssv.updateColourMap();
 			}
+
+			else if (key.equals(PREF_PORTRAIT_KEY)) {
+				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+				boolean portrait = prefs.getBoolean(PREF_PORTRAIT_KEY, false);
+				if (portrait) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+				else setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+			}
 		}
 	}
-	
+
 	@Override
 	public void onTabSelected(ActionBar.Tab tab,
 			FragmentTransaction fragmentTransaction) {
@@ -157,7 +173,7 @@ public class SpectroActivity extends FragmentActivity implements
 	public void onTabReselected(ActionBar.Tab tab,
 			FragmentTransaction fragmentTransaction) {
 	}
-	
+
 	/**
 	 * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
 	 * one of the sections/tabs/pages.
@@ -176,9 +192,9 @@ public class SpectroActivity extends FragmentActivity implements
 			Fragment fragment = null;
 			switch (position) {
 			case 0: fragment = new DummySectionFragment(); //TODO library fragment
-					break;
+			break;
 			case 1: fragment = new SpectroFragment();
-					break;
+			break;
 			}
 			if (position != 1) {
 				Bundle args = new Bundle();
@@ -205,7 +221,7 @@ public class SpectroActivity extends FragmentActivity implements
 			}
 			return null;
 		}
-		
+
 	}
 
 	public static class DummySectionFragment extends Fragment {
@@ -230,70 +246,70 @@ public class SpectroActivity extends FragmentActivity implements
 			return rootView;
 		}
 	}
-	
+
 	/*
-     * Called by Location Services if the attempt to
-     * Location Services fails.
-     */
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-        /*
-         * Google Play services can resolve some errors it detects.
-         * If the error has a resolution, try sending an Intent to
-         * start a Google Play services activity that can resolve
-         * error.
-         */
-        if (connectionResult.hasResolution()) {
-            try {
-                // Start an Activity that tries to resolve the error
-                connectionResult.startResolutionForResult(
-                        this,
-                        CONNECTION_FAILURE_RESOLUTION_REQUEST);
-                /*
-                 * Thrown if Google Play services canceled the original
-                 * PendingIntent
-                 */
-            } catch (IntentSender.SendIntentException e) {
-                // Log the error
-                e.printStackTrace();
-            }
-        } else {
-            /*
-             * If no resolution is available, display a dialog to the
-             * user with the error.
-             */
-        	int errorCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
-        	if (errorCode != ConnectionResult.SUCCESS) {
-        	  GooglePlayServicesUtil.getErrorDialog(errorCode, this, 0).show();
-        	}
-        }
-    }
-    /*
-     * Called by Location Services when the request to connect the
-     * client finishes successfully. At this point, you can
-     * request the current location or start periodic updates
-     */
+	 * Called by Location Services if the attempt to
+	 * Location Services fails.
+	 */
+	@Override
+	public void onConnectionFailed(ConnectionResult connectionResult) {
+		/*
+		 * Google Play services can resolve some errors it detects.
+		 * If the error has a resolution, try sending an Intent to
+		 * start a Google Play services activity that can resolve
+		 * error.
+		 */
+		if (connectionResult.hasResolution()) {
+			try {
+				// Start an Activity that tries to resolve the error
+				connectionResult.startResolutionForResult(
+						this,
+						CONNECTION_FAILURE_RESOLUTION_REQUEST);
+				/*
+				 * Thrown if Google Play services canceled the original
+				 * PendingIntent
+				 */
+			} catch (IntentSender.SendIntentException e) {
+				// Log the error
+				e.printStackTrace();
+			}
+		} else {
+			/*
+			 * If no resolution is available, display a dialog to the
+			 * user with the error.
+			 */
+			int errorCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+			if (errorCode != ConnectionResult.SUCCESS) {
+				GooglePlayServicesUtil.getErrorDialog(errorCode, this, 0).show();
+			}
+		}
+	}
+	/*
+	 * Called by Location Services when the request to connect the
+	 * client finishes successfully. At this point, you can
+	 * request the current location or start periodic updates
+	 */
 	@Override
 	public void onConnected(Bundle connectionHint) {
 		//TODO
-        //Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+		//Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
 		if (lssv != null) {
 			lssv.setLocationClient(lc);
 		}
 	}
-	
-	 /*
-     * Called by Location Services if the connection to the
-     * location client drops because of an error.
-     */
-    @Override
-    public void onDisconnected() {
-        // Display the connection status
-    	//TODO
-        //Toast.makeText(this, "Disconnected. Please re-connect.",Toast.LENGTH_SHORT).show();
-    }
-    
-    protected void setLiveSpectrogramSurfaceView(LiveSpectrogramSurfaceView lssv) {
-    	this.lssv = lssv;
-    }
+
+	/*
+	 * Called by Location Services if the connection to the
+	 * location client drops because of an error.
+	 */
+	@Override
+	public void onDisconnected() {
+		// Display the connection status
+		//TODO
+		//Toast.makeText(this, "Disconnected. Please re-connect.",Toast.LENGTH_SHORT).show();
+	}
+
+	protected void setLiveSpectrogramSurfaceView(LiveSpectrogramSurfaceView lssv) {
+		this.lssv = lssv;
+	}
 }

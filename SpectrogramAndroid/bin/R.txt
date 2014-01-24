@@ -118,6 +118,7 @@ int string library 0x7f07001d
 int string pref_colourmap 0x7f070024
 int string pref_colourmap_default 0x7f070026
 int string pref_colourmap_dialog 0x7f070025
+int string pref_portrait 0x7f070027
 int string record 0x7f07001e
 int string settings 0x7f07001f
 int string title_activity_main_actidfgdfgvdfgdfity 0x7f070020

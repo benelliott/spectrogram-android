@@ -41,7 +41,6 @@ public class SettingsActivity extends PreferenceActivity {
 
 		@Override
 		public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-			Log.d("SettingsFragment","Preference changed!");
 			Intent returnData = new Intent();
 			returnData.putExtra("PREF_KEY", key);
 			activity.setResult(RESULT_OK, returnData);
