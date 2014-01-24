@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<ListPreference
+        android:key="pref_colourmap"
+        android:title="@string/pref_colourmap"
+        android:dialogTitle="@string/pref_colourmap_dialog"
+        android:entries="@array/pref_colourmap_entries"
+        android:entryValues="@array/pref_colourmap_values"
+        android:defaultValue="@string/pref_colourmap_default" />
+    
+</PreferenceScreen>
