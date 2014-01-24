@@ -4,6 +4,7 @@ import java.util.Locale;
 
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
+import android.content.Intent;
 import android.content.IntentSender;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -11,8 +12,10 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -41,6 +44,7 @@ public class SpectroActivity extends FragmentActivity implements
 	 */
 	ViewPager mViewPager;
 	private final int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+	private final int PREF_REQUEST_CODE = 600;
 	private LocationClient lc;
 	private LiveSpectrogramSurfaceView lssv;
 	
@@ -67,6 +71,7 @@ public class SpectroActivity extends FragmentActivity implements
 		mViewPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
 					@Override
 					public void onPageSelected(int position) {
+						if (position != 1) lssv.pauseScrolling();
 						actionBar.setSelectedNavigationItem(position);
 					}
 				});
@@ -105,7 +110,36 @@ public class SpectroActivity extends FragmentActivity implements
 		getMenuInflater().inflate(R.menu.spectro, menu);
 		return true;
 	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    // Handle item selection
+	    switch (item.getItemId()) {
+	        case R.id.action_settings:
+	        	lssv.pauseScrolling();
+	        	Intent openSettings = new Intent(SpectroActivity.this, SettingsActivity.class);
+	        	startActivityForResult(openSettings,PREF_REQUEST_CODE);
+	            return true;
+	        default:
+	            return super.onOptionsItemSelected(item);
+	    }
+	}
+	
+	@Override
+	protected void onActivityResult (int requestCode, int resultCode, Intent data) {
+		//extract data from Intent URI and update values in spectrogram code accordingly
+		Log.d("SpectroActivity","Activity result");
 
+		if (requestCode == PREF_REQUEST_CODE && resultCode == RESULT_OK) {
+			Log.d("SpectroActivity","Preference changed!");
+			String key = data.getStringExtra("PREF_KEY");
+			Log.d("SpectroActivity","Key: "+key);
+			if (key.equals(BitmapGenerator.PREF_COLOURMAP_KEY)) {
+				lssv.updateColourMap();
+			}
+		}
+	}
+	
 	@Override
 	public void onTabSelected(ActionBar.Tab tab,
 			FragmentTransaction fragmentTransaction) {
@@ -145,8 +179,6 @@ public class SpectroActivity extends FragmentActivity implements
 					break;
 			case 1: fragment = new SpectroFragment();
 					break;
-			case 2: fragment = new DummySectionFragment();
-					break;
 			}
 			if (position != 1) {
 				Bundle args = new Bundle();
@@ -158,8 +190,8 @@ public class SpectroActivity extends FragmentActivity implements
 
 		@Override
 		public int getCount() {
-			// Show 3 total pages.
-			return 3;
+			// Show 2 total pages.
+			return 2;
 		}
 
 		@Override
@@ -170,8 +202,6 @@ public class SpectroActivity extends FragmentActivity implements
 				return getString(R.string.library).toUpperCase(l);
 			case 1:
 				return getString(R.string.record).toUpperCase(l);
-			case 2:
-				return getString(R.string.settings).toUpperCase(l);
 			}
 			return null;
 		}

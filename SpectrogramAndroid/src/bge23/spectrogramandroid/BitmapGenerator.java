@@ -2,6 +2,8 @@ package bge23.spectrogramandroid;
 
 import java.util.concurrent.Semaphore;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -9,6 +11,7 @@ import android.graphics.Paint;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
@@ -23,6 +26,8 @@ public class BitmapGenerator {
 
 	public static final int SAMPLE_RATE = 16000; //options are 11025, 22050, 16000, 44100
 	public static final int SAMPLES_PER_WINDOW = 300; //usually around 300
+	public static final String PREF_COLOURMAP_KEY = "pref_colourmap";
+
 	private final float CONTRAST = 2.0f;
 
 	//number of windows that can be held in the arrays at once before older ones are deleted. Time this represents is
@@ -43,7 +48,6 @@ public class BitmapGenerator {
 	private int[][] bitmapWindows = new int[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
 
 	private boolean running = false;
-
 	private double maxAmplitude = 1; //max amplitude seen so far
 	private AudioRecord mic;
 	private Thread audioThread;
@@ -57,24 +61,23 @@ public class BitmapGenerator {
 	private int lastBitmapRequested = 0; //keeps track of the most recently requested bitmap window
 	private double[] previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
 
-
-	public BitmapGenerator(int colourMap) {
+	private Context context;
+	
+	public BitmapGenerator(Context context) {
 		//bitmapsReady = new Semaphore(0);
+		this.context = context;
 		colours = new int[256];
 
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		String colMapString = prefs.getString(PREF_COLOURMAP_KEY, "NULL");
+		int colourMap = 0;
+		if (!colMapString.equals("NULL")) colourMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
+		
 		switch (colourMap) {
-		case 0: colours = HeatMap.greyscale(); break;
-		case 1: colours = HeatMap.blueGreenRed(); break;
-		case 2: colours = HeatMap.bluePinkRed(); break;
-		case 3: colours = HeatMap.blueOrangeYellow(); break;
-		case 4: colours = HeatMap.yellowOrangeBlue(); break;
-		case 5: colours = HeatMap.blackGreen(); break;
-		case 6: colours = HeatMap.blueGreenRed2(); break;
-		case 7: colours = HeatMap.whiteBlue(); break;
-		case 8: colours = HeatMap.hotMetal(); break;
-		case 9: colours = HeatMap.whitePurpleGrouped(); break;
-		case 10: colours = HeatMap.inverseGreyscale(); break;
-
+		case 0: colours = HeatMap.whitePurpleGrouped(); break;
+		case 1: colours = HeatMap.inverseGreyscale();break;
+		case 2: colours = HeatMap.hotMetal(); break;
+		case 3: colours = HeatMap.blueGreenRed(); break;
 		}
 
 		int readSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
@@ -83,7 +86,7 @@ public class BitmapGenerator {
 
 	public void start() {
 		/*
-		 * Start the two threads responsible fro bringing in audio samples and for processing them to generate bitmaps.
+		 * Start the two threads responsible for bringing in audio samples and for processing them to generate bitmaps.
 		 */
 
 		mic.startRecording();
@@ -333,7 +336,7 @@ public class BitmapGenerator {
 			//selection crosses a loop boundary
 			bitmapWidth = BITMAP_STORE_WIDTH_ADJ * ((WINDOW_LIMIT - startWindow) + endWindow + BITMAP_FREQ_AXIS_WIDTH);
 			bitmapHeight = BITMAP_STORE_HEIGHT_ADJ * (topFreq - bottomFreq);
-			
+
 			Log.d("BG", "Start window: "+startWindow+", end window: "+endWindow+", bottom freq as array index: "+bottomFreq+", top freq: "+topFreq);
 			Log.d("BG", "Bitmap width: "+bitmapWidth+" bitmap height: "+bitmapHeight);
 
@@ -342,7 +345,7 @@ public class BitmapGenerator {
 			retCanvas.drawColor(Color.BLACK);
 			int[] scaledBitmapWindow = new int[bitmapHeight];
 
-			
+
 			int h = 0;
 			for (int i = startWindow; i < WINDOW_LIMIT; i++) {
 				for (int j = 0; j < BITMAP_STORE_WIDTH_ADJ; j++) { //scaling
@@ -382,7 +385,7 @@ public class BitmapGenerator {
 		else {
 			bitmapWidth = BITMAP_STORE_WIDTH_ADJ * (endWindow - startWindow + BITMAP_FREQ_AXIS_WIDTH);
 			bitmapHeight = BITMAP_STORE_HEIGHT_ADJ * (topFreq - bottomFreq);
-			
+
 			Log.d("BG", "Start window: "+startWindow+", end window: "+endWindow+", bottom freq as array index: "+bottomFreq+", top freq: "+topFreq);
 			Log.d("BG", "Bitmap width: "+bitmapWidth+" bitmap height: "+bitmapHeight);
 
@@ -390,7 +393,7 @@ public class BitmapGenerator {
 			retCanvas = new Canvas(ret);
 			retCanvas.drawColor(Color.BLACK);
 			int[] scaledBitmapWindow = new int[bitmapHeight];
-			
+
 			int h = 0;
 			for (int i = startWindow; i < endWindow; i++) {
 				for (int j = 0; j < BITMAP_STORE_WIDTH_ADJ; j++) { //scaling
@@ -428,7 +431,7 @@ public class BitmapGenerator {
 		endWindow %= WINDOW_LIMIT;
 
 		short[] toReturn;
-		
+
 		if (endWindow < startWindow) {
 			//selection crosses a loop boundary
 			toReturn = new short[((WINDOW_LIMIT - startWindow) + endWindow)*SAMPLES_PER_WINDOW];
@@ -448,14 +451,30 @@ public class BitmapGenerator {
 		else {
 			toReturn = new short[(endWindow-startWindow)*SAMPLES_PER_WINDOW];
 			for (int i = startWindow; i < endWindow; i++) {
-		
-			for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
-				//Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
-				toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = Short.reverseBytes(audioWindows[i][j]); //must be little-endian for WAV
+
+				for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
+					//Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
+					toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = Short.reverseBytes(audioWindows[i][j]); //must be little-endian for WAV
+				}
 			}
 		}
-		}
 		return toReturn;
+	}
+
+	protected void updateColourMap() {
+		/*
+		 * Called when the colour map preference is changed.
+		 */
+		Log.d("BG","Preference changed!");
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		int newMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
+		Log.d("","NEW MAP: "+newMap);
+			switch(newMap) {
+			case 0: colours = HeatMap.whitePurpleGrouped(); break;
+			case 1: colours = HeatMap.inverseGreyscale();break;
+			case 2: colours = HeatMap.hotMetal(); break;
+			case 3: colours = HeatMap.blueGreenRed(); break;
+			}
 	}
 
 }

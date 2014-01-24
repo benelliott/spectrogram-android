@@ -11,5 +11,8 @@
     <string name="title_section1">Section 1</string>
     <string name="title_section2">Section 2</string>
     <string name="title_section3">Section 3</string>
+    <string name="pref_colourmap">Colour Map</string>
+    <string name="pref_colourmap_dialog">Colour map for spectrogram</string>
+    <string name="pref_colourmap_default">0</string>
 
 </resources>

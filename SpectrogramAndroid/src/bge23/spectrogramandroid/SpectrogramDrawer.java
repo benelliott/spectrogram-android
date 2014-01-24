@@ -37,7 +37,7 @@ class SpectrogramDrawer {
 		this.lssv = lssv;
 		this.width = lssv.getWidth();
 		this.height = lssv.getHeight();
-		bg = new BitmapGenerator(9);
+		bg = new BitmapGenerator(lssv.getContext());
 		bg.start();
 		SAMPLES_PER_WINDOW = BitmapGenerator.SAMPLES_PER_WINDOW;
 		VERTICAL_STRETCH = ((float)height)/((float)SAMPLES_PER_WINDOW); // stretch spectrogram to all of available height
@@ -290,7 +290,8 @@ class SpectrogramDrawer {
 		 * Returns the window number associated with the horizontal pixel 
 		 * offset (pixelOffset = 0 at the left side of the spectrogram)
 		 */
-		if (pixelOffset < 0 || pixelOffset > width) return 0;
+		if (pixelOffset < 0) return 0;
+		if (pixelOffset > width) pixelOffset = width;
 		float windowsOnScreen = ((float)width)/((float)HORIZONTAL_STRETCH); //number of windows that can fit on entire screen
 		if (canScroll) return (int)(leftmostWindow + ((pixelOffset/width) * windowsOnScreen)); //screen is filled with samples
 		int ret = (int)(windowsDrawn - (windowsOnScreen-(pixelOffset/width) * windowsOnScreen));
@@ -303,7 +304,8 @@ class SpectrogramDrawer {
 		 * Returns the time offset associated with the horizontal pixel 
 		 * offset (pixelOffset = 0 at the left side of the spectrogram)
 		 */
-		if (pixelOffset < 0 || pixelOffset > width) return 0;
+		if (pixelOffset < 0) return 0;
+		if (pixelOffset > width) return width;
 		int windowOffset = getWindowAtPixel(pixelOffset)-windowsDrawn;
 		float windowsOnScreen = ((float)width)/((float)HORIZONTAL_STRETCH); //number of windows that can fit on entire screen
 		return (getScreenFillTime()/windowsOnScreen)*(float)windowOffset; //time per window * windows difference
@@ -319,7 +321,8 @@ class SpectrogramDrawer {
 		 * Returns the frequency associated with the vertical pixel 
 		 * offset (pixelOffset = 0 at the top of the spectrogram)
 		 */
-		if (pixelOffset < 0 || pixelOffset > height) return 0;
+		if (pixelOffset < 0) return 0;
+		if (pixelOffset > height) pixelOffset = height;
 		return (int)(getMaxFrequency() - (pixelOffset/height)*getMaxFrequency());
 	}
 
@@ -386,6 +389,10 @@ class SpectrogramDrawer {
 	
 	public int getSampleRate() {
 		return bg.getSampleRate();
+	}
+	
+	protected BitmapGenerator getBitmapGenerator() {
+		return bg;
 	}
 	
 	

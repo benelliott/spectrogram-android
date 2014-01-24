@@ -118,6 +118,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	@Override
 	public void surfaceCreated(SurfaceHolder arg0) {
 		sd = new SpectrogramDrawer(this);
+		resumeButton.setVisibility(View.GONE);
 		updateLeftTimeText();
 		updateTopFreqText();
 		Log.d("","SURFACE CREATED");
@@ -372,5 +373,9 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
     		sba.store();
 			return null;
 		}
+    }
+    
+    protected void updateColourMap() {
+    	sd.getBitmapGenerator().updateColourMap();
     }
 }

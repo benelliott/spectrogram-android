@@ -1,5 +1,7 @@
 package bge23.spectrogramandroid;
 
+import android.util.Log;
+
 public class HeatMap {
 
 
