@@ -25,7 +25,7 @@ import com.google.android.gms.location.LocationClient;
 
 public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
-	private final String STORE_DIR_NAME = "Spectrogram captures";
+	public static final String STORE_DIR_NAME = "Spectrogram captures";
 	private Context context;
 	private SpectrogramDrawer sd;
 	private int mActivePointerId = MotionEvent.INVALID_POINTER_ID;

@@ -199,7 +199,7 @@ public class StoredBitmapAudio {
 	    return false;
 	}
 	
-	public File getAlbumStorageDir(String albumName) {
+	public static File getAlbumStorageDir(String albumName) {
 	    // Get the directory for the user's public pictures directory.
 	    File file = new File(Environment.getExternalStoragePublicDirectory(
 	            Environment.DIRECTORY_PICTURES), albumName);

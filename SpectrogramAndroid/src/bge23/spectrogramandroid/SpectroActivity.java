@@ -16,12 +16,8 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
@@ -198,15 +194,10 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			// below) with the page number as its lone argument.
 			Fragment fragment = null;
 			switch (position) {
-			case 0: fragment = new DummySectionFragment(); //TODO library fragment
+			case 0: fragment = new LibraryFragment();
 			break;
 			case 1: fragment = new SpectroFragment();
 			break;
-			}
-			if (position != 1) {
-				Bundle args = new Bundle();
-				args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, position);
-				fragment.setArguments(args);
 			}
 			return fragment;
 		}
@@ -230,30 +221,6 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		}
 
 	}
-
-	public static class DummySectionFragment extends Fragment {
-		/**
-		 * The fragment argument representing the section number for this
-		 * fragment.
-		 */
-		public static final String ARG_SECTION_NUMBER = "section_number";
-
-		public DummySectionFragment() {
-		}
-
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container,
-				Bundle savedInstanceState) {
-			View rootView = inflater.inflate(
-					R.layout.fragment_spectro_dummy,
-					container, false);
-			TextView dummyTextView = (TextView) rootView
-					.findViewById(R.id.section_label);
-			dummyTextView.setText("TODO");
-			return rootView;
-		}
-	}
-
 	/*
 	 * Called by Location Services if the attempt to
 	 * Location Services fails.
