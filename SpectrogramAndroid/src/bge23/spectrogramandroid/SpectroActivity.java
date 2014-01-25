@@ -112,6 +112,13 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		lc.disconnect();
 		super.onStop();
 	}
+	
+	@Override
+	protected void onPause() {
+		super.onPause();
+		lssv.pauseScrolling(); //stop samples coming in and eating battery
+	//TODO stop scrolling completely - release mic?
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
