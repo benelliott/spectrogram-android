@@ -18,6 +18,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,6 +46,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private TextView selectRectTextView;
 	private String filename;
 	private LocationClient lc;
+	private AlertDialog loadingAlert; //used to force user to wait for capture
 
 
 	//left, right, top and bottom edge locations for the select-area rectangle:
@@ -93,6 +95,12 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				updateSelectRectText();
 			}
 		};
+		
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+		builder.setTitle("Capture in progress...");
+		final ProgressBar pb = new ProgressBar(context);
+		builder.setView(pb);
+		loadingAlert = builder.create();
 	}
 
 	public void setResumeButton(Button resumeButton) {
@@ -359,11 +367,15 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
         @Override
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
-            Toast.makeText(context, "Capture completed!", Toast.LENGTH_SHORT).show();        }
+            Toast.makeText(context, "Capture completed!", Toast.LENGTH_SHORT).show();
+            loadingAlert.dismiss();
+            }
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            Toast.makeText(context, "Capture in progress...", Toast.LENGTH_LONG).show();
+            
+
+    		loadingAlert.show();
         }
 		@Override
 		protected Void doInBackground(Void... arg0) {

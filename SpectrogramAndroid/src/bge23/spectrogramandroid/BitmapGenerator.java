@@ -136,7 +136,12 @@ public class BitmapGenerator {
 				}
 			}
 			Log.d("Audio thread","Audio window "+audioCurrentIndex+" added.");
-			//audioWindowsAdded++;
+		}
+		try {
+			Thread.currentThread().join();
+			//if running == false, join()
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -177,6 +182,13 @@ public class BitmapGenerator {
 				arraysLooped = true;
 			}
 
+		}
+		
+		try {
+			Thread.currentThread().join();
+			//if running == false, join()
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 
 	}
