@@ -1,105 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
-<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/fragment_record"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
-    android:columnCount="2" >
+    android:baselineAligned="false"
+    android:orientation="horizontal" >
 
-    <FrameLayout
-        android:layout_width="0dp"
-        android:layout_height="400dp"
-        android:layout_column="1"
-        android:layout_gravity="fill_horizontal"
-        android:layout_row="0" >
-        
-	    <bge23.spectrogramandroid.LiveSpectrogramSurfaceView
-	        android:id="@+id/lssv"
-	        android:layout_width="match_parent"
-	        android:layout_height="match_parent"
-	        android:layout_gravity="left|top"
-	         />
-	
-	    <ImageButton
-	        android:id="@+id/button_resume"
-	        android:layout_width="32dp"
-	        android:layout_height="32dp"
-	        android:layout_gravity="right|center_vertical"
-	        android:src="@+drawable/resume"
-	        android:background="@null"
-	        android:contentDescription="@string/resume_desc"
-	         />
-
-	    <TextView
-	        android:id="@+id/text_select_rect"
-	        android:layout_gravity="center|bottom"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:text="sr"
-	        android:textColor="#000000"
-	        android:textAppearance="?android:attr/textAppearanceSmall" />
-
-    </FrameLayout>
-
-    <TextView
-        android:id="@+id/freq_text_top"
-        android:layout_column="0"
-        android:layout_gravity="left|top"
-        android:layout_row="0"
-        android:text="top"
-        android:textColor="#FFFFFF"
-        android:textAppearance="?android:attr/textAppearanceSmall" />
-    <TextView
-        android:id="@+id/freq_text_bottom"
-        android:layout_column="0"
-        android:layout_gravity="left|bottom"
-        android:layout_row="0"
-        android:text="bot"
-        android:textColor="#FFFFFF"
-        android:textAppearance="?android:attr/textAppearanceSmall" />
-    
-    <TextView
-        android:id="@+id/time_text_left"
-        android:layout_column="1"
-        android:layout_gravity="left|top"
-        android:layout_row="1"
-        android:text="left"
-        android:textColor="#FFFFFF"
-        android:textAppearance="?android:attr/textAppearanceSmall" />
-    <TextView
-        android:id="@+id/time_text_right"
-        android:layout_column="1"
-        android:layout_gravity="right|top"
-        android:layout_row="1"
-        android:text="right"
-        android:textColor="#FFFFFF"
-        android:textAppearance="?android:attr/textAppearanceSmall" />
-    
     <RelativeLayout
-        android:layout_height="wrap_content"
-        android:layout_column="0"
-        android:layout_gravity="fill_horizontal"
-        android:layout_row="2"
-        android:layout_columnSpan="2"
-         >
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="fill_horizontal" >
 
-       	<Button
-       	    android:id="@+id/selection_confirm"
-       	    android:layout_width="wrap_content"
-       	    android:layout_height="wrap_content"
-       	    android:layout_alignParentLeft="true"
-       	    android:layout_alignParentTop="true"
-       	    android:text="Capture" />
+        <TextView
+            android:id="@+id/freq_text_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:text="top"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textColor="#FFFFFF" />
 
-       	<Button
-       	    android:id="@+id/selection_cancel"
-       	    android:layout_width="wrap_content"
-       	    android:layout_height="wrap_content"
-       	    android:layout_alignParentRight="true"
-       	    android:layout_alignParentTop="true"
-       	    android:text="Cancel" />
-        
+        <TextView
+            android:id="@+id/freq_text_bottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:text="bot"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textColor="#FFFFFF" />
     </RelativeLayout>
 
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical" >
 
-</GridLayout>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="fill_horizontal"
+            android:layout_weight="1" >
+
+            <bge23.spectrogramandroid.LiveSpectrogramSurfaceView
+                android:id="@+id/lssv"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <ImageButton
+                android:id="@+id/button_resume"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:background="@null"
+                android:contentDescription="@string/resume_desc"
+                android:src="@+drawable/resume" />
+
+            <LinearLayout
+                android:id="@+id/capture_button_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentTop="true"
+                android:orientation="horizontal" >
+
+                <Button
+                    android:id="@+id/selection_confirm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Capture" />
+
+                <Button
+                    android:id="@+id/selection_cancel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentTop="true"
+                    android:text="Cancel" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/text_select_rect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:background="#88444444"
+                android:text="sr"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="#FFFFFF" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill_horizontal" >
+
+            <TextView
+                android:id="@+id/time_text_left"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:text="left"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/time_text_right"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:text="right"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:textColor="#FFFFFF" />
+        </RelativeLayout>
+    </LinearLayout>
+
+</LinearLayout>

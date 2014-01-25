@@ -19,12 +19,15 @@
 	        android:layout_gravity="left|top"
 	         />
 	
-	    <Button
+	    <ImageButton
 	        android:id="@+id/button_resume"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
+	        android:layout_width="32dp"
+	        android:layout_height="32dp"
 	        android:layout_gravity="right|center_vertical"
-	        android:text="Resume" />
+	        android:src="@+drawable/resume"
+	        android:background="@null"
+	        android:contentDescription="@string/resume_desc"
+	         />
 
 	    <TextView
 	        android:id="@+id/text_select_rect"

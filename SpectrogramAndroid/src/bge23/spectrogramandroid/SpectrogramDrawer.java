@@ -14,7 +14,7 @@ class SpectrogramDrawer {
 	private final int HORIZONTAL_STRETCH = 2;
 	private final float VERTICAL_STRETCH;
 	private final int SAMPLES_PER_WINDOW;
-	private int SELECT_RECT_COLOUR = Color.argb(127, 255, 255, 255);
+	private int SELECT_RECT_COLOUR = Color.argb(127, 127, 127, 127);
 	private int SCROLL_SHADOW_INV_SPREAD = 8; //decrease for a larger shadow
 	private final ReentrantLock scrollingLock = new ReentrantLock(false);
 	private BitmapGenerator bg;

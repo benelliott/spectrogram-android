@@ -3,6 +3,7 @@ package bge23.spectrogramandroid;
 import java.io.File;
 import java.util.ArrayList;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -39,6 +40,11 @@ public class LibraryFragment extends Fragment {
 		});
 		return rootView;
 	}
+	
+	private void viewImage(String filename) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		
+	}
 
 
 	private void populateFilesList() {
@@ -46,7 +52,11 @@ public class LibraryFragment extends Fragment {
 		imageFiles = new ArrayList<String>();
 		File[] directoryContents = directory.listFiles();
 		for (int i = 0; i < directoryContents.length; i++) {
-			if (directoryContents[i].getName().endsWith(IMAGE_SUFFIX)) imageFiles.add(directoryContents[i].getName());
+			String name = directoryContents[i].getName();
+			if (name.endsWith(IMAGE_SUFFIX)) {
+				name = name.substring(0, name.length() - IMAGE_SUFFIX.length());
+				imageFiles.add(name);
+			}
 		}
 	}
 

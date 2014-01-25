@@ -9,6 +9,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class SpectroFragment extends Fragment {
@@ -24,6 +25,7 @@ public class SpectroFragment extends Fragment {
 	private TextView topFreqTextView;
 	private TextView selectRectTextView;
 
+	private LinearLayout captureButtonContainer;
 
 	public SpectroFragment() {
 	}
@@ -94,12 +96,19 @@ public class SpectroFragment extends Fragment {
 		});
 		selectionCancelButton.setEnabled(false);
 		
+		
 		leftTimeTextView = (TextView)rootView.findViewById(R.id.time_text_left);
 		rightTimeTextView = (TextView)rootView.findViewById(R.id.time_text_right);
 		bottomFreqTextView = (TextView)rootView.findViewById(R.id.freq_text_bottom);
 		topFreqTextView = (TextView)rootView.findViewById(R.id.freq_text_top);
 		selectRectTextView = (TextView)rootView.findViewById(R.id.text_select_rect);
 		selectRectTextView.setVisibility(View.GONE);
+		
+		//TODO
+		captureButtonContainer = (LinearLayout)rootView.findViewById(R.id.capture_button_container);
+		lssv.setCaptureButtonContainer(captureButtonContainer);
+		captureButtonContainer.setVisibility(View.GONE);
+
 
 
 		bottomFreqTextView.setText("0 kHz");
