@@ -15,6 +15,7 @@ class SpectrogramDrawer {
 	private final float VERTICAL_STRETCH;
 	private final int SAMPLES_PER_WINDOW;
 	private int SELECT_RECT_COLOUR = Color.argb(127, 255, 255, 255);
+	private int SCROLL_SHADOW_INV_SPREAD = 8; //decrease for a larger shadow
 	private final ReentrantLock scrollingLock = new ReentrantLock(false);
 	private BitmapGenerator bg;
 	private LiveSpectrogramSurfaceView lssv;
@@ -24,6 +25,8 @@ class SpectrogramDrawer {
 	private Canvas bufferCanvas;
 	private Bitmap buffer2; //need to use this when shifting to the left because of a bug in Android, see http://stackoverflow.com/questions/6115695/android-canvas-gives-garbage-when-shifting-a-bitmap
 	private Canvas buffer2Canvas;
+	private Bitmap leftShadow;
+	private Bitmap rightShadow;
 	private int width;
 	private int height;
 	private int windowsDrawn;
@@ -31,6 +34,7 @@ class SpectrogramDrawer {
 	private boolean canScroll = false;
 	private int leftmostBitmapAvailable;
 	private int rightmostBitmapAvailable;
+
 
 
 	public SpectrogramDrawer(LiveSpectrogramSurfaceView lssv) {
@@ -52,6 +56,7 @@ class SpectrogramDrawer {
 				scroll();
 			}
 		};
+		generateScrollShadow();
 		clearCanvas();
 		scrollingThread.start();
 	}
@@ -108,14 +113,21 @@ class SpectrogramDrawer {
 			offset /= HORIZONTAL_STRETCH; //convert from pixel offset to window offset 
 
 			Log.d("Scrolling","Offset: "+offset);
-
+			boolean drawLeftShadow = true;
+			boolean drawRightShadow = true;
 			if (offset > BitmapGenerator.WINDOW_LIMIT/2) offset = BitmapGenerator.WINDOW_LIMIT/2;
 			if (offset < -BitmapGenerator.WINDOW_LIMIT/2) offset = -BitmapGenerator.WINDOW_LIMIT/2;
 			int leftmostWindowAsIndex = leftmostWindow % BitmapGenerator.WINDOW_LIMIT;
 			int rightmostWindow = leftmostWindow + width/HORIZONTAL_STRETCH;
 			int rightmostWindowAsIndex = rightmostWindow % BitmapGenerator.WINDOW_LIMIT;
-			if (leftmostWindow - offset < 0) offset = leftmostWindow;
-			if (rightmostWindow - offset > windowsDrawn) offset = windowsDrawn - rightmostWindow;
+			if (leftmostWindow - offset < 0) {
+				offset = leftmostWindow;
+				drawLeftShadow = false; //don't draw the left shadow as the left limit has been rached
+			}
+			if (rightmostWindow - offset > windowsDrawn) {
+				offset = windowsDrawn - rightmostWindow;
+				drawRightShadow = false;
+			}
 			if (offset > 0) { //slide leftwards
 				if (leftmostWindowAsIndex != leftmostBitmapAvailable) {
 				buffer2Canvas.drawBitmap(buffer, HORIZONTAL_STRETCH
@@ -145,6 +157,8 @@ class SpectrogramDrawer {
 			try {
 				synchronized (sh) {
 					displayCanvas.drawBitmap(buffer, 0, 0, null); //draw buffer to display
+					if (drawLeftShadow) displayCanvas.drawBitmap(leftShadow, 0,  0, null); //draw scrolling shadow bitmaps on top
+					if (drawRightShadow) displayCanvas.drawBitmap(rightShadow, 0,  0, null);
 				}
 			} finally {
 				if (displayCanvas != null) {
@@ -245,6 +259,7 @@ class SpectrogramDrawer {
 		bg.stop(); //stop taking in and processing new samples since this will overwrite those you are trying to scroll through
 		leftmostBitmapAvailable = bg.getLeftmostBitmapAvailable();
 		rightmostBitmapAvailable = bg.getRightmostBitmapAvailable();
+		quickSlide(0); //force the shadows to be drawn immediately
 	}
 
 	public Bitmap scaleBitmap(Bitmap bitmapToScale, float newWidth, float newHeight) {
@@ -393,6 +408,21 @@ class SpectrogramDrawer {
 	
 	protected BitmapGenerator getBitmapGenerator() {
 		return bg;
+	}
+	
+	private void generateScrollShadow() {
+		leftShadow = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		Canvas leftShadowCanvas = new Canvas(leftShadow);
+		rightShadow = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		Canvas rightShadowCanvas = new Canvas(rightShadow);
+		Paint paint = new Paint();
+		paint.setColor(Color.BLACK);
+		int spread = width/SCROLL_SHADOW_INV_SPREAD;
+		for (int i = 0; i < spread; i++) {
+			paint.setAlpha((spread - i)*255/spread); // becomes more transparent closer to centre
+			leftShadowCanvas.drawRect(i, 0, i+1, height, paint); //draw left shadow
+			rightShadowCanvas.drawRect(width-i-1,0,width-i,height,paint); //draw right shadow
+		}
 	}
 	
 	
