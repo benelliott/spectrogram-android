@@ -290,7 +290,7 @@ class SpectrogramDrawer {
 		 * Returns the window number associated with the horizontal pixel 
 		 * offset (pixelOffset = 0 at the left side of the spectrogram)
 		 */
-		if (pixelOffset < 0) return 0;
+		if (pixelOffset < 0) return leftmostWindow;
 		if (pixelOffset > width) pixelOffset = width;
 		float windowsOnScreen = ((float)width)/((float)HORIZONTAL_STRETCH); //number of windows that can fit on entire screen
 		if (canScroll) return (int)(leftmostWindow + ((pixelOffset/width) * windowsOnScreen)); //screen is filled with samples
@@ -304,7 +304,7 @@ class SpectrogramDrawer {
 		 * Returns the time offset associated with the horizontal pixel 
 		 * offset (pixelOffset = 0 at the left side of the spectrogram)
 		 */
-		if (pixelOffset < 0) return 0;
+		if (pixelOffset < 0) return getScreenFillTime();
 		if (pixelOffset > width) return width;
 		int windowOffset = getWindowAtPixel(pixelOffset)-windowsDrawn;
 		float windowsOnScreen = ((float)width)/((float)HORIZONTAL_STRETCH); //number of windows that can fit on entire screen
