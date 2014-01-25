@@ -8,12 +8,13 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 public class SpectroFragment extends Fragment {
 	
 	private View rootView;
-	private Button resumeButton;
+	private ImageButton resumeButton;
 	private Button selectionConfirmButton;
 	private Button selectionCancelButton;
 	private LiveSpectrogramSurfaceView lssv;
@@ -66,7 +67,7 @@ public class SpectroFragment extends Fragment {
 		lssv = (LiveSpectrogramSurfaceView)rootView.findViewById(R.id.lssv);
 		((SpectroActivity)getActivity()).setLiveSpectrogramSurfaceView(lssv); //pass the LSSV back to the activity for location updates
 		
-		resumeButton = (Button)rootView.findViewById(R.id.button_resume);
+		resumeButton = (ImageButton)rootView.findViewById(R.id.button_resume);
 		resumeButton.setOnClickListener(new OnClickListener() {
 			@Override 
 			public void onClick(View arg0) {

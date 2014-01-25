@@ -8,7 +8,7 @@
 <ListPreference
         android:key="pref_colourmap"
         android:title="@string/pref_colourmap"
-        android:dialogTitle="@string/pref_colourmap_dialog"
+        android:dialogTitle="@string/pref_colourmap"
         android:entries="@array/pref_colourmap_entries"
         android:entryValues="@array/pref_colourmap_values"
         android:defaultValue="@string/pref_colourmap_default" />

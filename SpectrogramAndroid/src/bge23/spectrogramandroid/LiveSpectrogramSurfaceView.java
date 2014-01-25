@@ -18,6 +18,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -38,7 +39,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private float centreY;
 	private boolean selecting = false; //true if user has entered the selection state
 	private int selectedCorner; // indicates which corner is being dragged; 0 is top-left, 1 is top-right, 2 is bottom-left, 3 is bottom-right
-	private Button resumeButton;
+	private ImageButton resumeButton;
 	private Button selectionConfirmButton;
 	private Button selectionCancelButton;
 	private TextView leftTimeTextView;
@@ -103,7 +104,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		loadingAlert = builder.create();
 	}
 
-	public void setResumeButton(Button resumeButton) {
+	public void setResumeButton(ImageButton resumeButton) {
 		this.resumeButton = resumeButton;
 	}
 

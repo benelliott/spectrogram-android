@@ -60,7 +60,8 @@ int drawable ic_plusone_medium_off_client 0x7f020019
 int drawable ic_plusone_small_off_client 0x7f02001a
 int drawable ic_plusone_standard_off_client 0x7f02001b
 int drawable ic_plusone_tall_off_client 0x7f02001c
-int drawable spectro_icon 0x7f02001d
+int drawable resume 0x7f02001d
+int drawable spectro_icon 0x7f02001e
 int id action_settings 0x7f060011
 int id button_resume 0x7f060009
 int id fragment_record 0x7f060007
@@ -115,17 +116,16 @@ int string common_google_play_services_update_title 0x7f070007
 int string common_signin_button_text 0x7f070012
 int string common_signin_button_text_long 0x7f070013
 int string library 0x7f07001d
-int string pref_colourmap 0x7f070024
-int string pref_colourmap_default 0x7f070026
-int string pref_colourmap_dialog 0x7f070025
-int string pref_portrait 0x7f070027
+int string pref_colourmap 0x7f070023
+int string pref_colourmap_default 0x7f070024
+int string pref_portrait 0x7f070025
 int string record 0x7f07001e
+int string resume_desc 0x7f070026
 int string settings 0x7f07001f
-int string title_activity_main_actidfgdfgvdfgdfity 0x7f070020
 int string title_activity_spectro 0x7f07001c
-int string title_section1 0x7f070021
-int string title_section2 0x7f070022
-int string title_section3 0x7f070023
+int string title_section1 0x7f070020
+int string title_section2 0x7f070021
+int string title_section3 0x7f070022
 int style AppBaseTheme 0x7f0b0000
 int style AppTheme 0x7f0b0001
 int[] styleable AdsAttrs { 0x7f010000, 0x7f010001, 0x7f010002 }

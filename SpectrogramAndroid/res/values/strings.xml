@@ -7,13 +7,12 @@
     <string name="library">Library</string>
     <string name="record">Record</string>
     <string name="settings">Settings</string>
-    <string name="title_activity_main_actidfgdfgvdfgdfity">MainActidfgdfgvdfgdfity</string>
     <string name="title_section1">Section 1</string>
     <string name="title_section2">Section 2</string>
     <string name="title_section3">Section 3</string>
-    <string name="pref_colourmap">Colour Map</string>
-    <string name="pref_colourmap_dialog">Colour map for spectrogram</string>
+    <string name="pref_colourmap">Spectrogram colour map</string>
     <string name="pref_colourmap_default">0</string>
     <string name="pref_portrait">Lock portrait orientation</string>
+    <string name="resume_desc">Resume scrolling</string>
 
 </resources>

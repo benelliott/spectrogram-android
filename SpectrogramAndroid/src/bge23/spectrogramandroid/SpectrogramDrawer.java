@@ -112,7 +112,6 @@ class SpectrogramDrawer {
 			//stop new windows from coming in immediately
 			offset /= HORIZONTAL_STRETCH; //convert from pixel offset to window offset 
 
-			Log.d("Scrolling","Offset: "+offset);
 			boolean drawLeftShadow = true;
 			boolean drawRightShadow = true;
 			if (offset > BitmapGenerator.WINDOW_LIMIT/2) offset = BitmapGenerator.WINDOW_LIMIT/2;
@@ -120,12 +119,12 @@ class SpectrogramDrawer {
 			int leftmostWindowAsIndex = leftmostWindow % BitmapGenerator.WINDOW_LIMIT;
 			int rightmostWindow = leftmostWindow + width/HORIZONTAL_STRETCH;
 			int rightmostWindowAsIndex = rightmostWindow % BitmapGenerator.WINDOW_LIMIT;
-			if (leftmostWindow - offset < 0) {
+			if (leftmostWindow - offset <= 0) {
 				offset = leftmostWindow;
-				drawLeftShadow = false; //don't draw the left shadow as the left limit has been rached
+				drawLeftShadow = false; //don't draw the left shadow as the left limit has been reached
 			}
-			if (rightmostWindow - offset > windowsDrawn) {
-				offset = windowsDrawn - rightmostWindow;
+			if (rightmostWindow - offset >= windowsDrawn) {
+				offset = -(windowsDrawn - rightmostWindow);
 				drawRightShadow = false;
 			}
 			if (offset > 0) { //slide leftwards
@@ -141,8 +140,8 @@ class SpectrogramDrawer {
 				leftmostWindow -= offset;
 				}
 			} else { //slide rightwards
-				if (rightmostWindowAsIndex != rightmostBitmapAvailable) {
 				offset = -offset; //change to positive for convenience
+				if (rightmostWindowAsIndex != rightmostBitmapAvailable) {
 				bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH
 						* offset, 0, null);//shift current display to the left by HORIZONTAL_STRETCH*offset pixels
 				for (int i = 0; i < offset; i++) {
@@ -421,7 +420,7 @@ class SpectrogramDrawer {
 		for (int i = 0; i < spread; i++) {
 			paint.setAlpha((spread - i)*255/spread); // becomes more transparent closer to centre
 			leftShadowCanvas.drawRect(i, 0, i+1, height, paint); //draw left shadow
-			rightShadowCanvas.drawRect(width-i-1,0,width-i,height,paint); //draw right shadow
+			rightShadowCanvas.drawRect(width-i-1, 0, width-i, height, paint); //draw right shadow
 		}
 	}
 	
