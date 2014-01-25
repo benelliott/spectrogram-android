@@ -27,8 +27,9 @@ public class BitmapGenerator {
 	public static final int SAMPLE_RATE = 16000; //options are 11025, 22050, 16000, 44100
 	public static final int SAMPLES_PER_WINDOW = 300; //usually around 300
 	public static final String PREF_COLOURMAP_KEY = "pref_colourmap";
+	protected static final String PREF_CONTRAST_KEY = "pref_contrast";
 
-	private final float CONTRAST = 2.0f;
+
 
 	//number of windows that can be held in the arrays at once before older ones are deleted. Time this represents is
 	// WINDOW_LIMIT*SAMPLES_PER_WINDOW/SAMPLE_RATE, e.g. 10000*300/16000 = 187.5 seconds.
@@ -46,6 +47,8 @@ public class BitmapGenerator {
 
 	private short[][] audioWindows = new short[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
 	private int[][] bitmapWindows = new int[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
+
+	private float contrast = 2.0f;
 
 	private boolean running = false;
 	private double maxAmplitude = 1; //max amplitude seen so far
@@ -79,6 +82,9 @@ public class BitmapGenerator {
 		case 2: colours = HeatMap.hotMetal(); break;
 		case 3: colours = HeatMap.blueGreenRed(); break;
 		}
+		
+		float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
+		if (newContrast != Float.MAX_VALUE) contrast = newContrast * 3.0f + 1.0f; //slider value must be between 0 and 1, so multiply by 3 and add 1
 
 		int readSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 		mic = new AudioRecord(MediaRecorder.AudioSource.MIC,SAMPLE_RATE,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, readSize*2);
@@ -231,7 +237,7 @@ public class BitmapGenerator {
 			maxAmplitude = d;
 			return 255;
 		}
-		return (int)(255*Math.pow((Math.log1p(d)/Math.log1p(maxAmplitude)),CONTRAST));
+		return (int)(255*Math.pow((Math.log1p(d)/Math.log1p(maxAmplitude)),contrast));
 	}
 
 	private void hammingWindow(double[] samples) {
@@ -477,7 +483,6 @@ public class BitmapGenerator {
 		/*
 		 * Called when the colour map preference is changed.
 		 */
-		Log.d("BG","Preference changed!");
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 		int newMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
 		Log.d("","NEW MAP: "+newMap);
@@ -487,6 +492,16 @@ public class BitmapGenerator {
 			case 2: colours = HeatMap.hotMetal(); break;
 			case 3: colours = HeatMap.blueGreenRed(); break;
 			}
+	}
+	
+	protected void updateContrast() {
+		/*
+		 * Called when the colour map preference is changed.
+		 */
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
+		if (newContrast != Float.MAX_VALUE) contrast = newContrast * 3.0f + 1.0f; //slider value must be between 0 and 1, so multiply by 3 and add 1
+		Log.d("","NEW CONTRAST: "+newContrast);
 	}
 
 }

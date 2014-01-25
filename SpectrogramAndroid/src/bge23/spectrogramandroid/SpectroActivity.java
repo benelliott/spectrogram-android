@@ -155,6 +155,11 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 				if (portrait) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 				else setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
 			}
+			
+			else if (key.equals(BitmapGenerator.PREF_CONTRAST_KEY)) {
+				lssv.updateContrast();
+			}
+			
 		}
 	}
 

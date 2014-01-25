@@ -391,4 +391,8 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
     protected void updateColourMap() {
     	sd.getBitmapGenerator().updateColourMap();
     }
+    
+    protected void updateContrast() {
+    	sd.getBitmapGenerator().updateContrast();
+    }
 }

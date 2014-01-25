@@ -14,5 +14,9 @@
     <string name="pref_colourmap_default">0</string>
     <string name="pref_portrait">Lock portrait orientation</string>
     <string name="resume_desc">Resume scrolling</string>
+    <string name="pref_contrast">Sprectrogram constrast</string>
+    <string name="pref_contrast_summary">Adjust spectrogram contrast/sensitivity</string>
+    <string name="pref_contrast_default">0.5</string>
+    <string name="pref_contrast_message">Slide to the right to increase contrast and reduce amplitude sensitivity, or to the left to increase sensitivity but reduce contrast.</string>
 
 </resources>

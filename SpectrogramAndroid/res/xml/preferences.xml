@@ -12,5 +12,11 @@
         android:entries="@array/pref_colourmap_entries"
         android:entryValues="@array/pref_colourmap_values"
         android:defaultValue="@string/pref_colourmap_default" />
-    
+
+<net.jayschwa.android.preference.SliderPreference
+    	android:key="pref_contrast"
+    	android:title="@string/pref_contrast"
+    	android:summary="@string/pref_contrast_summary"
+    	android:defaultValue="@string/pref_contrast_default"
+    	android:dialogMessage="@string/pref_contrast_message" />
 </PreferenceScreen>
