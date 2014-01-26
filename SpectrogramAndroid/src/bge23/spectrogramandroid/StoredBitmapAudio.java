@@ -239,5 +239,4 @@ public class StoredBitmapAudio {
 
         return degrees+"/1,"+minutes+"/1,"+seconds+"/1000";
     }
-
 }
