@@ -2,6 +2,8 @@ package bge23.spectrogramandroid;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import android.app.AlertDialog;
@@ -38,14 +40,13 @@ public class LibraryFragment extends Fragment {
 		View rootView = inflater.inflate(
 				R.layout.fragment_library,
 				container, false);
-		directory = StoredBitmapAudio.getAlbumStorageDir(LiveSpectrogramSurfaceView.STORE_DIR_NAME);
+		directory = AudioBitmapConverter.getAlbumStorageDir(LiveSpectrogramSurfaceView.STORE_DIR_NAME);
 		directory.mkdirs();
 		fileListView = (ListView) rootView.findViewById(R.id.listview_file_library);
 		populateFilesList();
 		fileListView.setAdapter(new ArrayAdapter<String>(getActivity(),android.R.layout.simple_list_item_1, imageFiles));
 		fileListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-				//TODO
 				Log.d("lib","item clicked!");
 				viewImage(imageFiles.get(position));
 			}
@@ -53,7 +54,7 @@ public class LibraryFragment extends Fragment {
 		return rootView;
 	}
 	
-	private void viewImage(String filename) {
+	private void viewImage(final String filename) {
 		final String filepath = directory.getAbsolutePath()+"/"+filename;
 		
 		//play wav file simultaneously with showing spectrogram:
@@ -94,6 +95,12 @@ public class LibraryFragment extends Fragment {
 		        startActivity(intent);
 		    }
 		});
+		builder.setNeutralButton("Send to server", new DialogInterface.OnClickListener() { 
+		    @Override
+		    public void onClick(DialogInterface dialog, int which) {
+		    	new ServerSendTask().execute(directory.getAbsolutePath(), filename);
+		    }
+		});
 		builder.setNegativeButton("Dismiss", new DialogInterface.OnClickListener() { 
 		    @Override
 		    public void onClick(DialogInterface dialog, int which) {
@@ -107,9 +114,6 @@ public class LibraryFragment extends Fragment {
 		
 		
 	}
-	
-
-
 	private void populateFilesList() {
 		//inspired by http://stackoverflow.com/questions/5800981/how-to-display-files-on-the-sd-card-in-a-listview
 		imageFiles = new ArrayList<String>();
@@ -156,6 +160,5 @@ public class LibraryFragment extends Fragment {
 		 if (direction.equals("W") || direction.equals("S")) total = -total;
 		 Log.d("","TOTAL: "+total);
 		 return total;
-	    }
-
+	 }
 }

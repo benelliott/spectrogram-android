@@ -1,5 +1,10 @@
 package bge23.spectrogramandroid;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 
 import android.app.AlertDialog;
@@ -7,6 +12,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
 import android.text.InputType;
@@ -350,7 +356,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 
 	public void confirmSelection() {
-		
 		//create and display an AlertDialog requesting a filename
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle("What did you hear?");
@@ -411,18 +416,19 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            
-
     		loadingAlert.show();
         }
 		@Override
 		protected Void doInBackground(Void... arg0) {
         	Bitmap bitmapToStore = sd.getBitmapToStore(selectRectL, selectRectR, selectRectT, selectRectB);
     		short[] audioToStore = sd.getAudioToStore(selectRectL, selectRectR, selectRectT, selectRectB);
-    		StoredBitmapAudio sba = new StoredBitmapAudio(filename,STORE_DIR_NAME,bitmapToStore,audioToStore,lc.getLastLocation());
-    		sba.store();
+    		AudioBitmapConverter abc = new AudioBitmapConverter(filename, STORE_DIR_NAME, bitmapToStore,audioToStore,lc.getLastLocation());
+    		abc.writeCBAToFile(filename, STORE_DIR_NAME);
+    		
+    		//populateFilesList();
 			return null;
 		}
+		
     }
     
     protected void updateColourMap() {
@@ -432,4 +438,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
     protected void updateContrast() {
     	sd.getBitmapGenerator().updateContrast();
     }
+    
+
 }
