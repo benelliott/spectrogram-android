@@ -1,5 +1,6 @@
-package bge23.spectrogramandroid;
+package uk.co.benjaminelliott.spectrogramandroid;
 
+import bge23.spectrogramandroid.R;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;

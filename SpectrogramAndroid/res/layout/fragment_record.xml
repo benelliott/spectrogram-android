@@ -42,7 +42,7 @@
             android:layout_gravity="fill_horizontal"
             android:layout_weight="1" >
 
-            <bge23.spectrogramandroid.LiveSpectrogramSurfaceView
+            <uk.co.benjaminelliott.spectrogramandroid.LiveSpectrogramSurfaceView
                 android:id="@+id/lssv"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />

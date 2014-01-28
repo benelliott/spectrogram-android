@@ -1,4 +1,4 @@
-package bge23.spectrogramandroid;
+package uk.co.benjaminelliott.spectrogramandroid;
 
 import java.util.Locale;
 
@@ -18,6 +18,7 @@ import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import bge23.spectrogramandroid.R;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
@@ -47,6 +48,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private final String PREF_PORTRAIT_KEY = "pref_portrait";
 	private LocationClient lc;
 	private LiveSpectrogramSurfaceView lssv;
+	private LibraryFragment library;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -198,7 +200,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 			// below) with the page number as its lone argument.
 			Fragment fragment = null;
 			switch (position) {
-			case 0: fragment = new LibraryFragment();
+			case 0: library = new LibraryFragment(); fragment = library;
 			break;
 			case 1: fragment = new SpectroFragment();
 			break;
@@ -289,5 +291,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 	protected void setLiveSpectrogramSurfaceView(LiveSpectrogramSurfaceView lssv) {
 		this.lssv = lssv;
+		if (library != null) lssv.setLibraryFragment(library);
+		
 	}
 }
