@@ -1,4 +1,4 @@
-package bge23.spectrogramandroid;
+package uk.co.benjaminelliott.spectrogramandroid;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,10 +1,5 @@
-package bge23.spectrogramandroid;
+package uk.co.benjaminelliott.spectrogramandroid;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 
 import android.app.AlertDialog;
@@ -12,8 +7,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
-import android.os.Environment;
 import android.os.Handler;
+import android.os.Message;
 import android.support.v4.view.MotionEventCompat;
 import android.text.InputType;
 import android.util.AttributeSet;
@@ -61,7 +56,8 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private String filename;
 	private LocationClient lc;
 	private AlertDialog loadingAlert; //used to force user to wait for capture
-
+	private LibraryFragment library;
+	private Handler viewUpdateHandler;
 
 	//left, right, top and bottom edge locations for the select-area rectangle:
 	private float selectRectL = 0;
@@ -117,6 +113,17 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		final ProgressBar pb = new ProgressBar(context);
 		builder.setView(pb);
 		loadingAlert = builder.create();
+		viewUpdateHandler = new Handler() {
+	        @Override
+	        public void handleMessage(Message msg) {
+	        	Log.d("","Handling message");
+	            library.updateFilesList();
+	        }
+	};
+	}
+	
+	public void setLibraryFragment(LibraryFragment library) {
+		this.library = library;
 	}
 
 	public void setResumeButton(ImageButton resumeButton) {
@@ -412,6 +419,8 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
             super.onPostExecute(result);
             Toast.makeText(context, "Capture completed!", Toast.LENGTH_SHORT).show();
             loadingAlert.dismiss();
+    		viewUpdateHandler.sendMessage(new Message()); //update library contents (must be done from UI thread)
+    		Log.d("","Message sent!");
             }
         @Override
         protected void onPreExecute() {
@@ -424,8 +433,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
     		short[] audioToStore = sd.getAudioToStore(selectRectL, selectRectR, selectRectT, selectRectB);
     		AudioBitmapConverter abc = new AudioBitmapConverter(filename, STORE_DIR_NAME, bitmapToStore,audioToStore,lc.getLastLocation());
     		abc.writeCBAToFile(filename, STORE_DIR_NAME);
-    		
-    		//populateFilesList();
 			return null;
 		}
 		

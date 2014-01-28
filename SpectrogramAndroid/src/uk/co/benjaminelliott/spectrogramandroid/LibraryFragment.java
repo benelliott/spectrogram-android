@@ -1,4 +1,4 @@
-package bge23.spectrogramandroid;
+package uk.co.benjaminelliott.spectrogramandroid;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
+import bge23.spectrogramandroid.R;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -125,6 +126,13 @@ public class LibraryFragment extends Fragment {
 				imageFiles.add(name);
 			}
 		}
+	}
+	
+	public void updateFilesList() {
+		populateFilesList();
+		((ArrayAdapter<String>) fileListView.getAdapter()).notifyDataSetChanged();
+		Log.d("","Files updated");
+		//TODO Y U NO WORK
 	}
 	
 

@@ -1,4 +1,4 @@
-package bge23.spectrogramandroid;
+package uk.co.benjaminelliott.spectrogramandroid;
 
 import java.io.Serializable;
 
@@ -29,7 +29,7 @@ public class CapturedBitmapAudio implements Serializable {
 
 	}
 	
-	public int[] getBitmapPixels() {
+	public int[] getBitmapARGBPixels() {
 		int[] ret = new int[bitmapAsIntArray.length];
 		for (int i = 0; i < bitmapAsIntArray.length; i++) {
 			ret[i] = bitmapAsIntArray[i];
@@ -43,6 +43,14 @@ public class CapturedBitmapAudio implements Serializable {
 	
 	public int getBitmapHeight() {
 		return bitmapHeight;
+	}
+	
+	public int[] getBitmapRGBPixels() {
+		int[] ret = new int[bitmapAsIntArray.length];
+		for (int i = 0; i < bitmapAsIntArray.length; i++) {
+			ret[i] = 0xffffff&bitmapAsIntArray[i];
+		}
+		return ret;
 	}
 
 }

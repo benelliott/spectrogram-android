@@ -1,4 +1,4 @@
-package bge23.spectrogramandroid;
+package uk.co.benjaminelliott.spectrogramandroid;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -16,7 +16,7 @@ import android.util.Log;
 public class ServerSendTask extends AsyncTask<String, Void, Void> {
 	
 	private final String HOST = "172.21.124.64";
-	private final int PORT = 5355;
+	private final int PORT = 5353;
 	private CapturedBitmapAudio cba;
 	
 	protected void sendCBAToServer() {
