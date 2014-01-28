@@ -8,7 +8,7 @@ public class CapturedBitmapAudio implements Serializable {
 	 * and unpackaged at the other end by the server.
 	 */
 
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 2L;
 	protected static final String EXTENSION = ".cba";
 	private final double decLatitude;
 	private final double decLongitude;

@@ -5,8 +5,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-
-import bge23.spectrogramandroid.R;
+import uk.co.benjaminelliott.spectrogramandroid.R;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
