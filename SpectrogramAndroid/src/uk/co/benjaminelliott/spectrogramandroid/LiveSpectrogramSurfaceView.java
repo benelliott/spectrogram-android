@@ -1,14 +1,20 @@
 package uk.co.benjaminelliott.spectrogramandroid;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.media.MediaPlayer;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.support.v4.view.MotionEventCompat;
 import android.text.InputType;
 import android.util.AttributeSet;
@@ -31,6 +37,8 @@ import com.google.android.gms.location.LocationClient;
 public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
 	public static final String STORE_DIR_NAME = "Spectrogram captures";
+	public static final String PREF_AUDIO_KEY = "pref_user_test_audio";
+
 	private Context context;
 	private SpectrogramDrawer sd;
 	private int mActivePointerId = MotionEvent.INVALID_POINTER_ID;
@@ -45,7 +53,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private ImageButton resumeButton;
 	private Button selectionConfirmButton;
 	private Button selectionCancelButton;
-	
+
 	private LinearLayout captureButtonContainer;
 	private int minContainerHeight = 120;
 	private int minContainerWidth = 120;
@@ -58,6 +66,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private AlertDialog loadingAlert; //used to force user to wait for capture
 	private LibraryFragment library;
 	private Handler viewUpdateHandler;
+	private MediaPlayer player;
 
 	//left, right, top and bottom edge locations for the select-area rectangle:
 	private float selectRectL = 0;
@@ -107,21 +116,21 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				updateSelectRectText();
 			}
 		};
-		
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle("Capture in progress...");
 		final ProgressBar pb = new ProgressBar(context);
 		builder.setView(pb);
 		loadingAlert = builder.create();
 		viewUpdateHandler = new Handler() {
-	        @Override
-	        public void handleMessage(Message msg) {
-	        	Log.d("","Handling message");
-	            library.updateFilesList();
-	        }
-	};
+			@Override
+			public void handleMessage(Message msg) {
+				Log.d("","Handling message");
+				library.updateFilesList();
+			}
+		};
 	}
-	
+
 	public void setLibraryFragment(LibraryFragment library) {
 		this.library = library;
 	}
@@ -129,7 +138,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	public void setResumeButton(ImageButton resumeButton) {
 		this.resumeButton = resumeButton;
 	}
-	
+
 	public void setCaptureButtonContainer(LinearLayout captureButtonContainer) {
 		this.captureButtonContainer = captureButtonContainer;
 
@@ -153,16 +162,39 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 	@Override
 	public void surfaceCreated(SurfaceHolder arg0) {
-		sd = new SpectrogramDrawer(this);
-		resumeButton.setVisibility(View.GONE);
-		updateLeftTimeText();
-		updateTopFreqText();
-		Log.d("","SURFACE CREATED");
+
+		try {
+			//play wav file simultaneously with showing spectrogram:
+			player = new MediaPlayer();
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+			String filepath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+prefs.getString(PREF_AUDIO_KEY, "NULL");
+			File f = new File(filepath);
+			f.setReadable(true,false); //need to set permissions so that it can be read by the media player
+			player.setDataSource(filepath);
+			Log.d("","About to play file "+filepath);
+			player.prepare();
+			sd = new SpectrogramDrawer(this);
+			player.start();
+			resumeButton.setVisibility(View.GONE);
+			updateLeftTimeText();
+			updateTopFreqText();
+			Log.d("","SURFACE CREATED");
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (IllegalStateException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder arg0) {
 		//TODO: worry about interrupted something something something
+		player.stop();
 	}
 
 	@Override
@@ -173,7 +205,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		final int action = MotionEventCompat.getActionMasked(ev); 
 
 		switch (action) {
-		
+
 		case MotionEvent.ACTION_DOWN: { //finger pressed on screen
 			if (!selecting) {
 				pauseScrolling();
@@ -312,7 +344,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		updateSelectRectText();
 		moveCaptureButtonContainer();
 	}
-	
+
 	protected void moveCaptureButtonContainer() {
 		RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)captureButtonContainer.getLayoutParams();
 		int lowestDimension = (selectRectT < selectRectB) ? (int)selectRectB : (int)selectRectT;
@@ -357,7 +389,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
 		topFreqTextView.setText(bd.floatValue()+" kHz");
 	}
-	
+
 	private void updateSelectRectText() {
 		selectRectTextView.setText("t0: "+sd.getTimeFromStartAtPixel(selectRectL)+" t1: "+sd.getTimeFromStartAtPixel(selectRectR)+" f0: "+sd.getFrequencyAtPixel(selectRectT)+" f1: "+sd.getFrequencyAtPixel(selectRectB));
 	}
@@ -369,23 +401,23 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		final EditText inputText = new EditText(context);
 		inputText.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_CAP_SENTENCES|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		builder.setView(inputText);
-		
+
 		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
-		    @Override
-		    public void onClick(DialogInterface dialog, int which) {
-		        filename = inputText.getText().toString();
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				filename = inputText.getText().toString();
 				new AsyncCaptureTask(context).execute(); //execute the capture operations
-		    }
+			}
 		});
 		builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-		    @Override
-		    public void onClick(DialogInterface dialog, int which) {
-		        dialog.cancel();
-		    }
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				dialog.cancel();
+			}
 		});
 		builder.show();
 	}
-	
+
 	public void cancelSelection() {
 		sd.hideSelectRect();
 		captureButtonContainer.setVisibility(View.GONE);
@@ -396,55 +428,55 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 	public void setSelectionConfirmButton(Button selectionConfirmButton) {
 		this.selectionConfirmButton = selectionConfirmButton;
-		
+
 	}
 
 	public void setSelectionCancelButton(Button selectionCancelButton) {
 		this.selectionCancelButton = selectionCancelButton;
-		
+
 	}
-		
+
 	protected void setLocationClient(LocationClient lc) {
 		this.lc = lc;
 	}
-	
-    private class AsyncCaptureTask extends AsyncTask<Void, Void, Void> {
-        private Context context;
-        public AsyncCaptureTask(Context context) {
-            this.context = context;
-        }
 
-        @Override
-        protected void onPostExecute(Void result) {
-            super.onPostExecute(result);
-            Toast.makeText(context, "Capture completed!", Toast.LENGTH_SHORT).show();
-            loadingAlert.dismiss();
-    		viewUpdateHandler.sendMessage(new Message()); //update library contents (must be done from UI thread)
-    		Log.d("","Message sent!");
-            }
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-    		loadingAlert.show();
-        }
+	private class AsyncCaptureTask extends AsyncTask<Void, Void, Void> {
+		private Context context;
+		public AsyncCaptureTask(Context context) {
+			this.context = context;
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+			super.onPostExecute(result);
+			Toast.makeText(context, "Capture completed!", Toast.LENGTH_SHORT).show();
+			loadingAlert.dismiss();
+			viewUpdateHandler.sendMessage(new Message()); //update library contents (must be done from UI thread)
+			Log.d("","Message sent!");
+		}
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			loadingAlert.show();
+		}
 		@Override
 		protected Void doInBackground(Void... arg0) {
-        	Bitmap bitmapToStore = sd.getBitmapToStore(selectRectL, selectRectR, selectRectT, selectRectB);
-    		short[] audioToStore = sd.getAudioToStore(selectRectL, selectRectR, selectRectT, selectRectB);
-    		AudioBitmapConverter abc = new AudioBitmapConverter(filename, STORE_DIR_NAME, bitmapToStore,audioToStore,lc.getLastLocation());
-    		abc.writeCBAToFile(filename, STORE_DIR_NAME);
+			Bitmap bitmapToStore = sd.getBitmapToStore(selectRectL, selectRectR, selectRectT, selectRectB);
+			short[] audioToStore = sd.getAudioToStore(selectRectL, selectRectR, selectRectT, selectRectB);
+			AudioBitmapConverter abc = new AudioBitmapConverter(filename, STORE_DIR_NAME, bitmapToStore,audioToStore,lc.getLastLocation());
+			abc.writeCBAToFile(filename, STORE_DIR_NAME);
 			return null;
 		}
-		
-    }
-    
-    protected void updateColourMap() {
-    	sd.getBitmapGenerator().updateColourMap();
-    }
-    
-    protected void updateContrast() {
-    	sd.getBitmapGenerator().updateContrast();
-    }
-    
+
+	}
+
+	protected void updateColourMap() {
+		sd.getBitmapGenerator().updateColourMap();
+	}
+
+	protected void updateContrast() {
+		sd.getBitmapGenerator().updateContrast();
+	}
+
 
 }

@@ -1,5 +1,7 @@
 int array pref_colourmap_entries 0x7f090000
 int array pref_colourmap_values 0x7f090001
+int array pref_user_test_audio_entries 0x7f090002
+int array pref_user_test_audio_values 0x7f090003
 int attr adSize 0x7f010000
 int attr adSizes 0x7f010001
 int attr adUnitId 0x7f010002
@@ -128,6 +130,8 @@ int string pref_contrast_default 0x7f070026
 int string pref_contrast_message 0x7f070027
 int string pref_contrast_summary 0x7f070025
 int string pref_portrait 0x7f070022
+int string pref_user_test_audio 0x7f070028
+int string pref_user_test_audio_default 0x7f070029
 int string record 0x7f07001e
 int string resume_desc 0x7f070023
 int string settings 0x7f07001f
