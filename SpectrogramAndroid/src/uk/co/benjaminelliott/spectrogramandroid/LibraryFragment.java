@@ -2,10 +2,8 @@ package uk.co.benjaminelliott.spectrogramandroid;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
-import uk.co.benjaminelliott.spectrogramandroid.R;
+
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -27,11 +25,12 @@ import android.widget.ListView;
 
 public class LibraryFragment extends Fragment {
 
-	private ArrayList<String> imageFiles;
+	private ArrayList<String> imageFiles = new ArrayList<String>();
 	private File directory;
 	private String IMAGE_SUFFIX = ".jpg";
 	private String AUDIO_SUFFIX = ".wav";
 	private ListView fileListView;
+	private ArrayAdapter<String> adapter;
 	private MediaPlayer player;
 
 	@Override
@@ -44,13 +43,15 @@ public class LibraryFragment extends Fragment {
 		directory.mkdirs();
 		fileListView = (ListView) rootView.findViewById(R.id.listview_file_library);
 		populateFilesList();
-		fileListView.setAdapter(new ArrayAdapter<String>(getActivity(),android.R.layout.simple_list_item_1, imageFiles));
+		adapter = new ArrayAdapter<String>(getActivity(),android.R.layout.simple_list_item_1, imageFiles);
+		fileListView.setAdapter(adapter);
 		fileListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
 				Log.d("lib","item clicked!");
 				viewImage(imageFiles.get(position));
 			}
 		});
+		Log.d("LIBRARY","View created");
 		return rootView;
 	}
 	
@@ -115,23 +116,20 @@ public class LibraryFragment extends Fragment {
 		
 	}
 	private void populateFilesList() {
-		//inspired by http://stackoverflow.com/questions/5800981/how-to-display-files-on-the-sd-card-in-a-listview
-		imageFiles = new ArrayList<String>();
 		File[] directoryContents = directory.listFiles();
 		for (int i = 0; i < directoryContents.length; i++) {
 			String name = directoryContents[i].getName();
 			if (name.endsWith(IMAGE_SUFFIX)) {
 				name = name.substring(0, name.length() - IMAGE_SUFFIX.length());
-				imageFiles.add(name);
+				if (!imageFiles.contains(name)) imageFiles.add(name);
 			}
 		}
 	}
 	
 	public void updateFilesList() {
 		populateFilesList();
-		((ArrayAdapter<String>) fileListView.getAdapter()).notifyDataSetChanged();
-		Log.d("","Files updated");
-		//TODO Y U NO WORK
+		//adapter.notifyDataSetChanged();
+		Log.d("LIBRARY","Files updated");
 	}
 	
 

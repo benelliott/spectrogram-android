@@ -1,6 +1,5 @@
 package uk.co.benjaminelliott.spectrogramandroid;
 
-import android.util.Log;
 
 public class HeatMap {
 

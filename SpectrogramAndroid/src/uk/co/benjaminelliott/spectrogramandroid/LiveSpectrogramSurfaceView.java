@@ -2,6 +2,7 @@ package uk.co.benjaminelliott.spectrogramandroid;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 
 import android.app.AlertDialog;
@@ -65,7 +66,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private LocationClient lc;
 	private AlertDialog loadingAlert; //used to force user to wait for capture
 	private LibraryFragment library;
-	private Handler viewUpdateHandler;
+	private ViewUpdateHandler vuh; //used to send message to library pane to update file list
 	private MediaPlayer player;
 	private String audioFilepath; // filepath for user test audio TODO remove
 
@@ -126,13 +127,23 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		final ProgressBar pb = new ProgressBar(context);
 		builder.setView(pb);
 		loadingAlert = builder.create();
-		viewUpdateHandler = new Handler() {
-			@Override
-			public void handleMessage(Message msg) {
-				Log.d("","Handling message");
-				library.updateFilesList();
-			}
-		};
+		vuh = new ViewUpdateHandler(this);
+	}
+	
+	private static class ViewUpdateHandler extends Handler {
+	    private final WeakReference<LiveSpectrogramSurfaceView> wr; 
+
+	    ViewUpdateHandler(LiveSpectrogramSurfaceView lssv) { 
+	    	wr = new WeakReference<LiveSpectrogramSurfaceView>(lssv); 
+	    } 
+		@Override
+		public void handleMessage(Message msg) {
+			wr.get().updateLibraryFiles();
+		}
+	};
+	
+	public void updateLibraryFiles() {
+		library.updateFilesList();
 	}
 
 	public void setLibraryFragment(LibraryFragment library) {
@@ -170,7 +181,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		try {
 			//play wav file simultaneously with showing spectrogram:
 			player = new MediaPlayer();
-			
 			File f = new File(audioFilepath);
 			f.setReadable(true,false); //need to set permissions so that it can be read by the media player
 			player.setDataSource(audioFilepath);
@@ -202,6 +212,9 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		player = null;
 		sd.stop();
 		Log.d("LSSV","SURFACE DESTROYED");
+		if (selecting) {
+			cancelSelection();
+		}
 	}
 
 	@Override
@@ -458,7 +471,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			super.onPostExecute(result);
 			Toast.makeText(context, "Capture completed!", Toast.LENGTH_SHORT).show();
 			loadingAlert.dismiss();
-			viewUpdateHandler.sendMessage(new Message()); //update library contents (must be done from UI thread)
+			vuh.sendMessage(new Message()); //update library contents (must be done from UI thread)
 			Log.d("","Message sent!");
 		}
 		@Override

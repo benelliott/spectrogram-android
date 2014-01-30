@@ -8,15 +8,15 @@ public class CapturedBitmapAudio implements Serializable {
 	 * and unpackaged at the other end by the server.
 	 */
 
-	private static final long serialVersionUID = 2L;
-	protected static final String EXTENSION = ".cba";
-	private final double decLatitude;
-	private final double decLongitude;
-	private final String filename;
-	private final int[] bitmapAsIntArray;
-	private final byte[] wavAsByteArray;
-	private final int bitmapWidth;
-	private final int bitmapHeight;
+	public static final long serialVersionUID = 2L;
+	public static final String EXTENSION = ".cba";
+	public final double decLatitude;
+	public final double decLongitude;
+	public final String filename;
+	public final int[] bitmapAsIntArray;
+	public final byte[] wavAsByteArray;
+	public final int bitmapWidth;
+	public final int bitmapHeight;
 	
 	CapturedBitmapAudio(String filename, int[] bitmapAsIntArray, byte[] wavAsByteArray, int bitmapWidth, int bitmapHeight, double decLatitude, double decLongitude) {
 		this.filename = filename;
@@ -27,22 +27,6 @@ public class CapturedBitmapAudio implements Serializable {
 		this.bitmapWidth = bitmapWidth;
 		this.bitmapHeight = bitmapHeight;
 
-	}
-	
-	public int[] getBitmapARGBPixels() {
-		int[] ret = new int[bitmapAsIntArray.length];
-		for (int i = 0; i < bitmapAsIntArray.length; i++) {
-			ret[i] = bitmapAsIntArray[i];
-		}
-		return ret;
-	}
-	
-	public int getBitmapWidth() {
-		return bitmapWidth;
-	}
-	
-	public int getBitmapHeight() {
-		return bitmapHeight;
 	}
 	
 	public int[] getBitmapRGBPixels() {
