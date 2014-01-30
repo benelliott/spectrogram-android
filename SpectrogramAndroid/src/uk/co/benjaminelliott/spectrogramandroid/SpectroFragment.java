@@ -1,7 +1,5 @@
 package uk.co.benjaminelliott.spectrogramandroid;
 
-import uk.co.benjaminelliott.spectrogramandroid.R;
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -52,19 +50,6 @@ public class SpectroFragment extends Fragment {
 		super.onResume();
 		lssv.resumeFromPause();
 	}
-	
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        LayoutInflater inflater = LayoutInflater.from(getActivity());
-        populateViewForOrientation(inflater, (ViewGroup) getView());
-    }
-    
-    private void populateViewForOrientation(LayoutInflater inflater, ViewGroup viewGroup) {
-        viewGroup.removeAllViewsInLayout();
-        View subview = inflater.inflate(R.layout.fragment_record, viewGroup);
-        init();
-    }
     
     private void init() {
 		lssv = (LiveSpectrogramSurfaceView)rootView.findViewById(R.id.lssv);
