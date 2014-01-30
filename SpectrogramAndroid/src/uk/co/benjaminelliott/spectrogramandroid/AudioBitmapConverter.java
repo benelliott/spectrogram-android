@@ -29,7 +29,7 @@ public class AudioBitmapConverter  {
 		this.directory = directory;
 		decLatitude = loc.getLatitude();
 		decLongitude = loc.getLongitude();
-		wavAudio = audioAsByteArray(rawWavAudio);
+		wavAudio = wavAsByteArray(rawWavAudio);
 		writeBitmapToJPEG(bitmap);
 		geotagJPEG();
 		writeAudioToWAV();
@@ -42,15 +42,18 @@ public class AudioBitmapConverter  {
 	
 	
 	
-	private byte[] audioAsByteArray(short[] rawWavAudio) {
+	private byte[] wavAsByteArray(short[] rawWavAudio) {
 		byte[] ret = new byte[44+rawWavAudio.length*2];
-		byte[] header = getWAVHeader(BitmapGenerator.SAMPLE_RATE,16,rawWavAudio.length*2,1);
+		byte[] header = getWAVHeader(BitmapGenerator.SAMPLE_RATE, 16, rawWavAudio.length*2, 1);
 		for (int i = 0; i < 44; i++) {
 			ret[i] = header[i];
 		}
-		for (int i = 0; i < rawWavAudio.length; i+=2) {
-			ret[44+i] =  (byte)((rawWavAudio[i] >> 8) & 0xff);
-			ret[44+i+1] = (byte)(rawWavAudio[i] & 0xff);
+		int j = 44;
+		for (int i = 0; i < rawWavAudio.length; i++) {
+			ret[j] =  (byte)((rawWavAudio[i] >> 8) & 0xff);
+			j++;
+			ret[j] = (byte)(rawWavAudio[i] & 0xff);
+			j++;
 		}
 		return ret;
 	}
@@ -66,7 +69,7 @@ public class AudioBitmapConverter  {
 				String fnm = filename;
 				File bmpFile = new File(dir.getAbsolutePath()+"/"+fnm+".jpg");
 				while (bmpFile.exists()) {
-					fnm = fnm+suffix;
+					fnm = fnm+"_"+suffix;
 					bmpFile = new File(dir.getAbsolutePath()+"/"+fnm+".jpg");
 				}
 				fos = new FileOutputStream(bmpFile);
@@ -114,7 +117,7 @@ public class AudioBitmapConverter  {
 				File audioFile = new File(dir.getAbsolutePath()+"/"+fnm+".wav");
 				int suffix = 0;
 				while (audioFile.exists()) {
-					fnm = fnm+suffix;
+					fnm = fnm+"_"+suffix;
 					audioFile = new File(dir.getAbsolutePath()+"/"+fnm+".wav");
 					suffix++;
 				}

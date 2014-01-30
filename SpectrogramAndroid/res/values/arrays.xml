@@ -13,20 +13,20 @@
         <item >3</item>
     </string-array>
     <string-array name="pref_user_test_audio_entries">
-        <item >Bush warbler</item>
-        <item >Tundra swan</item>
-        <item >Pohnpei lory</item>
-        <item >Wattled honeyeater</item>
-        <item >Pheasant</item>
-        <item >Grouse</item>
+        <item >Sample 1</item>
+        <item >Sample 2</item>
+        <item >Sample 3</item>
+        <item >Sample 4</item>
+        <item >Sample 5</item>
+        <item >Sample 6</item>
     </string-array>
     <string-array name="pref_user_test_audio_values">
         <item >bushwarbler.wav</item>
-        <item >tundraswan.wav</item>
-        <item >pohnpeilory.wav</item>
-        <item >wattledhoneyeater.wav</item>
-        <item >pheasant.wav</item>
         <item >grouse.wav</item>
+        <item >pheasant.wav</item>
+        <item >pohnpeilory.wav</item>
+        <item >tundraswan.wav</item>
+        <item >wattledhoneyeater.wav</item>
     </string-array>
     
 </resources>
