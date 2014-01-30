@@ -34,6 +34,7 @@ class SpectrogramDrawer {
 	private boolean canScroll = false;
 	private int leftmostBitmapAvailable;
 	private int rightmostBitmapAvailable;
+	private boolean running = true;
 
 
 
@@ -53,9 +54,11 @@ class SpectrogramDrawer {
 		scrollingThread = new Thread() {
 			@Override
 			public void run() {
-				scroll();
+				while (running) scroll();
+				Log.d("SCROLL","Running false, scroll terminating");
 			}
 		};
+		scrollingThread.setName("Scrolling thread");
 		generateScrollShadow();
 		clearCanvas();
 		scrollingThread.start();
@@ -83,7 +86,6 @@ class SpectrogramDrawer {
 		/*
 		 * Repeatedly run the quickProgress() method to look for new bitmaps, then draw the result to the display
 		 */
-		while (true) {
 			if (scrollingLock.tryLock()) {
 				SurfaceHolder sh = lssv.getHolder();
 				displayCanvas = sh.lockCanvas(null);
@@ -98,8 +100,6 @@ class SpectrogramDrawer {
 					}
 					scrollingLock.unlock();
 				}
-			}
-
 		}
 	}
 
@@ -422,6 +422,18 @@ class SpectrogramDrawer {
 			leftShadowCanvas.drawRect(i, 0, i+1, height, paint); //draw left shadow
 			rightShadowCanvas.drawRect(width-i-1, 0, width-i, height, paint); //draw right shadow
 		}
+	}
+
+	public void stop() {
+		running = false;
+		bg.stop();
+		Log.d("SD","STOPPED");
+	}
+	
+	public void start() {
+		running = true;
+		scrollingThread.start();
+		bg.start();
 	}
 	
 	

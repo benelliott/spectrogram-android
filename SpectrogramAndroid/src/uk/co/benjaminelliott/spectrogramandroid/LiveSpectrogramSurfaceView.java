@@ -67,6 +67,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private LibraryFragment library;
 	private Handler viewUpdateHandler;
 	private MediaPlayer player;
+	private String audioFilepath; // filepath for user test audio TODO remove
 
 	//left, right, top and bottom edge locations for the select-area rectangle:
 	private float selectRectL = 0;
@@ -116,6 +117,9 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				updateSelectRectText();
 			}
 		};
+		
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		audioFilepath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+prefs.getString(PREF_AUDIO_KEY, "NULL");
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle("Capture in progress...");
@@ -157,7 +161,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)  {
-		//TODO
+		Log.d("LSSV","SURFACE CHANGED");
 	}
 
 	@Override
@@ -166,12 +170,11 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		try {
 			//play wav file simultaneously with showing spectrogram:
 			player = new MediaPlayer();
-			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-			String filepath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+prefs.getString(PREF_AUDIO_KEY, "NULL");
-			File f = new File(filepath);
+			
+			File f = new File(audioFilepath);
 			f.setReadable(true,false); //need to set permissions so that it can be read by the media player
-			player.setDataSource(filepath);
-			Log.d("","About to play file "+filepath);
+			player.setDataSource(audioFilepath);
+			Log.d("","About to play file "+audioFilepath);
 			player.prepare();
 			sd = new SpectrogramDrawer(this);
 			player.start();
@@ -195,6 +198,10 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	public void surfaceDestroyed(SurfaceHolder arg0) {
 		//TODO: worry about interrupted something something something
 		player.stop();
+		player.release();
+		player = null;
+		sd.stop();
+		Log.d("LSSV","SURFACE DESTROYED");
 	}
 
 	@Override

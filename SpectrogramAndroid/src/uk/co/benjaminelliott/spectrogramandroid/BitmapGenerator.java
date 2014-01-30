@@ -63,9 +63,8 @@ public class BitmapGenerator {
 	private Semaphore bitmapsReady = new Semaphore(0);
 	private int lastBitmapRequested = 0; //keeps track of the most recently requested bitmap window
 	private double[] previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
-
 	private Context context;
-	
+
 	public BitmapGenerator(Context context) {
 		//bitmapsReady = new Semaphore(0);
 		this.context = context;
@@ -75,14 +74,14 @@ public class BitmapGenerator {
 		String colMapString = prefs.getString(PREF_COLOURMAP_KEY, "NULL");
 		int colourMap = 0;
 		if (!colMapString.equals("NULL")) colourMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
-		
+
 		switch (colourMap) {
 		case 0: colours = HeatMap.whitePurpleGrouped(); break;
 		case 1: colours = HeatMap.inverseGreyscale();break;
 		case 2: colours = HeatMap.hotMetal(); break;
 		case 3: colours = HeatMap.blueGreenRed(); break;
 		}
-		
+
 		float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
 		if (newContrast != Float.MAX_VALUE) contrast = newContrast * 3.0f + 1.0f; //slider value must be between 0 and 1, so multiply by 3 and add 1
 
@@ -97,17 +96,22 @@ public class BitmapGenerator {
 
 		mic.startRecording();
 		running = true;
-		audioThread = new Thread(new Runnable(){
+		audioThread = new Thread(){
 			public void run() {
-				fillAudioList();
+				while (running) fillAudioList();
+				Log.d("AUDIO","Running false, audio terminating");
 			}
-		});
+		};
+		audioThread.setName("Audio thread");
 
-		bitmapThread = new Thread(new Runnable(){
+		bitmapThread = new Thread(){
+			@Override
 			public void run() {
-				fillBitmapList();
+				while (running) fillBitmapList();
+				Log.d("BITMAP","Running false, bitmap terminating");
 			}
-		});
+		};
+		bitmapThread.setName("Bitmap thread");
 
 		audioThread.start();
 
@@ -118,8 +122,13 @@ public class BitmapGenerator {
 		/*
 		 * Stop bringing in and processing audio samples.
 		 */
-		running = false;
-		mic.stop();
+		if (running) {
+			running = false;
+			mic.stop();
+			mic.release();
+			mic = null;
+			Log.d("BG", "STOPPED");
+		}
 	}
 
 	public void fillAudioList() {
@@ -127,28 +136,20 @@ public class BitmapGenerator {
 		 * When audio data becomes available from the microphone, store it in a 2D array so
 		 * that it remains available in case the user chooses to replay certain sections.
 		 */
-		while (running) {
-			//note no locking on audioWindows - dangerous but crucial for responsiveness
-			readUntilFull(audioWindows[audioCurrentIndex], 0, SAMPLES_PER_WINDOW); //request samplesPerWindow shorts be written into the next free microphone buffer
+		//note no locking on audioWindows - dangerous but crucial for responsiveness
+		readUntilFull(audioWindows[audioCurrentIndex], 0, SAMPLES_PER_WINDOW); //request samplesPerWindow shorts be written into the next free microphone buffer
 
-			synchronized(audioCurrentIndex) { //don't modify this when it might be being read by another thread
-				audioCurrentIndex++;
-				audioReady.release();
-				if (audioCurrentIndex == audioWindows.length) {
-					//if entire array has been filled, loop and start filling from the start
-					Log.d("", "Adding audio item "+audioCurrentIndex+" and array full, so looping back to start");
-					audioCurrentIndex = 0;
+		synchronized(audioCurrentIndex) { //don't modify this when it might be being read by another thread
+			audioCurrentIndex++;
+			audioReady.release();
+			if (audioCurrentIndex == audioWindows.length) {
+				//if entire array has been filled, loop and start filling from the start
+				Log.d("", "Adding audio item "+audioCurrentIndex+" and array full, so looping back to start");
+				audioCurrentIndex = 0;
 
-				}
 			}
-			Log.d("Audio thread","Audio window "+audioCurrentIndex+" added.");
 		}
-		try {
-			Thread.currentThread().join();
-			//if running == false, join()
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		//Log.d("Audio thread","Audio window "+audioCurrentIndex+" added.");
 	}
 
 	private void readUntilFull(short[] buffer, int offset, int spaceRemaining) {
@@ -170,33 +171,21 @@ public class BitmapGenerator {
 		 * When some audio data is ready, perform the short-time Fourier transform on it and 
 		 * then convert the results to a bitmap, which is then stored in a 2D array, ready to be displayed.
 		 */
-		while (running) {
-
-			try {
-				audioReady.acquire();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			processAudioWindow(audioWindows[bitmapCurrentIndex], bitmapWindows[bitmapCurrentIndex]);
-			Log.d("Bitmap thread","Audio window "+(bitmapCurrentIndex)+ " processed. ");
-
-			bitmapCurrentIndex++;
-			bitmapsReady.release();
-
-			if (bitmapCurrentIndex == bitmapWindows.length) {
-				bitmapCurrentIndex = 0;
-				arraysLooped = true;
-			}
-
-		}
-		
 		try {
-			Thread.currentThread().join();
-			//if running == false, join()
+			audioReady.acquire();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		processAudioWindow(audioWindows[bitmapCurrentIndex], bitmapWindows[bitmapCurrentIndex]);
+		//Log.d("Bitmap thread","Audio window "+(bitmapCurrentIndex)+ " processed. ");
 
+		bitmapCurrentIndex++;
+		bitmapsReady.release();
+
+		if (bitmapCurrentIndex == bitmapWindows.length) {
+			bitmapCurrentIndex = 0;
+			arraysLooped = true;
+		}
 	}
 
 	private void processAudioWindow(short[] samples, int[] destArray) { //TODO prev and next
@@ -321,7 +310,7 @@ public class BitmapGenerator {
 			e.printStackTrace();
 		}
 		if (lastBitmapRequested == bitmapWindows.length) lastBitmapRequested = 0; //loop if necessary
-		Log.d("Spectro","Bitmap "+lastBitmapRequested+" requested");
+		//Log.d("Spectro","Bitmap "+lastBitmapRequested+" requested");
 		int[] ret = bitmapWindows[lastBitmapRequested];
 		lastBitmapRequested++;
 		return ret;
@@ -486,14 +475,14 @@ public class BitmapGenerator {
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 		int newMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
 		Log.d("","NEW MAP: "+newMap);
-			switch(newMap) {
-			case 0: colours = HeatMap.whitePurpleGrouped(); break;
-			case 1: colours = HeatMap.inverseGreyscale();break;
-			case 2: colours = HeatMap.hotMetal(); break;
-			case 3: colours = HeatMap.blueGreenRed(); break;
-			}
+		switch(newMap) {
+		case 0: colours = HeatMap.whitePurpleGrouped(); break;
+		case 1: colours = HeatMap.inverseGreyscale();break;
+		case 2: colours = HeatMap.hotMetal(); break;
+		case 3: colours = HeatMap.blueGreenRed(); break;
+		}
 	}
-	
+
 	protected void updateContrast() {
 		/*
 		 * Called when the colour map preference is changed.
