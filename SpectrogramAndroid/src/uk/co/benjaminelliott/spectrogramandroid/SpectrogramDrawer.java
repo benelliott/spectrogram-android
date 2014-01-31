@@ -288,7 +288,7 @@ class SpectrogramDrawer {
 		//no. windows on screen = width/HORIZONTAL_STRETCH,
 		//no. samples on screen = no. windows * samplesPerWindow
 		//time on screen = no. samples / samples per second [sample rate]
-		return ((float)width/(float)HORIZONTAL_STRETCH*(float)SAMPLES_PER_WINDOW)/(float)bg.getSampleRate();
+		return ((float)width/(float)HORIZONTAL_STRETCH*(float)SAMPLES_PER_WINDOW)/(float)BitmapGenerator.SAMPLE_RATE;
 	}
 
 	public float getMaxFrequency() {
@@ -296,7 +296,7 @@ class SpectrogramDrawer {
 		 * Returns the maximum frequency that can be displayed on the spectrogram, which, due
 		 * to the Nyquist limit, is half the sample rate.
 		 */
-		return 0.5f*bg.getSampleRate();
+		return 0.5f*BitmapGenerator.SAMPLE_RATE;
 	}
 	
 	protected int getWindowAtPixel(float pixelOffset) {
@@ -401,10 +401,6 @@ class SpectrogramDrawer {
 		return bg.getAudioChunk(startWindow, endWindow);
 	}
 	
-	public int getSampleRate() {
-		return bg.getSampleRate();
-	}
-	
 	protected BitmapGenerator getBitmapGenerator() {
 		return bg;
 	}
@@ -434,6 +430,7 @@ class SpectrogramDrawer {
 		running = true;
 		scrollingThread.start();
 		bg.start();
+		Log.d("SD","STARTED");
 	}
 	
 	

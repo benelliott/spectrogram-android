@@ -7,169 +7,53 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
-public class BitmapGenerator {
-
-	/*
-	 * Class which handles most of the 'clever stuff' behind the spectrogram display; taking in audio sample data
-	 * from the microphone and processing it to give a list of bitmaps (each representing one window of the audio),
-	 * ready to be displayed. Two threads are created: one to pull in data from the microphone ('audioThread') and 
-	 * another to convert this data into a bitmap as soon as it becomes available ('bitmapThread').
-	 */
-
-	public static final int SAMPLE_RATE = 16000; //options are 11025, 22050, 16000, 44100
-	public static final int SAMPLES_PER_WINDOW = 300; //usually around 300
-	public static final String PREF_COLOURMAP_KEY = "pref_colourmap";
-	protected static final String PREF_CONTRAST_KEY = "pref_contrast";
+public class BitmapGeneratorThread extends Thread {
+	private final String PREF_COLOURMAP_KEY = "pref_colourmap";
+	private final String PREF_CONTRAST_KEY = "pref_contrast";
+	
+	private final int BITMAP_STORE_WIDTH_ADJ = 2;
+	private final int BITMAP_STORE_HEIGHT_ADJ = 2;
+	private final int BITMAP_FREQ_AXIS_WIDTH = 30; //number of pixels (subject to width adjustment) to use to display frequency axis on stored bitmaps
 
 
-
-	//number of windows that can be held in the arrays at once before older ones are deleted. Time this represents is
-	// WINDOW_LIMIT*SAMPLES_PER_WINDOW/SAMPLE_RATE, e.g. 10000*300/16000 = 187.5 seconds.
-	protected static final int WINDOW_LIMIT = 1000; //usually around 10000 
-
-	//Storage for audio and bitmap windows is pre-allocated, and the quantity is determined by
-	// WINDOW_LIMIT*SAMPLES_PER_WINDOW*(bytes per int + bytes per double),
-	// e.g. 10000*300*(4+8) = 34MB
-
-
-	protected static final int BITMAP_STORE_WIDTH_ADJ = 2;
-	protected static final int BITMAP_STORE_HEIGHT_ADJ = 2;
-	protected static final int BITMAP_STORE_QUALITY = 90; //compression quality parameter for storage
-	protected static final int BITMAP_FREQ_AXIS_WIDTH = 30; //number of pixels (subject to width adjustment) to use to display frequency axis on stored bitmaps
-
-	private short[][] audioWindows = new short[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
-	private int[][] bitmapWindows = new int[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
-
-	private float contrast = 2.0f;
-
-	private boolean running = false;
-	private double maxAmplitude = 1; //max amplitude seen so far
-	private AudioRecord mic;
-	private Thread audioThread;
-	private Thread bitmapThread;
-	private int[] colours;
-	private Integer audioCurrentIndex = 0; //keep track of where in the audioWindows array we have most recently written to
-	private int bitmapCurrentIndex = 0;
-	private boolean arraysLooped = false; //true if we have filled the entire array and are now looping round, hence old values can be read from later in the array
-	private Semaphore audioReady = new Semaphore(0);
-	private Semaphore bitmapsReady = new Semaphore(0);
-	private int lastBitmapRequested = 0; //keeps track of the most recently requested bitmap window
-	private double[] previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
+	private final int SAMPLES_PER_WINDOW = AudioConfig.SAMPLES_PER_WINDOW;
+	private final int SAMPLE_RATE = AudioConfig.SAMPLE_RATE;
+	private final int WINDOW_LIMIT = AudioConfig.WINDOW_LIMIT;
+	
 	private Context context;
 
-	public BitmapGenerator(Context context) {
-		//bitmapsReady = new Semaphore(0);
-		this.context = context;
-		colours = new int[256];
+	private boolean running = true;
+	private short[][] audioWindows;
+	private int[][] bitmapWindows = new int[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
+	private int bitmapCurrentIndex = 0;
+	private boolean arraysLooped = false;
+	private Semaphore audioReady;
+	private Semaphore bitmapsReady = new Semaphore(0);
+	private int lastBitmapRequested = 0; //keeps track of the most recently requested bitmap window
+	private int[] colours;
+	private float contrast = 2.0f;
+	private double maxAmplitude = 1; //max amplitude seen so far
+	private double[] previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
 
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		String colMapString = prefs.getString(PREF_COLOURMAP_KEY, "NULL");
-		int colourMap = 0;
-		if (!colMapString.equals("NULL")) colourMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
 
-		switch (colourMap) {
-		case 0: colours = HeatMap.whitePurpleGrouped(); break;
-		case 1: colours = HeatMap.inverseGreyscale();break;
-		case 2: colours = HeatMap.hotMetal(); break;
-		case 3: colours = HeatMap.blueGreenRed(); break;
-		}
-
-		float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
-		if (newContrast != Float.MAX_VALUE) contrast = newContrast * 3.0f + 1.0f; //slider value must be between 0 and 1, so multiply by 3 and add 1
-
-		int readSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-		mic = new AudioRecord(MediaRecorder.AudioSource.MIC,SAMPLE_RATE,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, readSize*2);
+	
+	BitmapGeneratorThread(AudioAcquirerThread audioThread) {
+		super();
+		setName("Bitmap generator thread");
+		this.audioWindows = audioThread.audioWindows;
+		this.audioReady = audioThread.audioReady;
 	}
-
-	public void start() {
-		/*
-		 * Start the two threads responsible for bringing in audio samples and for processing them to generate bitmaps.
-		 */
-
-		mic.startRecording();
-		running = true;
-		audioThread = new Thread(){
-			public void run() {
-				while (running) fillAudioList();
-				Log.d("AUDIO","Running false, audio terminating");
-			}
-		};
-		audioThread.setName("Audio thread");
-
-		bitmapThread = new Thread(){
-			@Override
-			public void run() {
-				while (running) fillBitmapList();
-				Log.d("BITMAP","Running false, bitmap terminating");
-			}
-		};
-		bitmapThread.setName("Bitmap thread");
-
-		audioThread.start();
-
-		bitmapThread.start();
+	
+	@Override
+	public void run() {
+		while (running) fillBitmapList();
 	}
-
-	public void stop() {
-		/*
-		 * Stop bringing in and processing audio samples.
-		 */
-		if (running) {
-			running = false;
-			mic.stop();
-			mic.release();
-			while (audioThread.isAlive()) {
-				//TODO wait to die :/
-			}
-			mic = null;
-			Log.d("BG", "STOPPED");
-		}
-	}
-
-	public void fillAudioList() {
-		/*
-		 * When audio data becomes available from the microphone, store it in a 2D array so
-		 * that it remains available in case the user chooses to replay certain sections.
-		 */
-		//note no locking on audioWindows - dangerous but crucial for responsiveness
-		readUntilFull(audioWindows[audioCurrentIndex], 0, SAMPLES_PER_WINDOW); //request samplesPerWindow shorts be written into the next free microphone buffer
-
-		synchronized(audioCurrentIndex) { //don't modify this when it might be being read by another thread
-			audioCurrentIndex++;
-			audioReady.release();
-			if (audioCurrentIndex == audioWindows.length) {
-				//if entire array has been filled, loop and start filling from the start
-				Log.d("", "Adding audio item "+audioCurrentIndex+" and array full, so looping back to start");
-				audioCurrentIndex = 0;
-
-			}
-		}
-		//Log.d("Audio thread","Audio window "+audioCurrentIndex+" added.");
-	}
-
-	private void readUntilFull(short[] buffer, int offset, int spaceRemaining) {
-		/*
-		 * The 'read' method supplied by the AudioRecord class will not necessarily fill the destination
-		 * buffer with samples if there is not enough data available. This method always returns a full array by
-		 * repeatedly calling the 'read' method until there is no space left.
-		 */
-		int samplesRead;
-		while (spaceRemaining > 0) {
-			samplesRead = mic.read(buffer, offset, spaceRemaining);
-			spaceRemaining -= samplesRead;
-			offset += samplesRead;
-		}
-	}
-
+	
 	public void fillBitmapList() { 
 		/*
 		 * When some audio data is ready, perform the short-time Fourier transform on it and 
@@ -191,7 +75,7 @@ public class BitmapGenerator {
 			arraysLooped = true;
 		}
 	}
-
+	
 	private void processAudioWindow(short[] samples, int[] destArray) { //TODO prev and next
 		/*
 		 * Take the raw audio samples, apply a Hamming window, then perform the Short-Time
@@ -315,8 +199,31 @@ public class BitmapGenerator {
 		lastBitmapRequested++;
 		return ret;
 	}
+	
+	protected void updateColourMapPreference() {
+		/*
+		 * Called when the colour map preference is changed.
+		 */
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		int newMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
+		switch(newMap) {
+		case 0: colours = HeatMap.whitePurpleGrouped(); break;
+		case 1: colours = HeatMap.inverseGreyscale();break;
+		case 2: colours = HeatMap.hotMetal(); break;
+		case 3: colours = HeatMap.blueGreenRed(); break;
+		}
+	}
 
-	protected Bitmap createEntireBitmap(int startWindow, int endWindow, int bottomFreq, int topFreq) { //TODO make way more efficient!!
+	protected void updateContrastPreference() {
+		/*
+		 * Called when the colour map preference is changed.
+		 */
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
+		if (newContrast != Float.MAX_VALUE) contrast = newContrast * 3.0f + 1.0f; //slider value must be between 0 and 1, so multiply by 3 and add 1
+	}
+	
+	protected Bitmap createEntireBitmap(int startWindow, int endWindow, int bottomFreq, int topFreq) {
 		/*
 		 * Returns a stand-alone bitmap with time from startWindow to endWindow and band-pass-filtered
 		 * from bottomFreq to topFreq.
@@ -428,88 +335,6 @@ public class BitmapGenerator {
 		retCanvas.drawText(topFreqText, BITMAP_FREQ_AXIS_WIDTH/2, BITMAP_FREQ_AXIS_WIDTH/2, textStyle);
 		return ret;
 	}
-	
-	public Bitmap scaleBitmap(Bitmap bitmapToScale, float newWidth, float newHeight) {
-		/*
-		 * Returns the provided bitmap, scaled to fit the new width and height parameters.
-		 */
-		if(bitmapToScale == null)
-			return null;
-		//get the original width and height
-		int width = bitmapToScale.getWidth();
-		int height = bitmapToScale.getHeight();
-		// create a matrix for the manipulation
-		Matrix matrix = new Matrix();
 
-		// resize the bit map
-		matrix.postScale(newWidth / width, newHeight / height);
-
-		// recreate the new Bitmap and set it back
-		return Bitmap.createBitmap(bitmapToScale, 0, 0, bitmapToScale.getWidth(), bitmapToScale.getHeight(), matrix, true);
-	}
-
-	protected short[] getAudioChunk(int startWindow, int endWindow) {
-		/*
-		 * Returns an array of PCM audio data based on the window interval supplied to the function.
-		 */
-		//convert windows into array indices
-		startWindow %= WINDOW_LIMIT;
-		endWindow %= WINDOW_LIMIT;
-
-		short[] toReturn;
-
-		if (endWindow < startWindow) {
-			//selection crosses a loop boundary
-			toReturn = new short[((WINDOW_LIMIT - startWindow) + endWindow)*SAMPLES_PER_WINDOW];
-			for (int i = startWindow; i < WINDOW_LIMIT; i++) {
-				for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
-					//Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
-					toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = Short.reverseBytes(audioWindows[i][j]); //must be little-endian for WAV
-				}
-			}
-			for (int i = 0; i < endWindow; i++) {
-				for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
-					//Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
-					toReturn[(WINDOW_LIMIT-startWindow+i)*SAMPLES_PER_WINDOW+j] = Short.reverseBytes(audioWindows[i][j]); //must be little-endian for WAV
-				}
-			}
-		}
-		else {
-			toReturn = new short[(endWindow-startWindow)*SAMPLES_PER_WINDOW];
-			for (int i = startWindow; i < endWindow; i++) {
-
-				for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
-					//Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
-					toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = Short.reverseBytes(audioWindows[i][j]); //must be little-endian for WAV
-				}
-			}
-		}
-		return toReturn;
-	}
-
-	protected void updateColourMap() {
-		/*
-		 * Called when the colour map preference is changed.
-		 */
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		int newMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
-		Log.d("","NEW MAP: "+newMap);
-		switch(newMap) {
-		case 0: colours = HeatMap.whitePurpleGrouped(); break;
-		case 1: colours = HeatMap.inverseGreyscale();break;
-		case 2: colours = HeatMap.hotMetal(); break;
-		case 3: colours = HeatMap.blueGreenRed(); break;
-		}
-	}
-
-	protected void updateContrast() {
-		/*
-		 * Called when the colour map preference is changed.
-		 */
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
-		if (newContrast != Float.MAX_VALUE) contrast = newContrast * 3.0f + 1.0f; //slider value must be between 0 and 1, so multiply by 3 and add 1
-		Log.d("","NEW CONTRAST: "+newContrast);
-	}
 
 }

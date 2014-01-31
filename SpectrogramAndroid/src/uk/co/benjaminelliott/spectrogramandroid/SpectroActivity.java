@@ -114,7 +114,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		lssv.pauseScrolling(); //stop samples coming in and eating battery
+		lssv.stop();
 	}
 
 	@Override

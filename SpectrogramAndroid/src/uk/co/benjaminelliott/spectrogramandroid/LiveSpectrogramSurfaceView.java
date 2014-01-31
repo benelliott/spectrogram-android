@@ -207,14 +207,19 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	@Override
 	public void surfaceDestroyed(SurfaceHolder arg0) {
 		//TODO: worry about interrupted something something something
+		Log.d("LSSV","SURFACE DESTROYED");
+		if (sd != null) sd.stop();
+		sd = null;
+	}
+	
+	public void stop() {
+		Log.d("LSSV","STOP");
 		player.stop();
 		player.release();
 		player = null;
 		sd.stop();
-		Log.d("LSSV","SURFACE DESTROYED");
-		if (selecting) {
-			cancelSelection();
-		}
+		if (selecting) cancelSelection();
+
 	}
 
 	@Override
@@ -388,10 +393,10 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 
 	public void resumeScrolling() {
+		if (selecting) cancelSelection();
 		sd = new SpectrogramDrawer(this);
 		resumeButton.setVisibility(View.GONE);
 		selectRectTextView.setVisibility(View.GONE);
-		selecting = false;
 	}
 
 	public void resumeFromPause() {
