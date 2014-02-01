@@ -119,9 +119,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			}
 		};
 		
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		audioFilepath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+prefs.getString(PREF_AUDIO_KEY, "NULL");
-
+		
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle("Capture in progress...");
 		final ProgressBar pb = new ProgressBar(context);
@@ -177,6 +175,10 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 	@Override
 	public void surfaceCreated(SurfaceHolder arg0) {
+		//check audio filepath preference when surface created so it updates when setting changed
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		audioFilepath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+prefs.getString(PREF_AUDIO_KEY, "NULL");
+		Log.d("LSSV","Audio selected: "+audioFilepath);
 
 		try {
 			//play wav file simultaneously with showing spectrogram:
@@ -201,6 +203,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
 
 	}
 
@@ -494,14 +497,5 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		}
 
 	}
-
-	protected void updateColourMap() {
-		sd.getBitmapGenerator().updateColourMap();
-	}
-
-	protected void updateContrast() {
-		sd.getBitmapGenerator().updateContrast();
-	}
-
 
 }

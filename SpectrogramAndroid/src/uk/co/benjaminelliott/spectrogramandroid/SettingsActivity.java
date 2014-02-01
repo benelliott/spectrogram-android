@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 public class SettingsActivity extends PreferenceActivity {
 	
@@ -38,6 +39,7 @@ public class SettingsActivity extends PreferenceActivity {
 		@Override
 		public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 			Intent returnData = new Intent();
+			Log.d("Settings Activity","Preference changed: "+key);
 			returnData.putExtra("PREF_KEY", key);
 			activity.setResult(RESULT_OK, returnData);
 		}
