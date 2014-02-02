@@ -35,6 +35,7 @@ class SpectrogramDrawer {
 	private int leftmostBitmapAvailable;
 	private int rightmostBitmapAvailable;
 	private boolean running = true;
+	private int windowsAvailable = 0;
 
 
 
@@ -43,7 +44,6 @@ class SpectrogramDrawer {
 		this.width = lssv.getWidth();
 		this.height = lssv.getHeight();
 		bg = new BitmapGenerator(lssv.getContext());
-		bg.start();
 		SAMPLES_PER_WINDOW = BitmapGenerator.SAMPLES_PER_WINDOW;
 		VERTICAL_STRETCH = ((float)height)/((float)SAMPLES_PER_WINDOW); // stretch spectrogram to all of available height
 		Log.d("dim","Height: "+height+", samples per window: "+SAMPLES_PER_WINDOW+", VERTICAL_STRETCH: "+VERTICAL_STRETCH);
@@ -62,6 +62,7 @@ class SpectrogramDrawer {
 		generateScrollShadow();
 		clearCanvas();
 		scrollingThread.start();
+		bg.start(); //start scrolling thread before generator to stop 'jumping' when scrolling is resumed
 	}
 
 	private void clearCanvas() {
@@ -174,7 +175,7 @@ class SpectrogramDrawer {
 		 * This method shifts the bitmap displayed in the previous frame
 		 * and then draws the new windows on the right hand side.
 		 */
-		int windowsAvailable = bg.getBitmapWindowsAvailable();
+		windowsAvailable = bg.getBitmapWindowsAvailable();
 
 		if ((windowsDrawn+windowsAvailable) * HORIZONTAL_STRETCH >= width) { 
 			canScroll = true; //can only scroll if whole screen has been filled
@@ -252,9 +253,10 @@ class SpectrogramDrawer {
 		 * When this method is called, scrolling of the display is halted, as are the threads which bring in and
 		 * process audio samples to generate bitmaps.
 		 */
-		if (!scrollingLock.isHeldByCurrentThread()) {
-			scrollingLock.lock();
-		}
+//		if (!scrollingLock.isHeldByCurrentThread()) {
+//			scrollingLock.lock();
+//		}
+		running = false;
 		bg.stop(); //stop taking in and processing new samples since this will overwrite those you are trying to scroll through
 		leftmostBitmapAvailable = bg.getLeftmostBitmapAvailable();
 		rightmostBitmapAvailable = bg.getRightmostBitmapAvailable();

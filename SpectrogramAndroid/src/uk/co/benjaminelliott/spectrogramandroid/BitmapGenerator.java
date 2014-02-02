@@ -63,8 +63,16 @@ public class BitmapGenerator {
 	private Semaphore audioReady = new Semaphore(0);
 	private Semaphore bitmapsReady = new Semaphore(0);
 	private int lastBitmapRequested = 0; //keeps track of the most recently requested bitmap window
-	private double[] previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
 	private Context context;
+	
+	//allocate memory here rather than in performance-affecting methods:
+	private int samplesRead = 0;
+	private double[] fftSamples = new double[SAMPLES_PER_WINDOW*2];
+	private double[] previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
+	private double[] combinedWindow = new double[SAMPLES_PER_WINDOW];
+	private double[] hammingWindow = new double[SAMPLES_PER_WINDOW];
+	private DoubleFFT_1D dfft1d = new DoubleFFT_1D(SAMPLES_PER_WINDOW); //DoubleFFT_1D constructor must be supplied with an 'n' value, where n = data size
+
 
 	public BitmapGenerator(Context context) {
 		//bitmapsReady = new Semaphore(0);
@@ -82,6 +90,8 @@ public class BitmapGenerator {
 		case 2: colours = HeatMap.hotMetal(); break;
 		case 3: colours = HeatMap.blueGreenRed(); break;
 		}
+		
+		generateHammingWindow();
 
 		float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
 		if (newContrast != Float.MAX_VALUE) contrast = newContrast * 3.0f + 1.0f; //slider value must be between 0 and 1, so multiply by 3 and add 1
@@ -125,11 +135,11 @@ public class BitmapGenerator {
 		 */
 		if (running) {
 			running = false;
-			mic.stop();
-			mic.release();
 			while (audioThread.isAlive()) {
 				//TODO wait to die :/
 			}
+			mic.stop();
+			mic.release();
 			mic = null;
 			Log.d("BG", "STOPPED");
 		}
@@ -162,7 +172,6 @@ public class BitmapGenerator {
 		 * buffer with samples if there is not enough data available. This method always returns a full array by
 		 * repeatedly calling the 'read' method until there is no space left.
 		 */
-		int samplesRead;
 		while (spaceRemaining > 0) {
 			samplesRead = mic.read(buffer, offset, spaceRemaining);
 			spaceRemaining -= samplesRead;
@@ -199,14 +208,13 @@ public class BitmapGenerator {
 		 * for a smoothing effect. Return the resulting bitmap.
 		 */
 
-		double[] fftSamples = new double[SAMPLES_PER_WINDOW*2]; //need half the array to be empty for FFT
+		fftSamples = new double[SAMPLES_PER_WINDOW*2]; //need half the array to be empty for FFT
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			fftSamples[i] = (double)(samples[i]);
 		}
-		hammingWindow(fftSamples); //apply Hamming window before performing STFT
+		applyHammingWindow(fftSamples); //apply Hamming window before performing STFT
 		spectroTransform(fftSamples); //do the STFT on the copied data
 
-		double[] combinedWindow = new double[SAMPLES_PER_WINDOW];
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			combinedWindow[i] = fftSamples[i] + previousWindow[i];
 		}
@@ -215,7 +223,9 @@ public class BitmapGenerator {
 			int val = cappedValue(combinedWindow[i]);
 			destArray[SAMPLES_PER_WINDOW-i-1] = colours[val]; //fill upside-down because y=0 is at top of screen
 		}
-		previousWindow = fftSamples; //keep reference to samples for next process
+		
+		//keep samples for next process
+		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) previousWindow[i] = fftSamples[i];
 	}
 
 	private int cappedValue(double d) {
@@ -232,22 +242,23 @@ public class BitmapGenerator {
 		}
 		return (int)(255*Math.pow((Math.log1p(d)/Math.log1p(maxAmplitude)),contrast));
 	}
-
-	private void hammingWindow(double[] samples) {
-		/*
-		 * This method applies an appropriately-sized Hamming window to the provided array of 
-		 * audio sample data.
-		 */
-		int m = samples.length/4; //divide by 4 not 2 since input array is half-full
-		double[] hamming = new double[samples.length];
-		double r = Math.PI/(m+1);
-		for (int i = -m; i < m; i++) {
-			hamming[m + i] = 0.5 + 0.5 * Math.cos(i * r);
-		}
+	
+	private void applyHammingWindow(double[] samples) {
 
 		//apply windowing function through multiplication with time-domain samples
-		for (int i = 0; i < samples.length; i++) {
-			samples[i] *= hamming[i]; 
+		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
+			samples[i] *= hammingWindow[i]; 
+		}
+	}
+
+	private void generateHammingWindow() {
+		/*
+		 * This method generates an appropriately-sized Hamming window to be used later.
+		 */
+		int m = SAMPLES_PER_WINDOW/2;
+		double r = Math.PI/(m+1);
+		for (int i = -m; i < m; i++) {
+			hammingWindow[m + i] = 0.5 + 0.5 * Math.cos(i * r);
 		}
 	}
 
@@ -258,9 +269,8 @@ public class BitmapGenerator {
 		 *
 		 * See 'realForward' documentation of JTransforms for more information on the FFT implementation.
 		 */
-		DoubleFFT_1D d = new DoubleFFT_1D(paddedSamples.length / 2); //DoubleFFT_1D constructor must be supplied with an 'n' value, where n = data size
 
-		d.realForward(paddedSamples);
+		dfft1d.realForward(paddedSamples);
 
 		//Now the STFT has been calculated, need to square it:
 
@@ -311,9 +321,7 @@ public class BitmapGenerator {
 		}
 		if (lastBitmapRequested == bitmapWindows.length) lastBitmapRequested = 0; //loop if necessary
 		//Log.d("Spectro","Bitmap "+lastBitmapRequested+" requested");
-		int[] ret = bitmapWindows[lastBitmapRequested];
-		lastBitmapRequested++;
-		return ret;
+		return bitmapWindows[lastBitmapRequested++];
 	}
 
 	protected Bitmap createEntireBitmap(int startWindow, int endWindow, int bottomFreq, int topFreq) { //TODO make way more efficient!!
