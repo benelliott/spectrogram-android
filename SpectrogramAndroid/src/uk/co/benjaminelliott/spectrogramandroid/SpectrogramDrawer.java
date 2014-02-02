@@ -35,7 +35,9 @@ class SpectrogramDrawer {
 	private int leftmostBitmapAvailable;
 	private int rightmostBitmapAvailable;
 	private boolean running = true;
+	private Matrix scaleMatrix;
 	private int windowsAvailable = 0;
+	private Bitmap unscaledBitmap;
 
 
 
@@ -60,6 +62,7 @@ class SpectrogramDrawer {
 		};
 		scrollingThread.setName("Scrolling thread");
 		generateScrollShadow();
+		scaleMatrix = generateScaleMatrix(1,SAMPLES_PER_WINDOW,HORIZONTAL_STRETCH, SAMPLES_PER_WINDOW * VERTICAL_STRETCH); //generate matrix to scale by horiz/vert scale params
 		clearCanvas();
 		scrollingThread.start();
 		bg.start(); //start scrolling thread before generator to stop 'jumping' when scrolling is resumed
@@ -193,23 +196,18 @@ class SpectrogramDrawer {
 		/*
 		 * Retreive and draw the next bitmap, determined by the BitmapGenerator itself.
 		 */
-		Bitmap orig = Bitmap.createBitmap(bg.getNextBitmap(), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888);
-		Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, SAMPLES_PER_WINDOW * VERTICAL_STRETCH);
-		bufferCanvas.drawBitmap(scaled, xCoord, 0f, null);
+		unscaledBitmap = Bitmap.createBitmap(bg.getNextBitmap(), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888);
+		bufferCanvas.drawBitmap(scaleBitmap(unscaledBitmap), xCoord, 0f, null);
 	}
 
+	
 	private void drawSingleBitmap(int index, int xCoord) {
 		/*
 		 * Draw the bitmap specified by the provided index from the top of the screen at the provided x-coordinate, 
 		 * stretching according to the HORIZONTAL_STRETCH and VERTICAL_STRETCH parameters.
 		 */
-		Bitmap orig = Bitmap.createBitmap(bg.getBitmapWindow(index), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888);
-		Bitmap scaled = scaleBitmap(orig, HORIZONTAL_STRETCH, SAMPLES_PER_WINDOW * VERTICAL_STRETCH);
-		bufferCanvas.drawBitmap(scaled, xCoord, 0f, null);
-		System.out.println("Window " + index
-				+ " drawn with (left, top) coordinate at ("
-				+ xCoord + "," + 0 + "), density "
-				+ scaled.getDensity());
+		unscaledBitmap = Bitmap.createBitmap(bg.getBitmapWindow(index), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888);
+		bufferCanvas.drawBitmap(scaleBitmap(unscaledBitmap), xCoord, 0f, null);
 	}
 
 	public void drawSelectRect(float selectRectL, float selectRectR, float selectRectT, float selectRectB) {
@@ -262,24 +260,24 @@ class SpectrogramDrawer {
 		rightmostBitmapAvailable = bg.getRightmostBitmapAvailable();
 		quickSlide(0); //force the shadows to be drawn immediately
 	}
-
-	public Bitmap scaleBitmap(Bitmap bitmapToScale, float newWidth, float newHeight) {
+	
+	private Matrix generateScaleMatrix(float origWidth, float origHeight, float newWidth, float newHeight) {
 		/*
-		 * Returns the provided bitmap, scaled to fit the new width and height parameters.
+		 * Returns a matrix for scaling bitmaps from origWidth, origHeight to newWidth, newHeight
 		 */
-		if(bitmapToScale == null)
-			return null;
-		//get the original width and height
-		int width = bitmapToScale.getWidth();
-		int height = bitmapToScale.getHeight();
-		// create a matrix for the manipulation
+
 		Matrix matrix = new Matrix();
+		matrix.postScale(newWidth / origWidth, newHeight / origHeight);
 
-		// resize the bit map
-		matrix.postScale(newWidth / width, newHeight / height);
+		return matrix;
+	}
 
-		// recreate the new Bitmap and set it back
-		return Bitmap.createBitmap(bitmapToScale, 0, 0, bitmapToScale.getWidth(), bitmapToScale.getHeight(), matrix, true);
+	public Bitmap scaleBitmap(Bitmap bitmapToScale) {
+		/*
+		 * Returns the provided bitmap, scaled to fit the new width and height as determined by the horiz/vert scale parameters
+		 */
+
+		return Bitmap.createBitmap(bitmapToScale, 0, 0, bitmapToScale.getWidth(), bitmapToScale.getHeight(), scaleMatrix, true);
 	}
 
 	public float getScreenFillTime() {

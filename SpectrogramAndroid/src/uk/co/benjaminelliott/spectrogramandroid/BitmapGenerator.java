@@ -72,7 +72,7 @@ public class BitmapGenerator {
 	private double[] combinedWindow = new double[SAMPLES_PER_WINDOW];
 	private double[] hammingWindow = new double[SAMPLES_PER_WINDOW];
 	private DoubleFFT_1D dfft1d = new DoubleFFT_1D(SAMPLES_PER_WINDOW); //DoubleFFT_1D constructor must be supplied with an 'n' value, where n = data size
-
+	private int val = 0;
 
 	public BitmapGenerator(Context context) {
 		//bitmapsReady = new Semaphore(0);
@@ -158,7 +158,7 @@ public class BitmapGenerator {
 			audioReady.release();
 			if (audioCurrentIndex == audioWindows.length) {
 				//if entire array has been filled, loop and start filling from the start
-				Log.d("", "Adding audio item "+audioCurrentIndex+" and array full, so looping back to start");
+				//Log.d("", "Adding audio item "+audioCurrentIndex+" and array full, so looping back to start");
 				audioCurrentIndex = 0;
 
 			}
@@ -208,7 +208,6 @@ public class BitmapGenerator {
 		 * for a smoothing effect. Return the resulting bitmap.
 		 */
 
-		fftSamples = new double[SAMPLES_PER_WINDOW*2]; //need half the array to be empty for FFT
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			fftSamples[i] = (double)(samples[i]);
 		}
@@ -220,7 +219,7 @@ public class BitmapGenerator {
 		}
 
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
-			int val = cappedValue(combinedWindow[i]);
+			val = cappedValue(combinedWindow[i]);
 			destArray[SAMPLES_PER_WINDOW-i-1] = colours[val]; //fill upside-down because y=0 is at top of screen
 		}
 		
