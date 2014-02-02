@@ -97,6 +97,7 @@ class SpectrogramDrawer {
 					quickProgress(); //update buffer bitmap
 					synchronized (sh) {
 						displayCanvas.drawBitmap(buffer, 0, 0, null); //draw buffer to display
+						displayCanvas.drawBitmap(leftShadow, 0,  0, null); //draw scrolling shadow bitmaps on top
 					}
 				} finally {
 					if (displayCanvas != null) {
@@ -336,7 +337,7 @@ class SpectrogramDrawer {
 		 * offset (pixelOffset = 0 at the top of the spectrogram)
 		 */
 		if (pixelOffset < 0) return 0;
-		if (pixelOffset > height) pixelOffset = height;
+		if (pixelOffset > height) pixelOffset = 0;
 		return (int)(getMaxFrequency() - (pixelOffset/height)*getMaxFrequency());
 	}
 

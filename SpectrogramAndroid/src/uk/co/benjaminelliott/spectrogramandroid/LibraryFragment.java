@@ -78,9 +78,11 @@ public class LibraryFragment extends Fragment {
 		
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 		ImageView specImage = new ImageView(getActivity());
+		specImage.setPadding(0, 50, 0, 50);
 		Bitmap imgAsBmp = BitmapFactory.decodeFile(filepath+IMAGE_SUFFIX);
 		specImage.setImageBitmap(imgAsBmp);
 		builder.setView(specImage);
+		builder.setTitle(filename);
 		builder.setPositiveButton("Show on map", new DialogInterface.OnClickListener() { 
 		    @Override
 		    public void onClick(DialogInterface dialog, int which) {
