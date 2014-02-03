@@ -1,32 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string-array name="pref_colourmap_entries">
-        <item >Pink</item>
-        <item >Greyscale</item>
-        <item >Hot Metal</item>
-        <item >Rainbow</item>
+        <item>Pink</item>
+        <item>Greyscale</item>
+        <item>Hot Metal</item>
+        <item>Rainbow</item>
     </string-array>
     <string-array name="pref_colourmap_values">
-        <item >0</item>
-        <item >1</item>
-        <item >2</item>
-        <item >3</item>
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
     </string-array>
     <string-array name="pref_user_test_audio_entries">
-        <item >Sample 1</item>
-        <item >Sample 2</item>
-        <item >Sample 3</item>
-        <item >Sample 4</item>
-        <item >Sample 5</item>
-        <item >Sample 6</item>
+        <item>Sample 1</item>
+        <item>Sample 2</item>
+        <item>Sample 3</item>
+        <item>Sample 4</item>
+        <item>Sample 5</item>
+        <item>Sample 6</item>
     </string-array>
     <string-array name="pref_user_test_audio_values">
-        <item >bushwarbler.wav</item>
-        <item >grouse.wav</item>
-        <item >pheasant.wav</item>
-        <item >pohnpeilory.wav</item>
-        <item >tundraswan.wav</item>
-        <item >wattledhoneyeater.wav</item>
+        <item>bushwarbler.wav</item>
+        <item>grouse.wav</item>
+        <item>pheasant.wav</item>
+        <item>pohnpeilory.wav</item>
+        <item>tundraswan.wav</item>
+        <item>wattledhoneyeater.wav</item>
     </string-array>
-    
+    <string-array name="pref_sample_rate_values">
+        <item>11025</item>
+        <item>16000</item>
+        <item>22050</item>
+        <item>44100</item>
+    </string-array>
+    <string-array name="pref_samples_window_values">
+        <item>100</item>
+        <item>200</item>
+        <item>300</item>
+        <item>400</item>
+        <item>500</item>
+        <item>600</item>
+        <item>700</item>
+        <item>800</item>
+        <item>900</item>
+        <item>1000</item>
+    </string-array>
+
 </resources>

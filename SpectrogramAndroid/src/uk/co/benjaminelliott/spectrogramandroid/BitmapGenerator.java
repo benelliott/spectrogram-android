@@ -25,12 +25,12 @@ public class BitmapGenerator {
 	 * another to convert this data into a bitmap as soon as it becomes available ('bitmapThread').
 	 */
 
-	public static final int SAMPLE_RATE = 16000; //options are 11025, 22050, 16000, 44100
-	public static final int SAMPLES_PER_WINDOW = 300; //usually around 300
+	private final int SAMPLE_RATE; //options are 11025, 16000, 22050, 44100
+	private final int SAMPLES_PER_WINDOW; //usually around 300
 	public static final String PREF_COLOURMAP_KEY = "pref_colourmap";
 	protected static final String PREF_CONTRAST_KEY = "pref_contrast";
-
-
+	protected static final String PREF_SAMPLE_RATE_KEY = "pref_sample_rate";
+	protected static final String PREF_SAMPLES_WINDOW_KEY = "pref_samples_window";
 
 	//number of windows that can be held in the arrays at once before older ones are deleted. Time this represents is
 	// WINDOW_LIMIT*SAMPLES_PER_WINDOW/SAMPLE_RATE, e.g. 10000*300/16000 = 187.5 seconds.
@@ -46,8 +46,8 @@ public class BitmapGenerator {
 	protected static final int BITMAP_STORE_QUALITY = 90; //compression quality parameter for storage
 	protected static final int BITMAP_FREQ_AXIS_WIDTH = 30; //number of pixels (subject to width adjustment) to use to display frequency axis on stored bitmaps
 
-	private short[][] audioWindows = new short[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
-	private int[][] bitmapWindows = new int[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
+	private short[][] audioWindows;
+	private int[][] bitmapWindows;
 
 	private float contrast = 2.0f;
 
@@ -67,11 +67,11 @@ public class BitmapGenerator {
 	
 	//allocate memory here rather than in performance-affecting methods:
 	private int samplesRead = 0;
-	private double[] fftSamples = new double[SAMPLES_PER_WINDOW*2];
-	private double[] previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
-	private double[] combinedWindow = new double[SAMPLES_PER_WINDOW];
-	private double[] hammingWindow = new double[SAMPLES_PER_WINDOW];
-	private DoubleFFT_1D dfft1d = new DoubleFFT_1D(SAMPLES_PER_WINDOW); //DoubleFFT_1D constructor must be supplied with an 'n' value, where n = data size
+	private double[] fftSamples;
+	private double[] previousWindow; //keep a handle on the previous audio sample window so that values can be averaged across them
+	private double[] combinedWindow;
+	private double[] hammingWindow;
+	private DoubleFFT_1D dfft1d; //DoubleFFT_1D constructor must be supplied with an 'n' value, where n = data size
 	private int val = 0;
 
 	public BitmapGenerator(Context context) {
@@ -80,6 +80,20 @@ public class BitmapGenerator {
 		colours = new int[256];
 
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+		SAMPLE_RATE = Integer.parseInt(prefs.getString(PREF_SAMPLE_RATE_KEY, "16000"));
+		SAMPLES_PER_WINDOW = Integer.parseInt(prefs.getString(PREF_SAMPLES_WINDOW_KEY, "300"));
+		Log.d("","Sample rate: "+SAMPLE_RATE+", samples per window: "+SAMPLES_PER_WINDOW);
+		
+		audioWindows = new short[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
+		bitmapWindows = new int[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
+		
+		fftSamples = new double[SAMPLES_PER_WINDOW*2];
+		previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
+		combinedWindow = new double[SAMPLES_PER_WINDOW];
+		hammingWindow = new double[SAMPLES_PER_WINDOW];
+		dfft1d = new DoubleFFT_1D(SAMPLES_PER_WINDOW); //DoubleFFT_1D constructor must be supplied with an 'n' value, where n = data size
+
+		
 		String colMapString = prefs.getString(PREF_COLOURMAP_KEY, "NULL");
 		int colourMap = 0;
 		if (!colMapString.equals("NULL")) colourMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
@@ -517,6 +531,14 @@ public class BitmapGenerator {
 		float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
 		if (newContrast != Float.MAX_VALUE) contrast = newContrast * 3.0f + 1.0f; //slider value must be between 0 and 1, so multiply by 3 and add 1
 		Log.d("","NEW CONTRAST: "+newContrast);
+	}
+	
+	protected int getSampleRate() {
+		return SAMPLE_RATE;
+	}
+	
+	protected int getSamplesPerWindow() {
+		return SAMPLES_PER_WINDOW;
 	}
 
 }

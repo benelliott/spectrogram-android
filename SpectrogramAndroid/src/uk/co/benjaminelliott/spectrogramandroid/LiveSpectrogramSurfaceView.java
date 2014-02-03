@@ -40,6 +40,9 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	public static final String STORE_DIR_NAME = "Spectrogram captures";
 	public static final String PREF_AUDIO_KEY = "pref_user_test_audio";
 
+	private int width;
+	private int height;
+	
 	private Context context;
 	private SpectrogramDrawer sd;
 	private int mActivePointerId = MotionEvent.INVALID_POINTER_ID;
@@ -80,8 +83,17 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private float SELECT_RECT_WIDTH = 200;
 	private float SELECT_RECT_HEIGHT = 200;
 
-	private float CORNER_CIRCLE_RADIUS = 30; //when setting, must think about how large the target can be for the user to hit it accurately 
+	private final float CORNER_CIRCLE_RADIUS = 40; //when setting, must think about how large the target can be for the user to hit it accurately 
 
+	
+	//allocate memory for reused variables here to reduce GC
+	private int action;
+	private int pointerIndex;
+	private float x;
+	private float y;
+	private float dx;
+	private float dy;
+	
 	public LiveSpectrogramSurfaceView(Context context) {
 		super(context);
 		init(context);
@@ -105,14 +117,14 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			public void run() {
 				Log.d("", "Long press detected.");
 				selecting = true;
-				selectRectL = centreX - SELECT_RECT_WIDTH/2;
-				selectRectR = centreX + SELECT_RECT_WIDTH/2;
-				selectRectT = centreY - SELECT_RECT_HEIGHT/2;
-				selectRectB = centreY + SELECT_RECT_HEIGHT/2;
+				selectRectL = (centreX - SELECT_RECT_WIDTH/2 < 0) ? 0 : centreX - SELECT_RECT_WIDTH/2;
+				selectRectR = (centreX + SELECT_RECT_WIDTH/2 > getWidth()) ? getWidth() : centreX + SELECT_RECT_WIDTH/2;
+				selectRectT = (centreY - SELECT_RECT_HEIGHT/2 < 0) ? 0 : centreY - SELECT_RECT_HEIGHT/2;
+				selectRectB = (centreY + SELECT_RECT_HEIGHT/2 > getHeight()) ? getHeight() : centreY + SELECT_RECT_HEIGHT/2;
 				sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
-				moveCaptureButtonContainer();
+				//moveCaptureButtonContainer();
 				selectRectTextView.setVisibility(View.VISIBLE);
-				captureButtonContainer.setVisibility(View.VISIBLE);
+				//captureButtonContainer.setVisibility(View.VISIBLE); TODO removed for user test only!!
 				selectionConfirmButton.setEnabled(true);
 				selectionCancelButton.setEnabled(true);
 				updateSelectRectText();
@@ -175,6 +187,8 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 	@Override
 	public void surfaceCreated(SurfaceHolder arg0) {
+		width = getWidth();
+		height = getHeight();
 		//check audio filepath preference when surface created so it updates when setting changed
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 		audioFilepath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+prefs.getString(PREF_AUDIO_KEY, "NULL");
@@ -217,9 +231,11 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	
 	public void stop() {
 		Log.d("LSSV","STOP");
-		player.stop();
-		player.release();
-		player = null;
+		if (player != null) { //Android nullifies this on its own, e.g. if a call comes in
+			player.stop();
+			player.release();
+			player = null;
+		}
 		sd.stop();
 		if (selecting) cancelSelection();
 
@@ -230,7 +246,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		// Let the ScaleGestureDetector inspect all events.
 		//sgd.onTouchEvent(ev);
 
-		final int action = MotionEventCompat.getActionMasked(ev); 
+		action = MotionEventCompat.getActionMasked(ev); 
 
 		switch (action) {
 
@@ -240,16 +256,14 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				handler.postDelayed(onLongPress,1000); //run the long-press runnable if not cancelled by move event (1 second timeout) [only if not already selecting]
 			}
 
-			final int pointerIndex = MotionEventCompat.getActionIndex(ev); 
-			final float x = MotionEventCompat.getX(ev, pointerIndex); 
+			pointerIndex = MotionEventCompat.getActionIndex(ev); 
+			x = MotionEventCompat.getX(ev, pointerIndex); 
 			centreX = MotionEventCompat.getX(ev, pointerIndex);
 			centreY = MotionEventCompat.getY(ev, pointerIndex);
 			Log.d("","ACTION_DOWN");
-			System.out.println("Long-press timer started.");
 			// Remember where we started (for dragging)
 			lastTouchX = x;
 			lastTouchY = MotionEventCompat.getY(ev, pointerIndex);
-			System.out.println("Last touch x set to "+x);
 			// Save the ID of this pointer [finger], in case of drag 
 			mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
 			if (selecting) {
@@ -281,13 +295,12 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 		case MotionEvent.ACTION_MOVE: { //occurs when there is a difference between ACTION_UP and ACTION_DOWN
 			// Find the index of the active pointer and fetch its position
-			final int pointerIndex = MotionEventCompat.findPointerIndex(ev,
-					mActivePointerId);
+			pointerIndex = MotionEventCompat.findPointerIndex(ev,mActivePointerId);
 			//final float x = ev.getRawX(); //Note: never care about y axis
 			// Calculate the distance moved
 			if (!selecting) { //don't allow for scrolling if user is trying to select an area of the spectrogram
-				final float x = MotionEventCompat.getX(ev, pointerIndex); //Note: never care about y axis
-				final float dx = x - lastTouchX;
+				x = MotionEventCompat.getX(ev, pointerIndex); //Note: never care about y axis
+				dx = x - lastTouchX;
 				if (dx > 5 || dx < -5) { //only if moved more than 5 pixels
 					handler.removeCallbacks(onLongPress); //cancel long-press runnable
 					System.out.println("Long-press timer cancelled 1.");
@@ -299,10 +312,10 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				lastTouchX = x;
 			} else { 
 				//if selecting mode entered, allow user to move corners to adjust select-area rectangle size
-				float x = MotionEventCompat.getX(ev, pointerIndex);
-				float y = MotionEventCompat.getY(ev, pointerIndex);
-				float dx = x - lastTouchX;
-				float dy = y - lastTouchY;
+				x = MotionEventCompat.getX(ev, pointerIndex);
+				y = MotionEventCompat.getY(ev, pointerIndex);
+				x = x - lastTouchX;
+				dy = y - lastTouchY;
 				moveCorner(selectedCorner, dx, dy);				
 				lastTouchX = x;
 				lastTouchY = y;
@@ -328,7 +341,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		case MotionEvent.ACTION_POINTER_UP: {
 			handler.removeCallbacks(onLongPress); //cancel long-press runnable
 			System.out.println("Long-press timer cancelled 4.");
-			final int pointerIndex = MotionEventCompat.getActionIndex(ev); 
+			pointerIndex = MotionEventCompat.getActionIndex(ev); 
 			final int pointerId = MotionEventCompat.getPointerId(ev, pointerIndex); 
 
 			if (pointerId == mActivePointerId) {
@@ -368,9 +381,18 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			selectRectB += dy;
 			break;
 		}
+		selectRectL = (selectRectL < 0) ? 0 : selectRectL;
+		selectRectR = (selectRectR < 0) ? 0 : selectRectR;
+		selectRectL = (selectRectL > width) ? width : selectRectL;
+		selectRectR = (selectRectR > width) ? width : selectRectR;
+		selectRectT = (selectRectT < 0) ? 0 : selectRectT;
+		selectRectB = (selectRectB < 0) ? 0 : selectRectB;
+		selectRectT = (selectRectT > height) ? height : selectRectT;
+		selectRectB = (selectRectB > height) ? height : selectRectB;
 		sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
 		updateSelectRectText();
-		moveCaptureButtonContainer();
+		//moveCaptureButtonContainer(); TODO restore after user test!
+		//Log.d("","L: "+selectRectL+" R: "+selectRectR+" T: "+selectRectT+" B: "+selectRectB);
 	}
 
 	protected void moveCaptureButtonContainer() {
@@ -491,7 +513,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		protected Void doInBackground(Void... arg0) {
 			Bitmap bitmapToStore = sd.getBitmapToStore(selectRectL, selectRectR, selectRectT, selectRectB);
 			short[] audioToStore = sd.getAudioToStore(selectRectL, selectRectR, selectRectT, selectRectB);
-			AudioBitmapConverter abc = new AudioBitmapConverter(filename, STORE_DIR_NAME, bitmapToStore,audioToStore,lc.getLastLocation());
+			AudioBitmapConverter abc = new AudioBitmapConverter(filename, STORE_DIR_NAME, bitmapToStore,audioToStore,lc.getLastLocation(),sd.getBitmapGenerator().getSampleRate());
 			abc.writeCBAToFile(filename, STORE_DIR_NAME);
 			return null;
 		}

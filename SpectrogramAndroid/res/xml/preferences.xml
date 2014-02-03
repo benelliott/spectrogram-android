@@ -1,30 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
- <CheckBoxPreference
-        android:key="pref_portrait"
-        android:title="@string/pref_portrait"
-       	android:defaultValue="false" />
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
-<ListPreference
-        android:key="pref_colourmap"
-        android:title="@string/pref_colourmap"
+    <ListPreference
+        android:defaultValue="@string/pref_sample_rate_default"
+        android:dialogTitle="@string/pref_sample_rate"
+        android:entries="@array/pref_sample_rate_values"
+        android:entryValues="@array/pref_sample_rate_values"
+        android:key="pref_sample_rate"
+        android:title="@string/pref_sample_rate" />
+    
+        <ListPreference
+        android:defaultValue="@string/pref_samples_window_default"
+        android:dialogTitle="@string/pref_samples_window"
+        android:entries="@array/pref_samples_window_values"
+        android:entryValues="@array/pref_samples_window_values"
+        android:key="pref_samples_window"
+        android:title="@string/pref_samples_window" />
+
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="pref_portrait"
+        android:title="@string/pref_portrait" />
+
+    <ListPreference
+        android:defaultValue="@string/pref_colourmap_default"
         android:dialogTitle="@string/pref_colourmap"
         android:entries="@array/pref_colourmap_entries"
         android:entryValues="@array/pref_colourmap_values"
-        android:defaultValue="@string/pref_colourmap_default" />
+        android:key="pref_colourmap"
+        android:title="@string/pref_colourmap" />
 
-<net.jayschwa.android.preference.SliderPreference
-    	android:key="pref_contrast"
-    	android:title="@string/pref_contrast"
-    	android:summary="@string/pref_contrast_summary"
-    	android:defaultValue="@string/pref_contrast_default"
-    	android:dialogMessage="@string/pref_contrast_message" />
+    <net.jayschwa.android.preference.SliderPreference
+        android:defaultValue="@string/pref_contrast_default"
+        android:dialogMessage="@string/pref_contrast_message"
+        android:key="pref_contrast"
+        android:summary="@string/pref_contrast_summary"
+        android:title="@string/pref_contrast" />
 
-<ListPreference
-        android:key="pref_user_test_audio"
-        android:title="@string/pref_user_test_audio"
+    <ListPreference
+        android:defaultValue="@string/pref_user_test_audio_default"
         android:dialogTitle="@string/pref_user_test_audio"
         android:entries="@array/pref_user_test_audio_entries"
         android:entryValues="@array/pref_user_test_audio_values"
-        android:defaultValue="@string/pref_user_test_audio_default" />
+        android:key="pref_user_test_audio"
+        android:title="@string/pref_user_test_audio" />
+
 </PreferenceScreen>

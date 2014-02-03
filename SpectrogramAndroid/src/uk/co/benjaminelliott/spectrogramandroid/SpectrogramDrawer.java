@@ -2,15 +2,18 @@ package uk.co.benjaminelliott.spectrogramandroid;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
 class SpectrogramDrawer {
+	private final int SAMPLE_RATE;
 	private final int HORIZONTAL_STRETCH = 2;
 	private final float VERTICAL_STRETCH;
 	private final int SAMPLES_PER_WINDOW;
@@ -38,6 +41,13 @@ class SpectrogramDrawer {
 	private Matrix scaleMatrix;
 	private int windowsAvailable = 0;
 	private Bitmap unscaledBitmap;
+	
+	//declare reused variables here to reduce GC
+	private boolean drawLeftShadow;
+	private boolean drawRightShadow;
+	private int leftmostWindowAsIndex;
+	private int rightmostWindow;
+	private int rightmostWindowAsIndex;
 
 
 
@@ -46,7 +56,8 @@ class SpectrogramDrawer {
 		this.width = lssv.getWidth();
 		this.height = lssv.getHeight();
 		bg = new BitmapGenerator(lssv.getContext());
-		SAMPLES_PER_WINDOW = BitmapGenerator.SAMPLES_PER_WINDOW;
+		SAMPLE_RATE = bg.getSampleRate();
+		SAMPLES_PER_WINDOW = bg.getSamplesPerWindow();
 		VERTICAL_STRETCH = ((float)height)/((float)SAMPLES_PER_WINDOW); // stretch spectrogram to all of available height
 		Log.d("dim","Height: "+height+", samples per window: "+SAMPLES_PER_WINDOW+", VERTICAL_STRETCH: "+VERTICAL_STRETCH);
 		buffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -117,13 +128,13 @@ class SpectrogramDrawer {
 			//stop new windows from coming in immediately
 			offset /= HORIZONTAL_STRETCH; //convert from pixel offset to window offset 
 
-			boolean drawLeftShadow = true;
-			boolean drawRightShadow = true;
+			drawLeftShadow = true;
+			drawRightShadow = true;
 			if (offset > BitmapGenerator.WINDOW_LIMIT/2) offset = BitmapGenerator.WINDOW_LIMIT/2;
 			if (offset < -BitmapGenerator.WINDOW_LIMIT/2) offset = -BitmapGenerator.WINDOW_LIMIT/2;
-			int leftmostWindowAsIndex = leftmostWindow % BitmapGenerator.WINDOW_LIMIT;
-			int rightmostWindow = leftmostWindow + width/HORIZONTAL_STRETCH;
-			int rightmostWindowAsIndex = rightmostWindow % BitmapGenerator.WINDOW_LIMIT;
+			leftmostWindowAsIndex = leftmostWindow % BitmapGenerator.WINDOW_LIMIT;
+			rightmostWindow = leftmostWindow + width/HORIZONTAL_STRETCH;
+			rightmostWindowAsIndex = rightmostWindow % BitmapGenerator.WINDOW_LIMIT;
 			if (leftmostWindow - offset <= 0) {
 				offset = leftmostWindow;
 				drawLeftShadow = false; //don't draw the left shadow as the left limit has been reached
@@ -289,7 +300,7 @@ class SpectrogramDrawer {
 		//no. windows on screen = width/HORIZONTAL_STRETCH,
 		//no. samples on screen = no. windows * samplesPerWindow
 		//time on screen = no. samples / samples per second [sample rate]
-		return ((float)width/(float)HORIZONTAL_STRETCH*(float)SAMPLES_PER_WINDOW)/(float)BitmapGenerator.SAMPLE_RATE;
+		return ((float)width/(float)HORIZONTAL_STRETCH*(float)SAMPLES_PER_WINDOW)/(float)SAMPLE_RATE;
 	}
 
 	public float getMaxFrequency() {
@@ -297,7 +308,7 @@ class SpectrogramDrawer {
 		 * Returns the maximum frequency that can be displayed on the spectrogram, which, due
 		 * to the Nyquist limit, is half the sample rate.
 		 */
-		return 0.5f*BitmapGenerator.SAMPLE_RATE;
+		return 0.5f*SAMPLE_RATE;
 	}
 	
 	protected int getWindowAtPixel(float pixelOffset) {
@@ -336,8 +347,8 @@ class SpectrogramDrawer {
 		 * Returns the frequency associated with the vertical pixel 
 		 * offset (pixelOffset = 0 at the top of the spectrogram)
 		 */
-		if (pixelOffset < 0) return 0;
-		if (pixelOffset > height) pixelOffset = 0;
+		if (pixelOffset < 0) pixelOffset = 0;
+		if (pixelOffset > height) pixelOffset = height;
 		return (int)(getMaxFrequency() - (pixelOffset/height)*getMaxFrequency());
 	}
 

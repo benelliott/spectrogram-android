@@ -6,14 +6,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.media.ExifInterface;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class AudioBitmapConverter  {
 
+	private final int SAMPLE_RATE;
 	private final double decLatitude;
 	private final double decLongitude;
 	private final String filename;
@@ -24,9 +27,10 @@ public class AudioBitmapConverter  {
 	private final int height;
 	private CapturedBitmapAudio cba;
 	
-	AudioBitmapConverter(String filename, String directory, Bitmap bitmap, short[] rawWavAudio, Location loc) {
+	AudioBitmapConverter(String filename, String directory, Bitmap bitmap, short[] rawWavAudio, Location loc, int sampleRate) {
 		this.filename = filename;
 		this.directory = directory;
+		this.SAMPLE_RATE = sampleRate;
 		decLatitude = loc.getLatitude();
 		decLongitude = loc.getLongitude();
 		wavAudio = wavAsByteArray(rawWavAudio);
@@ -44,7 +48,7 @@ public class AudioBitmapConverter  {
 	
 	private byte[] wavAsByteArray(short[] rawWavAudio) {
 		byte[] ret = new byte[44+rawWavAudio.length*2];
-		byte[] header = getWAVHeader(BitmapGenerator.SAMPLE_RATE, 16, rawWavAudio.length*2, 1);
+		byte[] header = getWAVHeader(SAMPLE_RATE, 16, rawWavAudio.length*2, 1);
 		for (int i = 0; i < 44; i++) {
 			ret[i] = header[i];
 		}
