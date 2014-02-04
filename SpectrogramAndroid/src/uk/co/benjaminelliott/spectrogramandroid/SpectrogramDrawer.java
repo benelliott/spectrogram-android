@@ -41,6 +41,7 @@ class SpectrogramDrawer {
 	private Matrix scaleMatrix;
 	private int windowsAvailable = 0;
 	private Bitmap unscaledBitmap;
+	private int oldestBitmapAvailable;
 	
 	//declare reused variables here to reduce GC
 	private boolean drawLeftShadow;
@@ -127,7 +128,7 @@ class SpectrogramDrawer {
 		if (canScroll) { //only scroll if there are more than a screen's worth of windows
 			//stop new windows from coming in immediately
 			offset /= HORIZONTAL_STRETCH; //convert from pixel offset to window offset 
-
+			oldestBitmapAvailable = bg.getOldestBitmapAvailable();
 			drawLeftShadow = true;
 			drawRightShadow = true;
 			if (offset > BitmapGenerator.WINDOW_LIMIT/2) offset = BitmapGenerator.WINDOW_LIMIT/2;
@@ -135,13 +136,14 @@ class SpectrogramDrawer {
 			leftmostWindowAsIndex = leftmostWindow % BitmapGenerator.WINDOW_LIMIT;
 			rightmostWindow = leftmostWindow + width/HORIZONTAL_STRETCH;
 			rightmostWindowAsIndex = rightmostWindow % BitmapGenerator.WINDOW_LIMIT;
-			if (leftmostWindow - offset <= 0) {
-				offset = leftmostWindow;
-				drawLeftShadow = false; //don't draw the left shadow as the left limit has been reached
-			}
+
 			if (rightmostWindow - offset >= windowsDrawn) {
 				offset = -(windowsDrawn - rightmostWindow);
 				drawRightShadow = false;
+			}
+			if (leftmostWindow - offset <= oldestBitmapAvailable) {
+				offset = leftmostWindow - oldestBitmapAvailable;
+				drawLeftShadow = false;
 			}
 			if (offset > 0) { //slide leftwards
 				if (leftmostWindowAsIndex != leftmostBitmapAvailable) {
@@ -340,6 +342,11 @@ class SpectrogramDrawer {
 	protected float getTimeFromStartAtPixel(float pixelOffset) {
 		float windowsOnScreen = ((float)width)/((float)HORIZONTAL_STRETCH); //number of windows that can fit on entire screen
 		return (getScreenFillTime()/windowsOnScreen)*getWindowAtPixel(pixelOffset);
+	}
+	
+	protected float getTimeFromStopAtPixel(float pixelOffset) {
+		float windowsOnScreen = ((float)width)/((float)HORIZONTAL_STRETCH); //number of windows that can fit on entire screen
+		return -(getScreenFillTime()/windowsOnScreen)*(windowsDrawn-getWindowAtPixel(pixelOffset));
 	}
 	
 	protected int getFrequencyAtPixel(float pixelOffset) {

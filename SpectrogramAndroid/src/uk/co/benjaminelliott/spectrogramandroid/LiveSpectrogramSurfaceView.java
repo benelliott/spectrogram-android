@@ -63,6 +63,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private int minContainerWidth = 120;
 
 	private TextView leftTimeTextView;
+	private TextView rightTimeTextView;
 	private TextView topFreqTextView;
 	private TextView selectRectTextView;
 	private String filename;
@@ -124,7 +125,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
 				//moveCaptureButtonContainer();
 				selectRectTextView.setVisibility(View.VISIBLE);
-				//captureButtonContainer.setVisibility(View.VISIBLE); TODO removed for user test only!!
+				//captureButtonContainer.setVisibility(View.VISIBLE); TODO removed only for user test!!
 				selectionConfirmButton.setEnabled(true);
 				selectionCancelButton.setEnabled(true);
 				updateSelectRectText();
@@ -172,6 +173,10 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	public void setLeftTimeTextView(TextView leftTimeTextView) {
 		this.leftTimeTextView = leftTimeTextView;
 	}
+	
+	public void setRightTimeTextView(TextView rightTimeTextView) {
+		this.rightTimeTextView = rightTimeTextView;
+	}
 
 	public void setTopFreqTextView(TextView topFreqTextView) {
 		this.topFreqTextView = topFreqTextView;
@@ -203,9 +208,10 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			Log.d("","About to play file "+audioFilepath);
 			player.prepare();
 			sd = new SpectrogramDrawer(this);
-			player.start();
+			//player.start();
 			resumeButton.setVisibility(View.GONE);
-			updateLeftTimeText();
+			updateLeftTimeFillText();
+			updateRightTimeText();
 			updateTopFreqText();
 			Log.d("","SURFACE CREATED");
 		} catch (IllegalArgumentException e) {
@@ -289,6 +295,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 					Log.d("","Bottom right");
 					selectedCorner = 4;
 				}
+				if (selectedCorner == 0) cancelSelection(); //TODO might delete, temp ability to cancel for user testing
 			}
 			break;
 		}
@@ -314,7 +321,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				//if selecting mode entered, allow user to move corners to adjust select-area rectangle size
 				x = MotionEventCompat.getX(ev, pointerIndex);
 				y = MotionEventCompat.getY(ev, pointerIndex);
-				x = x - lastTouchX;
+				dx = x - lastTouchX;
 				dy = y - lastTouchY;
 				moveCorner(selectedCorner, dx, dy);				
 				lastTouchX = x;
@@ -353,7 +360,11 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			}
 			break;
 		}
-		}       
+		}
+		
+		updateLeftTimeText(); //TODO update these live
+		updateRightTimeText();
+		
 		return true;
 	}
 
@@ -428,10 +439,22 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		//if (gc != null) gc.resumeFromPause(); //TODO bit messy
 	}
 
-	private void updateLeftTimeText() {
+	private void updateLeftTimeFillText() {
 		BigDecimal bd = new BigDecimal(Float.toString(sd.getScreenFillTime()));
 		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
 		leftTimeTextView.setText("-"+bd.floatValue()+" sec");
+	}
+	
+	private void updateLeftTimeText() {
+		BigDecimal bd = new BigDecimal(Float.toString(sd.getTimeFromStopAtPixel(0)));
+		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
+		leftTimeTextView.setText(bd.floatValue()+" sec");
+	}
+
+	private void updateRightTimeText() {
+		BigDecimal bd = new BigDecimal(Float.toString(sd.getTimeFromStopAtPixel(width)));
+		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
+		rightTimeTextView.setText(bd.floatValue()+" sec");
 	}
 
 	private void updateTopFreqText() {

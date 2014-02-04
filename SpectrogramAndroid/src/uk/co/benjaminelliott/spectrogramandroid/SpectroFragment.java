@@ -101,6 +101,7 @@ public class SpectroFragment extends Fragment {
 		rightTimeTextView.setText("0 sec");
 		
 		lssv.setLeftTimeTextView(leftTimeTextView);
+		lssv.setRightTimeTextView(rightTimeTextView);
 		lssv.setTopFreqTextView(topFreqTextView);
 		lssv.setResumeButton(resumeButton);
 		lssv.setSelectRectTextView(selectRectTextView);

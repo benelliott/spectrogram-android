@@ -23,10 +23,10 @@
     </string-array>
     <string-array name="pref_user_test_audio_values">
         <item>bushwarbler.wav</item>
-        <item>grouse.wav</item>
+        <item>millerbird.wav</item>
         <item>pheasant.wav</item>
         <item>pohnpeilory.wav</item>
-        <item>tundraswan.wav</item>
+		<item>redwingedtinapou.wav</item>
         <item>wattledhoneyeater.wav</item>
     </string-array>
     <string-array name="pref_sample_rate_values">

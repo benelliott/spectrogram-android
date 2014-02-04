@@ -63,6 +63,7 @@ public class BitmapGenerator {
 	private Semaphore audioReady = new Semaphore(0);
 	private Semaphore bitmapsReady = new Semaphore(0);
 	private int lastBitmapRequested = 0; //keeps track of the most recently requested bitmap window
+	private int oldestBitmapAvailable = 0;
 	private Context context;
 	
 	//allocate memory here rather than in performance-affecting methods:
@@ -210,8 +211,13 @@ public class BitmapGenerator {
 		bitmapsReady.release();
 
 		if (bitmapCurrentIndex == bitmapWindows.length) {
+			Log.d("Bitmap: ","Arrays looped! Window limit "+WINDOW_LIMIT+", bitmapCurrentIndex: "+bitmapCurrentIndex);
 			bitmapCurrentIndex = 0;
 			arraysLooped = true;
+		}
+		
+		if (arraysLooped) {
+			oldestBitmapAvailable++;
 		}
 	}
 
@@ -297,6 +303,10 @@ public class BitmapGenerator {
 		 * Returns the number of bitmaps ready to be drawn.
 		 */
 		return bitmapsReady.availablePermits();
+	}
+	
+	protected int getOldestBitmapAvailable() {
+		return oldestBitmapAvailable;
 	}
 
 	protected int getLeftmostBitmapAvailable() {
