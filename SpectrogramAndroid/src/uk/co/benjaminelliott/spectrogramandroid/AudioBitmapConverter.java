@@ -6,12 +6,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.media.ExifInterface;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class AudioBitmapConverter  {

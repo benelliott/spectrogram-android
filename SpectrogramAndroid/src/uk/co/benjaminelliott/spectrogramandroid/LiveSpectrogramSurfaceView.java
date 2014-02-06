@@ -94,6 +94,12 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private float y;
 	private float dx;
 	private float dy;
+	private float t0;
+	private float t1;
+	private int f0;
+	private int f1;
+	private BigDecimal startTime;
+	private BigDecimal endTime;
 	
 	public LiveSpectrogramSurfaceView(Context context) {
 		super(context);
@@ -464,7 +470,19 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	}
 
 	private void updateSelectRectText() {
-		selectRectTextView.setText("t0: "+sd.getTimeFromStartAtPixel(selectRectL)+" t1: "+sd.getTimeFromStartAtPixel(selectRectR)+" f0: "+sd.getFrequencyAtPixel(selectRectT)+" f1: "+sd.getFrequencyAtPixel(selectRectB));
+		t0 = sd.getTimeFromStartAtPixel(selectRectL);
+		t1 = sd.getTimeFromStartAtPixel(selectRectR);
+		f0 = sd.getFrequencyAtPixel(selectRectT);
+		f1 = sd.getFrequencyAtPixel(selectRectB);
+		
+		startTime = (t0 < t1) ? new BigDecimal(Float.toString(t0)) : new BigDecimal(Float.toString(t1));
+		startTime = startTime.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
+		endTime = (t0 < t1) ? new BigDecimal(Float.toString(t1)) : new BigDecimal(Float.toString(t0));
+		endTime = endTime.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
+		int minFreq = (f0 < f1) ? f0 : f1;
+		int maxFreq = (f1 > f0) ? f1 : f0;
+
+		selectRectTextView.setText("Start time: "+startTime.floatValue()+" End time: "+endTime.floatValue()+"\n"+"Min freq: "+minFreq+" Max freq: "+maxFreq);
 	}
 
 	public void confirmSelection() {

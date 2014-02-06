@@ -88,6 +88,7 @@
                 android:layout_centerHorizontal="true"
                 android:background="#88444444"
                 android:text="sr"
+                android:textAlignment="center"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:textColor="#FFFFFF" />
         </RelativeLayout>
