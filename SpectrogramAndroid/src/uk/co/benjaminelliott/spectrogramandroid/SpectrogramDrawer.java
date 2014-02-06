@@ -2,13 +2,11 @@ package uk.co.benjaminelliott.spectrogramandroid;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
@@ -234,17 +232,49 @@ class SpectrogramDrawer {
 		Paint rectPaint = new Paint();
 
 		//draw select-area rectangle
-		rectPaint.setColor(SELECT_RECT_COLOUR);
 
-		bufCanvas.drawRect(selectRectL, selectRectT, selectRectR, selectRectB, rectPaint);
+		//rectPaint.setColor(SELECT_RECT_COLOUR);
+		//bufCanvas.drawRect(selectRectL, selectRectT, selectRectR, selectRectB, rectPaint);
+		
+		rectPaint.setColor(Color.BLACK);
+		rectPaint.setStrokeWidth(10);
+		bufCanvas.drawLine(selectRectL, selectRectB, selectRectR, selectRectB, rectPaint);
+		bufCanvas.drawLine(selectRectR, selectRectB, selectRectR, selectRectT, rectPaint);
+		bufCanvas.drawLine(selectRectL, selectRectT, selectRectR, selectRectT, rectPaint);
+		bufCanvas.drawLine(selectRectL, selectRectB, selectRectL, selectRectT, rectPaint);
+		rectPaint.setColor(Color.WHITE);
+		rectPaint.setStrokeWidth(6);
+		bufCanvas.drawLine(selectRectL, selectRectB, selectRectR, selectRectB, rectPaint);
+		bufCanvas.drawLine(selectRectR, selectRectB, selectRectR, selectRectT, rectPaint);
+		bufCanvas.drawLine(selectRectL, selectRectT, selectRectR, selectRectT, rectPaint);
+		bufCanvas.drawLine(selectRectL, selectRectB, selectRectL, selectRectT, rectPaint);
 
+		
+		int halfCornerDiam = 10;
 		//draw draggable corners
-		Paint circPaint = new Paint();
-		circPaint.setColor(Color.rgb(255,255,255));
-		bufCanvas.drawCircle(selectRectL, selectRectB, 10, circPaint);
-		bufCanvas.drawCircle(selectRectL, selectRectT, 10, circPaint);
-		bufCanvas.drawCircle(selectRectR, selectRectB, 10, circPaint);
-		bufCanvas.drawCircle(selectRectR, selectRectT, 10, circPaint);
+		Paint cornerPaint = new Paint();
+		cornerPaint.setColor(Color.BLACK);
+		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectB+halfCornerDiam, selectRectL+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectB+halfCornerDiam, selectRectR+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectT+halfCornerDiam, selectRectL+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectT+halfCornerDiam, selectRectR+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
+
+		halfCornerDiam = 8;
+		cornerPaint.setColor(Color.WHITE);
+		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectB+halfCornerDiam, selectRectL+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectB+halfCornerDiam, selectRectR+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectT+halfCornerDiam, selectRectL+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectT+halfCornerDiam, selectRectR+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
+//		
+//		bufCanvas.drawCircle(selectRectL, selectRectB, 20, cornerPaint);
+//		bufCanvas.drawCircle(selectRectL, selectRectT, 20, cornerPaint);
+//		bufCanvas.drawCircle(selectRectR, selectRectB, 20, cornerPaint);
+//		bufCanvas.drawCircle(selectRectR, selectRectT, 20, cornerPaint);
+//		cornerPaint.setColor(Color.WHITE);
+//		bufCanvas.drawCircle(selectRectL, selectRectB, 16, cornerPaint);
+//		bufCanvas.drawCircle(selectRectL, selectRectT, 16, cornerPaint);
+//		bufCanvas.drawCircle(selectRectR, selectRectB, 16, cornerPaint);
+//		bufCanvas.drawCircle(selectRectR, selectRectT, 16, cornerPaint);
 
 		SurfaceHolder sh = lssv.getHolder();
 		displayCanvas = sh.lockCanvas(null);
