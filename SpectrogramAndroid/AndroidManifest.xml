@@ -26,8 +26,7 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme"
-        android:largeHeap="true" >
+        android:theme="@style/AppTheme">
         <activity
             android:name="uk.co.benjaminelliott.spectrogramandroid.SpectroActivity"
             android:label="@string/app_name">

@@ -104,6 +104,9 @@ public class BitmapGenerator {
 		case 1: colours = HeatMap.inverseGreyscale();break;
 		case 2: colours = HeatMap.hotMetal(); break;
 		case 3: colours = HeatMap.blueGreenRed(); break;
+		case 4: colours = HeatMap.Greys_ColorBrewer(); break;
+		case 5: colours = HeatMap.YlOrRd_ColorBrewer(); break;
+		case 6: colours = HeatMap.PuOr_Backwards_ColorBrewer(); break;
 		}
 		
 		generateHammingWindow();

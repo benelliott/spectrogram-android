@@ -299,5 +299,140 @@ public class HeatMap {
 		}
 		return toReturn;
 	}
+	
+	static int[] Greys_ColorBrewer() {
+		//Sequential, single-hue
+
+		int[] toReturn = new int[256];
+		for (int i = 0; i < 256; i++) {
+			toReturn[i] = 255; //alpha
+			toReturn[i] <<= 8;
+			
+			//red
+			if (0 <= i && i <= 31) toReturn[i] += 255;
+			if (32 <= i && i <= 63) toReturn[i] += 240;
+			if (64 <= i && i <= 95) toReturn[i] += 217;
+			if (96 <= i && i <= 127) toReturn[i] += 189;
+			if (128 <= i && i <= 159) toReturn[i] += 150;
+			if (160 <= i && i <= 191) toReturn[i] += 115;
+			if (192 <= i && i <= 223) toReturn[i] += 82;
+			if (224 <= i && i <= 255) toReturn[i] += 37;
+			toReturn[i] <<= 8; 
+			
+			//green
+			
+			if (0 <= i && i <= 31) toReturn[i] += 255;
+			if (32 <= i && i <= 63) toReturn[i] += 240;
+			if (64 <= i && i <= 95) toReturn[i] += 217;
+			if (96 <= i && i <= 127) toReturn[i] += 189;
+			if (128 <= i && i <= 159) toReturn[i] += 150;
+			if (160 <= i && i <= 191) toReturn[i] += 115;
+			if (192 <= i && i <= 223) toReturn[i] += 82;
+			if (224 <= i && i <= 255) toReturn[i] += 37;
+			toReturn[i] <<= 8; 
+			
+			//blue
+			if (0 <= i && i <= 31) toReturn[i] += 255;
+			if (32 <= i && i <= 63) toReturn[i] += 240;
+			if (64 <= i && i <= 95) toReturn[i] += 217;
+			if (96 <= i && i <= 127) toReturn[i] += 189;
+			if (128 <= i && i <= 159) toReturn[i] += 150;
+			if (160 <= i && i <= 191) toReturn[i] += 115;
+			if (192 <= i && i <= 223) toReturn[i] += 82;
+			if (224 <= i && i <= 255) toReturn[i] += 37;
+			//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
+		}
+		return toReturn;
+	}
+	
+	static int[] YlOrRd_ColorBrewer() {
+		//Sequential, multi-hue
+
+		int[] toReturn = new int[256];
+		for (int i = 0; i < 256; i++) {
+			toReturn[i] = 255; //alpha
+			toReturn[i] <<= 8;
+			
+			//red
+			if (0 <= i && i <= 31) toReturn[i] += 255;
+			if (32 <= i && i <= 63) toReturn[i] += 255;
+			if (64 <= i && i <= 95) toReturn[i] += 254;
+			if (96 <= i && i <= 127) toReturn[i] += 254;
+			if (128 <= i && i <= 159) toReturn[i] += 253;
+			if (160 <= i && i <= 191) toReturn[i] += 252;
+			if (192 <= i && i <= 223) toReturn[i] += 227;
+			if (224 <= i && i <= 255) toReturn[i] += 177;
+			toReturn[i] <<= 8; 
+			
+			//green
+			
+			if (0 <= i && i <= 31) toReturn[i] += 255;
+			if (32 <= i && i <= 63) toReturn[i] += 237;
+			if (64 <= i && i <= 95) toReturn[i] += 217;
+			if (96 <= i && i <= 127) toReturn[i] += 178;
+			if (128 <= i && i <= 159) toReturn[i] += 141;
+			if (160 <= i && i <= 191) toReturn[i] += 78;
+			if (192 <= i && i <= 223) toReturn[i] += 26;
+			if (224 <= i && i <= 255) toReturn[i] += 0;
+			toReturn[i] <<= 8; 
+			
+			//blue
+			if (0 <= i && i <= 31) toReturn[i] += 204;
+			if (32 <= i && i <= 63) toReturn[i] += 160;
+			if (64 <= i && i <= 95) toReturn[i] += 118;
+			if (96 <= i && i <= 127) toReturn[i] += 76;
+			if (128 <= i && i <= 159) toReturn[i] += 60;
+			if (160 <= i && i <= 191) toReturn[i] += 42;
+			if (192 <= i && i <= 223) toReturn[i] += 28;
+			if (224 <= i && i <= 255) toReturn[i] += 38;
+			//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
+		}
+		return toReturn;
+	}
+	
+	static int[] PuOr_Backwards_ColorBrewer() {
+		//Diverging
+
+		int[] toReturn = new int[256];
+		for (int i = 0; i < 256; i++) {
+			toReturn[i] = 255; //alpha
+			toReturn[i] <<= 8;
+			
+			//red
+			if (0 <= i && i <= 31) toReturn[i] += 84;
+			if (32 <= i && i <= 63) toReturn[i] += 128;
+			if (64 <= i && i <= 95) toReturn[i] += 178;
+			if (96 <= i && i <= 127) toReturn[i] += 216;
+			if (128 <= i && i <= 159) toReturn[i] += 254;
+			if (160 <= i && i <= 191) toReturn[i] += 253;
+			if (192 <= i && i <= 223) toReturn[i] += 224;
+			if (224 <= i && i <= 255) toReturn[i] += 179;
+			toReturn[i] <<= 8; 
+			
+			//green
+			
+			if (0 <= i && i <= 31) toReturn[i] += 39;
+			if (32 <= i && i <= 63) toReturn[i] += 115;
+			if (64 <= i && i <= 95) toReturn[i] += 171;
+			if (96 <= i && i <= 127) toReturn[i] += 218;
+			if (128 <= i && i <= 159) toReturn[i] += 224;
+			if (160 <= i && i <= 191) toReturn[i] += 184;
+			if (192 <= i && i <= 223) toReturn[i] += 130;
+			if (224 <= i && i <= 255) toReturn[i] += 88;
+			toReturn[i] <<= 8; 
+			
+			//blue
+			if (0 <= i && i <= 31) toReturn[i] += 136;
+			if (32 <= i && i <= 63) toReturn[i] += 172;
+			if (64 <= i && i <= 95) toReturn[i] += 210;
+			if (96 <= i && i <= 127) toReturn[i] += 235;
+			if (128 <= i && i <= 159) toReturn[i] += 182;
+			if (160 <= i && i <= 191) toReturn[i] += 99;
+			if (192 <= i && i <= 223) toReturn[i] += 20;
+			if (224 <= i && i <= 255) toReturn[i] += 6;
+			//System.out.println("Alpha: "+Color.alpha(toReturn)+" Red: "+Color.red(toReturn)+" Green: "+Color.green(toReturn)+" Blue: "+Color.blue(toReturn));
+		}
+		return toReturn;
+	}
 
 }
