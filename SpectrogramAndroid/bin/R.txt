@@ -65,7 +65,8 @@ int drawable ic_plusone_small_off_client 0x7f02001a
 int drawable ic_plusone_standard_off_client 0x7f02001b
 int drawable ic_plusone_tall_off_client 0x7f02001c
 int drawable resume 0x7f02001d
-int drawable spectro_icon 0x7f02001e
+int drawable resume_old 0x7f02001e
+int drawable spectro_icon 0x7f02001f
 int id action_settings 0x7f060015
 int id button_resume 0x7f06000b
 int id capture_button_container 0x7f06000c

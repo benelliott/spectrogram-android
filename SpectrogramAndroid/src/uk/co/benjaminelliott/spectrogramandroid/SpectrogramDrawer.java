@@ -15,7 +15,7 @@ class SpectrogramDrawer {
 	private final int HORIZONTAL_STRETCH = 2;
 	private final float VERTICAL_STRETCH;
 	private final int SAMPLES_PER_WINDOW;
-	private int SELECT_RECT_COLOUR = Color.argb(127, 127, 127, 127);
+	private int SELECT_RECT_COLOUR = Color.argb(80, 255, 255, 255);
 	private int SCROLL_SHADOW_INV_SPREAD = 8; //decrease for a larger shadow
 	private final ReentrantLock scrollingLock = new ReentrantLock(false);
 	private BitmapGenerator bg;
@@ -47,6 +47,13 @@ class SpectrogramDrawer {
 	private int leftmostWindowAsIndex;
 	private int rightmostWindow;
 	private int rightmostWindowAsIndex;
+	
+	//TODO move
+	float rectL;
+	float rectR;
+	float rectT;
+	float rectB;
+	final int CORNER_RECT_DISTANCE = 40;
 
 
 
@@ -221,6 +228,78 @@ class SpectrogramDrawer {
 		unscaledBitmap = Bitmap.createBitmap(bg.getBitmapWindow(index), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888);
 		bufferCanvas.drawBitmap(scaleBitmap(unscaledBitmap), xCoord, 0f, null);
 	}
+	
+	public void drawAlanSelectRect(float selectRectL, float selectRectR, float selectRectT, float selectRectB) {
+		/*
+		 * Draw the select-area rectangle with left, right, top and bottom coordinates at selectRectL, selectRectR, 
+		 * selectRectT and selectRectB respectively. Colour according to the SELECT_RECT_COLOUR value.
+		 */
+		Bitmap buf = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		Canvas bufCanvas = new Canvas(buf);
+		Paint rectPaint = new Paint();
+
+		
+		Paint cornerPaint = new Paint();
+		
+		int halfCornerDiam = 20;		
+		cornerPaint.setColor(Color.BLACK);
+		cornerPaint.setStrokeWidth(5);
+
+		rectL = selectRectL + CORNER_RECT_DISTANCE;
+		rectR = selectRectR - CORNER_RECT_DISTANCE;
+		rectT = selectRectT + CORNER_RECT_DISTANCE;
+		rectB = selectRectB - CORNER_RECT_DISTANCE;
+		
+		rectPaint.setColor(Color.BLACK);
+		rectPaint.setStrokeWidth(10);
+		bufCanvas.drawLine(rectL, rectB, rectR, rectB, rectPaint);
+		bufCanvas.drawLine(rectR, rectB, rectR, rectT, rectPaint);
+		bufCanvas.drawLine(rectL, rectT, rectR, rectT, rectPaint);
+		bufCanvas.drawLine(rectL, rectB, rectL, rectT, rectPaint);
+		
+		
+		bufCanvas.drawLine(selectRectL, selectRectB, rectL, rectB, cornerPaint);
+		bufCanvas.drawLine(selectRectL, selectRectT, rectL, rectT, cornerPaint);
+		bufCanvas.drawLine(selectRectR, selectRectB, rectR, rectB, cornerPaint);
+		bufCanvas.drawLine(selectRectR, selectRectT, rectR, rectT, cornerPaint);
+		
+		rectPaint.setColor(Color.WHITE);
+		rectPaint.setStrokeWidth(6);
+		bufCanvas.drawLine(rectL, rectB, rectR, rectB, rectPaint);
+		bufCanvas.drawLine(rectR, rectB, rectR, rectT, rectPaint);
+		bufCanvas.drawLine(rectL, rectT, rectR, rectT, rectPaint);
+		bufCanvas.drawLine(rectL, rectB, rectL, rectT, rectPaint);
+
+		
+		//draw draggable corners
+
+		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectB+halfCornerDiam, selectRectL+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectB+halfCornerDiam, selectRectR+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectT+halfCornerDiam, selectRectL+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectT+halfCornerDiam, selectRectR+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
+
+
+
+		halfCornerDiam = 18;
+		cornerPaint.setColor(Color.WHITE);
+		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectB+halfCornerDiam, selectRectL+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectB+halfCornerDiam, selectRectR+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectT+halfCornerDiam, selectRectL+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectT+halfCornerDiam, selectRectR+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
+
+		SurfaceHolder sh = lssv.getHolder();
+		displayCanvas = sh.lockCanvas(null);
+		try {
+			synchronized (sh) {
+				displayCanvas.drawBitmap(buffer, 0, 0, null); //clean any old rectangles away
+				displayCanvas.drawBitmap(buf, 0, 0, null); //draw new rectangle to display buffer
+			}
+		} finally {
+			if (displayCanvas != null) {
+				sh.unlockCanvasAndPost(displayCanvas);
+			}
+		}
+	}
 
 	public void drawSelectRect(float selectRectL, float selectRectR, float selectRectT, float selectRectB) {
 		/*
@@ -232,10 +311,8 @@ class SpectrogramDrawer {
 		Paint rectPaint = new Paint();
 
 		//draw select-area rectangle
-
 		//rectPaint.setColor(SELECT_RECT_COLOUR);
 		//bufCanvas.drawRect(selectRectL, selectRectT, selectRectR, selectRectB, rectPaint);
-		
 		rectPaint.setColor(Color.BLACK);
 		rectPaint.setStrokeWidth(10);
 		bufCanvas.drawLine(selectRectL, selectRectB, selectRectR, selectRectB, rectPaint);
@@ -248,33 +325,23 @@ class SpectrogramDrawer {
 		bufCanvas.drawLine(selectRectR, selectRectB, selectRectR, selectRectT, rectPaint);
 		bufCanvas.drawLine(selectRectL, selectRectT, selectRectR, selectRectT, rectPaint);
 		bufCanvas.drawLine(selectRectL, selectRectB, selectRectL, selectRectT, rectPaint);
-
 		
-		int halfCornerDiam = 10;
 		//draw draggable corners
 		Paint cornerPaint = new Paint();
+		int halfCornerDiam = 20;
 		cornerPaint.setColor(Color.BLACK);
 		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectB+halfCornerDiam, selectRectL+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
 		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectB+halfCornerDiam, selectRectR+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
 		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectT+halfCornerDiam, selectRectL+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
 		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectT+halfCornerDiam, selectRectR+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
 
-		halfCornerDiam = 8;
+		halfCornerDiam = 18;
 		cornerPaint.setColor(Color.WHITE);
 		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectB+halfCornerDiam, selectRectL+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
 		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectB+halfCornerDiam, selectRectR+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
 		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectT+halfCornerDiam, selectRectL+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
 		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectT+halfCornerDiam, selectRectR+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
-//		
-//		bufCanvas.drawCircle(selectRectL, selectRectB, 20, cornerPaint);
-//		bufCanvas.drawCircle(selectRectL, selectRectT, 20, cornerPaint);
-//		bufCanvas.drawCircle(selectRectR, selectRectB, 20, cornerPaint);
-//		bufCanvas.drawCircle(selectRectR, selectRectT, 20, cornerPaint);
-//		cornerPaint.setColor(Color.WHITE);
-//		bufCanvas.drawCircle(selectRectL, selectRectB, 16, cornerPaint);
-//		bufCanvas.drawCircle(selectRectL, selectRectT, 16, cornerPaint);
-//		bufCanvas.drawCircle(selectRectR, selectRectB, 16, cornerPaint);
-//		bufCanvas.drawCircle(selectRectR, selectRectT, 16, cornerPaint);
+
 
 		SurfaceHolder sh = lssv.getHolder();
 		displayCanvas = sh.lockCanvas(null);

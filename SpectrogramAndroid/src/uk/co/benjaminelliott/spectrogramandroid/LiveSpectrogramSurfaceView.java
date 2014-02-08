@@ -84,7 +84,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private float SELECT_RECT_WIDTH = 200;
 	private float SELECT_RECT_HEIGHT = 200;
 
-	private final float CORNER_CIRCLE_RADIUS = 40; //when setting, must think about how large the target can be for the user to hit it accurately 
+	private final float CORNER_CIRCLE_RADIUS = 45; //when setting, must think about how large the target can be for the user to hit it accurately 
 
 	
 	//allocate memory for reused variables here to reduce GC
