@@ -131,7 +131,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
 				//moveCaptureButtonContainer();
 				selectRectTextView.setVisibility(View.VISIBLE);
-				//captureButtonContainer.setVisibility(View.VISIBLE); TODO removed only for user test!!
+				captureButtonContainer.setVisibility(View.VISIBLE); //TODO removed only for user test!!
 				selectionConfirmButton.setEnabled(true);
 				selectionCancelButton.setEnabled(true);
 				updateSelectRectText();
@@ -556,6 +556,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			short[] audioToStore = sd.getAudioToStore(selectRectL, selectRectR, selectRectT, selectRectB);
 			AudioBitmapConverter abc = new AudioBitmapConverter(filename, STORE_DIR_NAME, bitmapToStore,audioToStore,lc.getLastLocation(),sd.getBitmapGenerator().getSampleRate());
 			abc.writeCBAToFile(filename, STORE_DIR_NAME);
+			abc.storeJPEGandWAV();
 			return null;
 		}
 

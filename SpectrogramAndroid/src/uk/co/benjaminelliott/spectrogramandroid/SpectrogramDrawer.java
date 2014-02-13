@@ -514,7 +514,17 @@ class SpectrogramDrawer {
 			startWindow = getWindowAtPixel(x1);
 			endWindow = getWindowAtPixel(x0);
 		}
-		return bg.getAudioChunk(startWindow, endWindow);
+		int bottomFreq;
+		int topFreq;
+		if (y0 < y1) {
+			//remember that for y-coordinates, higher means lower down screen
+			topFreq = getFrequencyAtPixel(y0);
+			bottomFreq = getFrequencyAtPixel(y1);
+		} else {
+			topFreq = getFrequencyAtPixel(y1);
+			bottomFreq = getFrequencyAtPixel(y0);
+		}
+		return bg.getAudioChunk(startWindow, endWindow, bottomFreq, topFreq);
 	}
 	
 	protected BitmapGenerator getBitmapGenerator() {

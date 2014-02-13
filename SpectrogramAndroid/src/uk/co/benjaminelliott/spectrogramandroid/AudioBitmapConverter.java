@@ -24,17 +24,16 @@ public class AudioBitmapConverter  {
 	private final int width;
 	private final int height;
 	private CapturedBitmapAudio cba;
+	private Bitmap bitmap;
 	
 	AudioBitmapConverter(String filename, String directory, Bitmap bitmap, short[] rawWavAudio, Location loc, int sampleRate) {
 		this.filename = filename;
 		this.directory = directory;
 		this.SAMPLE_RATE = sampleRate;
+		this.bitmap = bitmap;
 		decLatitude = loc.getLatitude();
 		decLongitude = loc.getLongitude();
 		wavAudio = wavAsByteArray(rawWavAudio);
-		writeBitmapToJPEG(bitmap);
-		geotagJPEG();
-		writeAudioToWAV();
 		width = bitmap.getWidth();
 		height = bitmap.getHeight();
 		bitmapAsIntArray = new int[width*height];
@@ -42,6 +41,10 @@ public class AudioBitmapConverter  {
 		cba = new CapturedBitmapAudio(filename, bitmapAsIntArray, wavAudio, width, height, decLatitude, decLongitude);
 	}
 	
+	void storeJPEGandWAV() {
+		writeBitmapToJPEG(bitmap);
+		writeAudioToWAV();
+	}
 	
 	
 	private byte[] wavAsByteArray(short[] rawWavAudio) {
@@ -88,6 +91,7 @@ public class AudioBitmapConverter  {
 				}
 			}
 		}
+		geotagJPEG();
 	}
 	
 	private void geotagJPEG() {

@@ -65,13 +65,13 @@ public class BitmapGenerator {
 	private int lastBitmapRequested = 0; //keeps track of the most recently requested bitmap window
 	private int oldestBitmapAvailable = 0;
 	private Context context;
+	private HammingWindow hammingWindow;
 	
 	//allocate memory here rather than in performance-affecting methods:
 	private int samplesRead = 0;
 	private double[] fftSamples;
 	private double[] previousWindow; //keep a handle on the previous audio sample window so that values can be averaged across them
 	private double[] combinedWindow;
-	private double[] hammingWindow;
 	private DoubleFFT_1D dfft1d; //DoubleFFT_1D constructor must be supplied with an 'n' value, where n = data size
 	private int val = 0;
 
@@ -91,9 +91,9 @@ public class BitmapGenerator {
 		fftSamples = new double[SAMPLES_PER_WINDOW*2];
 		previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
 		combinedWindow = new double[SAMPLES_PER_WINDOW];
-		hammingWindow = new double[SAMPLES_PER_WINDOW];
 		dfft1d = new DoubleFFT_1D(SAMPLES_PER_WINDOW); //DoubleFFT_1D constructor must be supplied with an 'n' value, where n = data size
 
+		hammingWindow = new HammingWindow(SAMPLES_PER_WINDOW);
 		
 		String colMapString = prefs.getString(PREF_COLOURMAP_KEY, "NULL");
 		int colourMap = 0;
@@ -109,8 +109,6 @@ public class BitmapGenerator {
 		case 6: colours = HeatMap.PuOr_Backwards_ColorBrewer(); break;
 		}
 		
-		generateHammingWindow();
-
 		float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
 		if (newContrast != Float.MAX_VALUE) contrast = newContrast * 3.0f + 1.0f; //slider value must be between 0 and 1, so multiply by 3 and add 1
 
@@ -234,7 +232,7 @@ public class BitmapGenerator {
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			fftSamples[i] = (double)(samples[i]);
 		}
-		applyHammingWindow(fftSamples); //apply Hamming window before performing STFT
+		hammingWindow.applyHammingWindow(fftSamples); //apply Hamming window before performing STFT
 		spectroTransform(fftSamples); //do the STFT on the copied data
 
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
@@ -263,25 +261,6 @@ public class BitmapGenerator {
 			return 255;
 		}
 		return (int)(255*Math.pow((Math.log1p(d)/Math.log1p(maxAmplitude)),contrast));
-	}
-	
-	private void applyHammingWindow(double[] samples) {
-
-		//apply windowing function through multiplication with time-domain samples
-		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
-			samples[i] *= hammingWindow[i]; 
-		}
-	}
-
-	private void generateHammingWindow() {
-		/*
-		 * This method generates an appropriately-sized Hamming window to be used later.
-		 */
-		int m = SAMPLES_PER_WINDOW/2;
-		double r = Math.PI/(m+1);
-		for (int i = -m; i < m; i++) {
-			hammingWindow[m + i] = 0.5 + 0.5 * Math.cos(i * r);
-		}
 	}
 
 	private void spectroTransform(double[] paddedSamples) {
@@ -366,8 +345,6 @@ public class BitmapGenerator {
 		//same for windows
 		startWindow %= WINDOW_LIMIT;
 		endWindow %= WINDOW_LIMIT;
-
-		//TODO filter
 
 		Bitmap ret;
 		Canvas retCanvas;
@@ -482,13 +459,14 @@ public class BitmapGenerator {
 		return Bitmap.createBitmap(bitmapToScale, 0, 0, bitmapToScale.getWidth(), bitmapToScale.getHeight(), matrix, true);
 	}
 
-	protected short[] getAudioChunk(int startWindow, int endWindow) {
+	protected short[] getAudioChunk(int startWindow, int endWindow, int bottomFreq, int topFreq) {
 		/*
 		 * Returns an array of PCM audio data based on the window interval supplied to the function.
 		 */
 		//convert windows into array indices
 		startWindow %= WINDOW_LIMIT;
 		endWindow %= WINDOW_LIMIT;
+		
 
 		short[] toReturn;
 
@@ -498,13 +476,13 @@ public class BitmapGenerator {
 			for (int i = startWindow; i < WINDOW_LIMIT; i++) {
 				for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
 					//Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
-					toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = Short.reverseBytes(audioWindows[i][j]); //must be little-endian for WAV
+					toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
 				}
 			}
 			for (int i = 0; i < endWindow; i++) {
 				for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
 					//Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
-					toReturn[(WINDOW_LIMIT-startWindow+i)*SAMPLES_PER_WINDOW+j] = Short.reverseBytes(audioWindows[i][j]); //must be little-endian for WAV
+					toReturn[(WINDOW_LIMIT-startWindow+i)*SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
 				}
 			}
 		}
@@ -514,10 +492,16 @@ public class BitmapGenerator {
 
 				for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
 					//Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
-					toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = Short.reverseBytes(audioWindows[i][j]); //must be little-endian for WAV
+					toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
 				}
 			}
 		}
+		
+		Log.d("","Filtering capture from "+bottomFreq+"Hz to "+topFreq+"Hz.");
+		BandpassButterworth butter = new BandpassButterworth(SAMPLE_RATE, 4, (double)bottomFreq, (double)topFreq, 1.0);
+		butter.applyBandpassFilter(toReturn);
+		
+		for (int i = 0; i < toReturn.length; i++) toReturn[i] = Short.reverseBytes(toReturn[i]); //must be little-endian for WAV
 		return toReturn;
 	}
 
