@@ -98,7 +98,7 @@ public class LibraryFragment extends Fragment {
 		        startActivity(intent);
 		    }
 		});
-		builder.setNeutralButton("Send to server", new DialogInterface.OnClickListener() { 
+		builder.setNeutralButton("Upload", new DialogInterface.OnClickListener() { 
 		    @Override
 		    public void onClick(DialogInterface dialog, int which) {
 		    	new ServerSendTask().execute(directory.getAbsolutePath(), filename);

@@ -71,8 +71,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private AlertDialog loadingAlert; //used to force user to wait for capture
 	private LibraryFragment library;
 	private ViewUpdateHandler vuh; //used to send message to library pane to update file list
-	private MediaPlayer player;
-	private String audioFilepath; // filepath for user test audio TODO remove
 
 	//left, right, top and bottom edge locations for the select-area rectangle:
 	private float selectRectL = 0;
@@ -200,19 +198,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	public void surfaceCreated(SurfaceHolder arg0) {
 		width = getWidth();
 		height = getHeight();
-		//check audio filepath preference when surface created so it updates when setting changed
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		audioFilepath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/"+prefs.getString(PREF_AUDIO_KEY, "NULL");
-		Log.d("LSSV","Audio selected: "+audioFilepath);
-
 		try {
-			//play wav file simultaneously with showing spectrogram:
-			player = new MediaPlayer();
-			File f = new File(audioFilepath);
-			f.setReadable(true,false); //need to set permissions so that it can be read by the media player
-			player.setDataSource(audioFilepath);
-			Log.d("","About to play file "+audioFilepath);
-			player.prepare();
 			sd = new SpectrogramDrawer(this);
 			//player.start();
 			resumeButton.setVisibility(View.GONE);
@@ -226,16 +212,11 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			e.printStackTrace();
 		} catch (IllegalStateException e) {
 			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
-		
-
 	}
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder arg0) {
-		//TODO: worry about interrupted something something something
 		Log.d("LSSV","SURFACE DESTROYED");
 		if (sd != null) sd.stop();
 		sd = null;
@@ -243,11 +224,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	
 	public void stop() {
 		Log.d("LSSV","STOP");
-		if (player != null) { //Android nullifies this on its own, e.g. if a call comes in
-			player.stop();
-			player.release();
-			player = null;
-		}
 		sd.stop();
 		if (selecting) cancelSelection();
 
@@ -301,7 +277,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 					Log.d("","Bottom right");
 					selectedCorner = 4;
 				}
-				if (selectedCorner == 0) cancelSelection(); //TODO might delete, temp ability to cancel for user testing
+				if (selectedCorner == 0) cancelSelection();
 			}
 			break;
 		}
@@ -360,7 +336,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			if (pointerId == mActivePointerId) {
 				// This was our active pointer going up. Choose a new
 				// active pointer and adjust accordingly.
-				final int newPointerIndex = pointerIndex == 0 ? 1 : 0; //TODO dafuq
+				final int newPointerIndex = pointerIndex == 0 ? 1 : 0;
 				lastTouchX = MotionEventCompat.getX(ev, newPointerIndex); 
 				mActivePointerId = MotionEventCompat.getPointerId(ev, newPointerIndex);
 			}
@@ -439,10 +415,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		sd = new SpectrogramDrawer(this);
 		resumeButton.setVisibility(View.GONE);
 		selectRectTextView.setVisibility(View.GONE);
-	}
-
-	public void resumeFromPause() {
-		//if (gc != null) gc.resumeFromPause(); //TODO bit messy
 	}
 
 	private void updateLeftTimeFillText() {

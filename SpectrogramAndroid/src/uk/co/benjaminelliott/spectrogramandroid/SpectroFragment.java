@@ -48,7 +48,6 @@ public class SpectroFragment extends Fragment {
 	@Override
 	public void onResume() {
 		super.onResume();
-		lssv.resumeFromPause();
 	}
     
     private void init() {
@@ -90,12 +89,9 @@ public class SpectroFragment extends Fragment {
 		selectRectTextView = (TextView)rootView.findViewById(R.id.text_select_rect);
 		selectRectTextView.setVisibility(View.GONE);
 		
-		//TODO
 		captureButtonContainer = (LinearLayout)rootView.findViewById(R.id.capture_button_container);
 		lssv.setCaptureButtonContainer(captureButtonContainer);
 		captureButtonContainer.setVisibility(View.GONE);
-
-
 
 		bottomFreqTextView.setText("0 kHz");
 		rightTimeTextView.setText("0 sec");

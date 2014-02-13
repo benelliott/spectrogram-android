@@ -37,12 +37,4 @@
         android:summary="@string/pref_contrast_summary"
         android:title="@string/pref_contrast" />
 
-    <ListPreference
-        android:defaultValue="@string/pref_user_test_audio_default"
-        android:dialogTitle="@string/pref_user_test_audio"
-        android:entries="@array/pref_user_test_audio_entries"
-        android:entryValues="@array/pref_user_test_audio_values"
-        android:key="pref_user_test_audio"
-        android:title="@string/pref_user_test_audio" />
-
 </PreferenceScreen>

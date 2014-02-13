@@ -15,8 +15,6 @@
     <string name="pref_contrast_summary">Adjust spectrogram contrast/sensitivity</string>
     <string name="pref_contrast_default">0.5</string>
     <string name="pref_contrast_message">Slide to the right to increase contrast and reduce amplitude sensitivity, or to the left to increase sensitivity but reduce contrast.</string>
-    <string name="pref_user_test_audio">User testing audio track</string>
-    <string name="pref_user_test_audio_default">bushwarbler.wav</string>
     <string name="pref_sample_rate_default">16000</string>
     <string name="pref_sample_rate">Sample rate</string>
     <string name="pref_samples_window">Samples per window</string>
