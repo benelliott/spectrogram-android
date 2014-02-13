@@ -372,7 +372,7 @@ public class BitmapGenerator {
 					int m = 0;
 					for (int k = bottomFreq; k < topFreq; k++) {
 						for (int l = 0; l < BITMAP_STORE_HEIGHT_ADJ; l++) {
-							Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
+							//Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
 							scaledBitmapWindow[bitmapHeight-m-1] = orig[SAMPLES_PER_WINDOW-k-1]; //remember that array had been filled backwards, and new one should be too
 							retCanvas.drawBitmap(scaledBitmapWindow, 0, 1, BITMAP_FREQ_AXIS_WIDTH*BITMAP_STORE_WIDTH_ADJ + h, 0, 1, bitmapHeight, false, null);
 							m++;
@@ -390,7 +390,7 @@ public class BitmapGenerator {
 					int m = 0;
 					for (int k = bottomFreq; k < topFreq; k++) {
 						for (int l = 0; l < BITMAP_STORE_HEIGHT_ADJ; l++) {
-							Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
+							//Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
 							scaledBitmapWindow[bitmapHeight-m-1] = orig[SAMPLES_PER_WINDOW-k-1]; //remember that array had been filled backwards, and new one should be too
 							retCanvas.drawBitmap(scaledBitmapWindow, 0, 1, BITMAP_FREQ_AXIS_WIDTH*BITMAP_STORE_WIDTH_ADJ +(WINDOW_LIMIT-startWindow)*BITMAP_STORE_WIDTH_ADJ + h, 0, 1, bitmapHeight, false, null);
 							m++;
@@ -498,7 +498,7 @@ public class BitmapGenerator {
 		}
 		
 		Log.d("","Filtering capture from "+bottomFreq+"Hz to "+topFreq+"Hz.");
-		BandpassButterworth butter = new BandpassButterworth(SAMPLE_RATE, 4, (double)bottomFreq, (double)topFreq, 1.0);
+		BandpassButterworth butter = new BandpassButterworth(SAMPLE_RATE, 8, (double)bottomFreq, (double)topFreq, 1.0);
 		butter.applyBandpassFilter(toReturn);
 		
 		for (int i = 0; i < toReturn.length; i++) toReturn[i] = Short.reverseBytes(toReturn[i]); //must be little-endian for WAV

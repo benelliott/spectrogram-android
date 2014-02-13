@@ -15,7 +15,7 @@ import android.util.Log;
 
 public class ServerSendTask extends AsyncTask<String, Void, Void> {
 	
-	private final String HOST = "172.17.155.107";
+	private final String HOST = "172.21.124.64";
 	private final int PORT = 5353;
 	private CapturedBitmapAudio cba;
 	
