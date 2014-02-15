@@ -1,21 +1,15 @@
 package uk.co.benjaminelliott.spectrogramandroid;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.media.MediaPlayer;
 import android.os.AsyncTask;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.preference.PreferenceManager;
 import android.support.v4.view.MotionEventCompat;
 import android.text.InputType;
 import android.util.AttributeSet;

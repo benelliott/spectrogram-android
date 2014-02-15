@@ -15,7 +15,7 @@ class SpectrogramDrawer {
 	private final int HORIZONTAL_STRETCH = 2;
 	private final float VERTICAL_STRETCH;
 	private final int SAMPLES_PER_WINDOW;
-	private int SELECT_RECT_COLOUR = Color.argb(80, 255, 255, 255);
+	//private int SELECT_RECT_COLOUR = Color.argb(80, 255, 255, 255);
 	private int SCROLL_SHADOW_INV_SPREAD = 8; //decrease for a larger shadow
 	private final ReentrantLock scrollingLock = new ReentrantLock(false);
 	private BitmapGenerator bg;
@@ -504,7 +504,6 @@ class SpectrogramDrawer {
 
 	protected short[] getAudioToStore(float x0, float x1,
 			float y0, float y1) {
-		// TODO filtering
 		int startWindow;
 		int endWindow;
 		if (x0 < x1) {

@@ -11,23 +11,27 @@
         android:layout_height="match_parent"
         android:layout_gravity="fill_horizontal" >
 
-        <TextView
+        <uk.co.benjaminelliott.spectrogramandroid.VerticalTextView
             android:id="@+id/freq_text_top"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:text="top"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textColor="#FFFFFF" />
+    		android:layout_width="wrap_content"
+    		android:layout_height="wrap_content"
+    		android:layout_alignParentTop="true"
+    		android:textColor="#FFFFFF"
+    		android:gravity="bottom|right"
+ 			android:textAppearance="?android:attr/textAppearanceSmall"
+ 			android:paddingRight="5dp"
+    		android:text="top" />
 
-        <TextView
+        <uk.co.benjaminelliott.spectrogramandroid.VerticalTextView
             android:id="@+id/freq_text_bottom"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:text="bot"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textColor="#FFFFFF" />
+    		android:layout_width="wrap_content"
+    		android:layout_height="wrap_content"
+    		android:layout_alignParentBottom="true"
+    		android:textColor="#FFFFFF"
+    		android:gravity="bottom|right"
+ 			android:textAppearance="?android:attr/textAppearanceSmall"
+ 			android:paddingLeft="20dp"
+    		android:text="bot" />
     </RelativeLayout>
 
     <LinearLayout

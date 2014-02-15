@@ -141,6 +141,7 @@ int string settings 0x7f07001f
 int string title_activity_spectro 0x7f07001c
 int style AppBaseTheme 0x7f0b0000
 int style AppTheme 0x7f0b0001
+int style verticalTextStyle 0x7f0b0002
 int[] styleable AdsAttrs { 0x7f010000, 0x7f010001, 0x7f010002 }
 int styleable AdsAttrs_adSize 0
 int styleable AdsAttrs_adSizes 1
