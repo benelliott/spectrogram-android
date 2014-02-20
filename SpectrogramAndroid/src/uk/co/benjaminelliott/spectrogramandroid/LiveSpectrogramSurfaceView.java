@@ -123,7 +123,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
 				//moveCaptureButtonContainer();
 				selectRectTextView.setVisibility(View.VISIBLE);
-				captureButtonContainer.setVisibility(View.VISIBLE); //TODO removed only for user test!!
+				//captureButtonContainer.setVisibility(View.VISIBLE); //TODO removed only for user test!!
 				selectionConfirmButton.setEnabled(true);
 				selectionCancelButton.setEnabled(true);
 				updateSelectRectText();
@@ -194,7 +194,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		height = getHeight();
 		try {
 			sd = new SpectrogramDrawer(this);
-			//player.start();
 			resumeButton.setVisibility(View.GONE);
 			updateLeftTimeFillText();
 			updateRightTimeText();
@@ -378,7 +377,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		selectRectB = (selectRectB > height) ? height : selectRectB;
 		sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
 		updateSelectRectText();
-		//moveCaptureButtonContainer(); TODO restore after user test!
+		//moveCaptureButtonContainer(); //TODO restore after user test!
 		//Log.d("","L: "+selectRectL+" R: "+selectRectR+" T: "+selectRectT+" B: "+selectRectB);
 	}
 
@@ -462,7 +461,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
-				filename = inputText.getText().toString();
+				filename = inputText.getText().toString().trim();
 				new AsyncCaptureTask(context).execute(); //execute the capture operations
 			}
 		});
@@ -509,7 +508,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 			Toast.makeText(context, "Capture completed!", Toast.LENGTH_SHORT).show();
 			loadingAlert.dismiss();
 			vuh.sendMessage(new Message()); //update library contents (must be done from UI thread)
-			Log.d("","Message sent!");
 		}
 		@Override
 		protected void onPreExecute() {
