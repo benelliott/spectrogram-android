@@ -50,7 +50,7 @@ class SpectrogramDrawer {
 	private SurfaceHolder sh;
 	
 	private final int HALF_CORNER_WIDTH_OUTER = 20;
-	private final int HALF_CORNER_WIDTH_INNER = 20;
+	private final int HALF_CORNER_WIDTH_INNER = 18;
 
 
 
