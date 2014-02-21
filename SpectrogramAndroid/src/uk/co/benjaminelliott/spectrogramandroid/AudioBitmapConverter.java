@@ -71,11 +71,10 @@ public class AudioBitmapConverter  {
 			FileOutputStream fos = null;
 			try {
 				int suffix = 0;
-				String fnm = filename;
-				File bmpFile = new File(dir.getAbsolutePath()+"/"+fnm+".jpg");
+				File bmpFile = new File(dir.getAbsolutePath()+"/"+filename+".jpg");
 				while (bmpFile.exists()) {
-					fnm = fnm+"_"+suffix;
-					bmpFile = new File(dir.getAbsolutePath()+"/"+fnm+".jpg");
+					bmpFile = new File(dir.getAbsolutePath()+"/"+filename+"_"+suffix+".jpg");
+					suffix++;
 				}
 				fos = new FileOutputStream(bmpFile);
 				bitmap.compress(Bitmap.CompressFormat.JPEG, BitmapGenerator.BITMAP_STORE_QUALITY, fos);
@@ -119,12 +118,10 @@ public class AudioBitmapConverter  {
 		if (isExternalStorageWritable()) {
 			File dir = getAlbumStorageDir(directory);
 			try {
-				String fnm = filename;
-				File audioFile = new File(dir.getAbsolutePath()+"/"+fnm+".wav");
+				File audioFile = new File(dir.getAbsolutePath()+"/"+filename+".wav");
 				int suffix = 0;
 				while (audioFile.exists()) {
-					fnm = fnm+"_"+suffix;
-					audioFile = new File(dir.getAbsolutePath()+"/"+fnm+".wav");
+					audioFile = new File(dir.getAbsolutePath()+"/"+filename+"_"+suffix+".wav");
 					suffix++;
 				}
 				fos = new FileOutputStream(audioFile);
@@ -298,8 +295,8 @@ public class AudioBitmapConverter  {
 				int suffix = 0;
 				File cbaFile = new File(dir.getAbsolutePath()+"/"+filename+CapturedBitmapAudio.EXTENSION);
 				while (cbaFile.exists()) {
-					filename = filename+suffix;
-					cbaFile = new File(dir.getAbsolutePath()+"/"+filename+CapturedBitmapAudio.EXTENSION);
+					cbaFile = new File(dir.getAbsolutePath()+"/"+filename+"_"+suffix+".cba");
+					suffix++;
 				}
 				fos = new FileOutputStream(cbaFile);
 				oos = new ObjectOutputStream(fos);

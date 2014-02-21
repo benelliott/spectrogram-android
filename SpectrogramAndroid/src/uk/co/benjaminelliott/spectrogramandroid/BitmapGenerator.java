@@ -152,7 +152,7 @@ public class BitmapGenerator {
 		if (running) {
 			running = false;
 			while (audioThread.isAlive()) {
-				//TODO wait to die :/
+				//this is hacky
 			}
 			mic.stop();
 			mic.release();
@@ -222,7 +222,7 @@ public class BitmapGenerator {
 		}
 	}
 
-	private void processAudioWindow(short[] samples, int[] destArray) { //TODO prev and next
+	private void processAudioWindow(short[] samples, int[] destArray) {
 		/*
 		 * Take the raw audio samples, apply a Hamming window, then perform the Short-Time
 		 * Fourier Transform and square the result. Combine the output with that from the previous window
@@ -329,7 +329,7 @@ public class BitmapGenerator {
 		return bitmapWindows[lastBitmapRequested++];
 	}
 
-	protected Bitmap createEntireBitmap(int startWindow, int endWindow, int bottomFreq, int topFreq) { //TODO make way more efficient!!
+	protected Bitmap createEntireBitmap(int startWindow, int endWindow, int bottomFreq, int topFreq) {
 		/*
 		 * Returns a stand-alone bitmap with time from startWindow to endWindow and band-pass-filtered
 		 * from bottomFreq to topFreq.
@@ -350,94 +350,78 @@ public class BitmapGenerator {
 		Canvas retCanvas;
 		int bitmapWidth;
 		int bitmapHeight;
+		int[] window = new int[SAMPLES_PER_WINDOW];
+		int[] subsection;
+
 		if (endWindow < startWindow) {
 			//selection crosses a loop boundary
-			bitmapWidth = BITMAP_STORE_WIDTH_ADJ * ((WINDOW_LIMIT - startWindow) + endWindow + BITMAP_FREQ_AXIS_WIDTH);
-			bitmapHeight = BITMAP_STORE_HEIGHT_ADJ * (topFreq - bottomFreq);
+			bitmapWidth = (WINDOW_LIMIT - startWindow) + endWindow + BITMAP_FREQ_AXIS_WIDTH;
+			bitmapHeight = topFreq - bottomFreq;
 
+			subsection = new int[bitmapHeight];
+			
 			Log.d("BG", "Start window: "+startWindow+", end window: "+endWindow+", bottom freq as array index: "+bottomFreq+", top freq: "+topFreq);
 			Log.d("BG", "Bitmap width: "+bitmapWidth+" bitmap height: "+bitmapHeight);
 
 			ret = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888);
 			retCanvas = new Canvas(ret);
 			retCanvas.drawColor(Color.BLACK);
-			int[] scaledBitmapWindow = new int[bitmapHeight];
 
 
-			int h = 0;
 			for (int i = startWindow; i < WINDOW_LIMIT; i++) {
-				for (int j = 0; j < BITMAP_STORE_WIDTH_ADJ; j++) { //scaling
-					int[] orig = new int[SAMPLES_PER_WINDOW];
-					processAudioWindow(audioWindows[i],orig);
-					int m = 0;
-					for (int k = bottomFreq; k < topFreq; k++) {
-						for (int l = 0; l < BITMAP_STORE_HEIGHT_ADJ; l++) {
-							//Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
-							scaledBitmapWindow[bitmapHeight-m-1] = orig[SAMPLES_PER_WINDOW-k-1]; //remember that array had been filled backwards, and new one should be too
-							retCanvas.drawBitmap(scaledBitmapWindow, 0, 1, BITMAP_FREQ_AXIS_WIDTH*BITMAP_STORE_WIDTH_ADJ + h, 0, 1, bitmapHeight, false, null);
-							m++;
-						}
-					}
-					h++;
+				window = new int[SAMPLES_PER_WINDOW];
+				processAudioWindow(audioWindows[i], window);
+				for (int j = 0; j < topFreq - bottomFreq; j++) {
+					subsection[bitmapHeight-j-1] = window[SAMPLES_PER_WINDOW-(j+bottomFreq)-1]; //array was filled backwards
 				}
+				retCanvas.drawBitmap(subsection, 0, 1, BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
 			}
 
-			h = 0;
 			for (int i = 0; i < endWindow; i++) {
-				for (int j = 0; j < BITMAP_STORE_WIDTH_ADJ; j++) { //scaling
-					int[] orig = new int[SAMPLES_PER_WINDOW];
-					processAudioWindow(audioWindows[i],orig);
-					int m = 0;
-					for (int k = bottomFreq; k < topFreq; k++) {
-						for (int l = 0; l < BITMAP_STORE_HEIGHT_ADJ; l++) {
-							//Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
-							scaledBitmapWindow[bitmapHeight-m-1] = orig[SAMPLES_PER_WINDOW-k-1]; //remember that array had been filled backwards, and new one should be too
-							retCanvas.drawBitmap(scaledBitmapWindow, 0, 1, BITMAP_FREQ_AXIS_WIDTH*BITMAP_STORE_WIDTH_ADJ +(WINDOW_LIMIT-startWindow)*BITMAP_STORE_WIDTH_ADJ + h, 0, 1, bitmapHeight, false, null);
-							m++;
-						}
-					}
-					h++;
+				window = new int[SAMPLES_PER_WINDOW];
+				processAudioWindow(audioWindows[i], window);
+				for (int j = 0; j < topFreq - bottomFreq; j++) {
+					subsection[bitmapHeight-j-1] = window[SAMPLES_PER_WINDOW-(j+bottomFreq)-1]; //array was filled backwards
 				}
+				retCanvas.drawBitmap(subsection, 0, 1, BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
 			}
+			
 		}
 		else {
-			bitmapWidth = BITMAP_STORE_WIDTH_ADJ * (endWindow - startWindow + BITMAP_FREQ_AXIS_WIDTH);
-			bitmapHeight = BITMAP_STORE_HEIGHT_ADJ * (topFreq - bottomFreq);
+			bitmapWidth = endWindow - startWindow + BITMAP_FREQ_AXIS_WIDTH;
+			bitmapHeight = topFreq - bottomFreq;
+			
+			subsection = new int[bitmapHeight];
 
 			Log.d("BG", "Start window: "+startWindow+", end window: "+endWindow+", bottom freq as array index: "+bottomFreq+", top freq: "+topFreq);
-			Log.d("BG", "Bitmap width: "+bitmapWidth+" bitmap height: "+bitmapHeight);
+			Log.d("BG", "Bitmap width: "+bitmapWidth+" bitmap height: "+bitmapHeight+" BFAW: "+BITMAP_FREQ_AXIS_WIDTH);
 
 			ret = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888);
 			retCanvas = new Canvas(ret);
 			retCanvas.drawColor(Color.BLACK);
-			int[] scaledBitmapWindow = new int[bitmapHeight];
-
-			int h = 0;
+			
 			for (int i = startWindow; i < endWindow; i++) {
-				for (int j = 0; j < BITMAP_STORE_WIDTH_ADJ; j++) { //scaling
-					int[] orig = new int[SAMPLES_PER_WINDOW];
-					processAudioWindow(audioWindows[i],orig);
-					int m = 0;
-					for (int k = bottomFreq; k < topFreq; k++) {
-						for (int l = 0; l < BITMAP_STORE_HEIGHT_ADJ; l++) {
-							Log.d("","top freq: "+topFreq+" i: "+i+" j: "+j+ " k: "+k+" l: "+l+" k-bottomFreq+l: "+(k-bottomFreq+l)+", scaled len: "+scaledBitmapWindow.length+", top-bottom:"+(topFreq-bottomFreq)+" height: "+bitmapHeight);
-							scaledBitmapWindow[bitmapHeight-m-1] = orig[SAMPLES_PER_WINDOW-k-1]; //remember that array had been filled backwards, and new one should be too
-							retCanvas.drawBitmap(scaledBitmapWindow, 0, 1, BITMAP_FREQ_AXIS_WIDTH*BITMAP_STORE_WIDTH_ADJ + h, 0, 1, bitmapHeight, false, null);
-							m++;
-						}
-					}
-					h++;
+				window = new int[SAMPLES_PER_WINDOW];
+				processAudioWindow(audioWindows[i], window);
+				for (int j = 0; j < topFreq - bottomFreq; j++) {
+					subsection[bitmapHeight-j-1] = window[SAMPLES_PER_WINDOW-(j+bottomFreq)-1]; //array was filled backwards
 				}
+				retCanvas.drawBitmap(subsection, 0, 1, BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
 			}
+			
 		}
+				
+		Bitmap scaled = scaleBitmap(ret,bitmapWidth*BITMAP_STORE_WIDTH_ADJ, bitmapHeight*BITMAP_STORE_HEIGHT_ADJ);
+		Canvas scaledCanvas = new Canvas(scaled);
+		
 		//annotate bitmap with frequency range:
 		Paint textStyle = new Paint();
 		textStyle.setColor(Color.WHITE);
 		textStyle.setTextSize(BITMAP_FREQ_AXIS_WIDTH/3);
-		retCanvas.drawText(bottomFreqText, BITMAP_FREQ_AXIS_WIDTH/2, bitmapHeight-5*BITMAP_STORE_HEIGHT_ADJ, textStyle);
-		Log.d("Bitmap capture","bottomFreqText drawn at x:"+(BITMAP_FREQ_AXIS_WIDTH*BITMAP_STORE_WIDTH_ADJ/10)+" y: "+(bitmapHeight-5*BITMAP_STORE_HEIGHT_ADJ));
-		retCanvas.drawText(topFreqText, BITMAP_FREQ_AXIS_WIDTH/2, BITMAP_FREQ_AXIS_WIDTH/2, textStyle);
-		return ret;
+		scaledCanvas.drawText(bottomFreqText, BITMAP_FREQ_AXIS_WIDTH/2, bitmapHeight*BITMAP_STORE_HEIGHT_ADJ-5*BITMAP_STORE_HEIGHT_ADJ, textStyle);
+		Log.d("Bitmap capture","bottomFreqText drawn at x:"+(BITMAP_FREQ_AXIS_WIDTH*BITMAP_STORE_WIDTH_ADJ/10)+" y: "+(bitmapHeight*BITMAP_STORE_HEIGHT_ADJ-5*BITMAP_STORE_HEIGHT_ADJ));
+		scaledCanvas.drawText(topFreqText, BITMAP_FREQ_AXIS_WIDTH/2, BITMAP_FREQ_AXIS_WIDTH/2, textStyle);
+		return scaled;
 	}
 	
 	public Bitmap scaleBitmap(Bitmap bitmapToScale, float newWidth, float newHeight) {
