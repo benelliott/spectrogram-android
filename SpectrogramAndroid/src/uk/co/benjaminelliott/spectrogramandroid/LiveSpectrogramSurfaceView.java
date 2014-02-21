@@ -121,9 +121,9 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				selectRectT = (centreY - SELECT_RECT_HEIGHT/2 < 0) ? 0 : centreY - SELECT_RECT_HEIGHT/2;
 				selectRectB = (centreY + SELECT_RECT_HEIGHT/2 > getHeight()) ? getHeight() : centreY + SELECT_RECT_HEIGHT/2;
 				sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
-				//moveCaptureButtonContainer();
+				moveCaptureButtonContainer();
+				captureButtonContainer.setVisibility(View.VISIBLE); //TODO removed only for user test!!
 				selectRectTextView.setVisibility(View.VISIBLE);
-				//captureButtonContainer.setVisibility(View.VISIBLE); //TODO removed only for user test!!
 				selectionConfirmButton.setEnabled(true);
 				selectionCancelButton.setEnabled(true);
 				updateSelectRectText();
@@ -190,6 +190,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 	@Override
 	public void surfaceCreated(SurfaceHolder arg0) {
+		Log.d("","CREATING SURFACE");
 		width = getWidth();
 		height = getHeight();
 		try {
@@ -234,7 +235,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		case MotionEvent.ACTION_DOWN: { //finger pressed on screen
 			if (!selecting) {
 				pauseScrolling();
-				handler.postDelayed(onLongPress,1000); //run the long-press runnable if not cancelled by move event (1 second timeout) [only if not already selecting]
+				handler.postDelayed(onLongPress,500); //run the long-press runnable if not cancelled by move event (1 second timeout) [only if not already selecting]
 			}
 
 			pointerIndex = MotionEventCompat.getActionIndex(ev); 
@@ -377,22 +378,29 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		selectRectB = (selectRectB > height) ? height : selectRectB;
 		sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
 		updateSelectRectText();
-		//moveCaptureButtonContainer(); //TODO restore after user test!
+		moveCaptureButtonContainer(); //TODO restore after user test!
 		//Log.d("","L: "+selectRectL+" R: "+selectRectR+" T: "+selectRectT+" B: "+selectRectB);
 	}
-
+	
+	
+	private int lowestDimension;
+	private int highestDimension;
+	private int leftmostDimension;
+	private int halfDifference;
+	private int centred;
+	private int yDimension;
+	
 	protected void moveCaptureButtonContainer() {
 		RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)captureButtonContainer.getLayoutParams();
-		int lowestDimension = (selectRectT < selectRectB) ? (int)selectRectB : (int)selectRectT;
-		int highestDimension = (selectRectT < selectRectB) ? (int)selectRectT : (int)selectRectB;
-		int leftmostDimension = (selectRectL < selectRectR) ? (int)selectRectL : (int)selectRectR;
-		int halfDifference = (int)Math.abs((selectRectL-selectRectR)/2);
-		int centred = leftmostDimension + halfDifference - captureButtonContainer.getWidth()/2;
-		int yDimension = (getHeight() - lowestDimension < minContainerHeight + 10)? highestDimension - minContainerHeight - 10 : lowestDimension + 10;
+		lowestDimension = (selectRectT < selectRectB) ? (int)selectRectB : (int)selectRectT;
+		highestDimension = (selectRectT < selectRectB) ? (int)selectRectT : (int)selectRectB;
+		leftmostDimension = (selectRectL < selectRectR) ? (int)selectRectL : (int)selectRectR;
+		halfDifference = (int)Math.abs((selectRectL-selectRectR)/2);
+		centred = leftmostDimension + halfDifference - captureButtonContainer.getWidth()/2;
+		yDimension = (getHeight() - lowestDimension < minContainerHeight + 10)? highestDimension - minContainerHeight - 10 : lowestDimension + 10;
 		if (leftmostDimension + minContainerWidth > getWidth()) leftmostDimension = getWidth()-minContainerWidth;
 		params.setMargins(centred, (int)(yDimension+CORNER_CIRCLE_RADIUS/2), 0, 0);
 		Log.d("Button","Margin set to L:"+centred+" T: "+yDimension+" R: "+0+" B:"+0);
-		Log.d("","height: "+getHeight()+" fullContainerHeight: "+minContainerHeight+" current height: "+captureButtonContainer.getHeight()+" lowest dimension: "+lowestDimension);
 		captureButtonContainer.setLayoutParams(params);
 	}
 
@@ -476,7 +484,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 
 	public void cancelSelection() {
 		sd.hideSelectRect();
-		captureButtonContainer.setVisibility(View.GONE);
+		captureButtonContainer.setVisibility(View.INVISIBLE);
 		selectionConfirmButton.setEnabled(false);
 		selectionCancelButton.setEnabled(false);
 		selecting = false;

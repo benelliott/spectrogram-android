@@ -47,13 +47,10 @@ class SpectrogramDrawer {
 	private int leftmostWindowAsIndex;
 	private int rightmostWindow;
 	private int rightmostWindowAsIndex;
+	private SurfaceHolder sh;
 	
-	//TODO move
-	float rectL;
-	float rectR;
-	float rectT;
-	float rectB;
-	final int CORNER_RECT_DISTANCE = 40;
+	private final int HALF_CORNER_WIDTH_OUTER = 20;
+	private final int HALF_CORNER_WIDTH_INNER = 20;
 
 
 
@@ -89,7 +86,7 @@ class SpectrogramDrawer {
 		/*
 		 * Clear the display by painting it black.
 		 */
-		SurfaceHolder sh = lssv.getHolder();
+		sh = lssv.getHolder();
 		displayCanvas = sh.lockCanvas(null);
 		try {
 			bufferCanvas.drawColor(Color.BLACK);
@@ -108,7 +105,7 @@ class SpectrogramDrawer {
 		 * Repeatedly run the quickProgress() method to look for new bitmaps, then draw the result to the display
 		 */
 			if (scrollingLock.tryLock()) {
-				SurfaceHolder sh = lssv.getHolder();
+				sh = lssv.getHolder();
 				displayCanvas = sh.lockCanvas(null);
 				try {
 					quickProgress(); //update buffer bitmap
@@ -174,7 +171,7 @@ class SpectrogramDrawer {
 				leftmostWindow += offset;
 				}
 			}
-			SurfaceHolder sh = lssv.getHolder();
+			sh = lssv.getHolder();
 			displayCanvas = sh.lockCanvas(null);
 			try {
 				synchronized (sh) {
@@ -229,6 +226,11 @@ class SpectrogramDrawer {
 		bufferCanvas.drawBitmap(scaleBitmap(unscaledBitmap), xCoord, 0f, null);
 	}
 	
+	float rectL;
+	float rectR;
+	float rectT;
+	float rectB;
+	int CORNER_RECT_DISTANCE = 40;
 	public void drawAlanSelectRect(float selectRectL, float selectRectR, float selectRectT, float selectRectB) {
 		/*
 		 * Draw the select-area rectangle with left, right, top and bottom coordinates at selectRectL, selectRectR, 
@@ -287,7 +289,7 @@ class SpectrogramDrawer {
 		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectT+halfCornerDiam, selectRectL+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
 		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectT+halfCornerDiam, selectRectR+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
 
-		SurfaceHolder sh = lssv.getHolder();
+		sh = lssv.getHolder();
 		displayCanvas = sh.lockCanvas(null);
 		try {
 			synchronized (sh) {
@@ -301,14 +303,19 @@ class SpectrogramDrawer {
 		}
 	}
 
+	
+	private Bitmap buf;
+	private Canvas bufCanvas;
+	private Paint rectPaint;
+	
 	public void drawSelectRect(float selectRectL, float selectRectR, float selectRectT, float selectRectB) {
 		/*
 		 * Draw the select-area rectangle with left, right, top and bottom coordinates at selectRectL, selectRectR, 
 		 * selectRectT and selectRectB respectively. Colour according to the SELECT_RECT_COLOUR value.
 		 */
-		Bitmap buf = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-		Canvas bufCanvas = new Canvas(buf);
-		Paint rectPaint = new Paint();
+		buf = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		bufCanvas = new Canvas(buf);
+		rectPaint = new Paint();
 
 		//draw select-area rectangle
 		//rectPaint.setColor(SELECT_RECT_COLOUR);
@@ -328,22 +335,20 @@ class SpectrogramDrawer {
 		
 		//draw draggable corners
 		Paint cornerPaint = new Paint();
-		int halfCornerDiam = 20;
 		cornerPaint.setColor(Color.BLACK);
-		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectB+halfCornerDiam, selectRectL+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
-		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectB+halfCornerDiam, selectRectR+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
-		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectT+halfCornerDiam, selectRectL+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
-		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectT+halfCornerDiam, selectRectR+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectL-HALF_CORNER_WIDTH_OUTER, selectRectB+HALF_CORNER_WIDTH_OUTER, selectRectL+HALF_CORNER_WIDTH_OUTER, selectRectB-HALF_CORNER_WIDTH_OUTER, cornerPaint);
+		bufCanvas.drawRect(selectRectR-HALF_CORNER_WIDTH_OUTER, selectRectB+HALF_CORNER_WIDTH_OUTER, selectRectR+HALF_CORNER_WIDTH_OUTER, selectRectB-HALF_CORNER_WIDTH_OUTER, cornerPaint);
+		bufCanvas.drawRect(selectRectL-HALF_CORNER_WIDTH_OUTER, selectRectT+HALF_CORNER_WIDTH_OUTER, selectRectL+HALF_CORNER_WIDTH_OUTER, selectRectT-HALF_CORNER_WIDTH_OUTER, cornerPaint);
+		bufCanvas.drawRect(selectRectR-HALF_CORNER_WIDTH_OUTER, selectRectT+HALF_CORNER_WIDTH_OUTER, selectRectR+HALF_CORNER_WIDTH_OUTER, selectRectT-HALF_CORNER_WIDTH_OUTER, cornerPaint);
 
-		halfCornerDiam = 18;
 		cornerPaint.setColor(Color.WHITE);
-		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectB+halfCornerDiam, selectRectL+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
-		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectB+halfCornerDiam, selectRectR+halfCornerDiam, selectRectB-halfCornerDiam, cornerPaint);
-		bufCanvas.drawRect(selectRectL-halfCornerDiam, selectRectT+halfCornerDiam, selectRectL+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
-		bufCanvas.drawRect(selectRectR-halfCornerDiam, selectRectT+halfCornerDiam, selectRectR+halfCornerDiam, selectRectT-halfCornerDiam, cornerPaint);
+		bufCanvas.drawRect(selectRectL-HALF_CORNER_WIDTH_INNER, selectRectB+HALF_CORNER_WIDTH_INNER, selectRectL+HALF_CORNER_WIDTH_INNER, selectRectB-HALF_CORNER_WIDTH_INNER, cornerPaint);
+		bufCanvas.drawRect(selectRectR-HALF_CORNER_WIDTH_INNER, selectRectB+HALF_CORNER_WIDTH_INNER, selectRectR+HALF_CORNER_WIDTH_INNER, selectRectB-HALF_CORNER_WIDTH_INNER, cornerPaint);
+		bufCanvas.drawRect(selectRectL-HALF_CORNER_WIDTH_INNER, selectRectT+HALF_CORNER_WIDTH_INNER, selectRectL+HALF_CORNER_WIDTH_INNER, selectRectT-HALF_CORNER_WIDTH_INNER, cornerPaint);
+		bufCanvas.drawRect(selectRectR-HALF_CORNER_WIDTH_INNER, selectRectT+HALF_CORNER_WIDTH_INNER, selectRectR+HALF_CORNER_WIDTH_INNER, selectRectT-HALF_CORNER_WIDTH_INNER, cornerPaint);
 
 
-		SurfaceHolder sh = lssv.getHolder();
+		sh = lssv.getHolder();
 		displayCanvas = sh.lockCanvas(null);
 		try {
 			synchronized (sh) {
@@ -362,9 +367,6 @@ class SpectrogramDrawer {
 		 * When this method is called, scrolling of the display is halted, as are the threads which bring in and
 		 * process audio samples to generate bitmaps.
 		 */
-//		if (!scrollingLock.isHeldByCurrentThread()) {
-//			scrollingLock.lock();
-//		}
 		running = false;
 		bg.stop(); //stop taking in and processing new samples since this will overwrite those you are trying to scroll through
 		leftmostBitmapAvailable = bg.getLeftmostBitmapAvailable();
@@ -457,7 +459,7 @@ class SpectrogramDrawer {
 	}
 
 	public void hideSelectRect() {
-		SurfaceHolder sh = lssv.getHolder();
+		sh = lssv.getHolder();
 		displayCanvas = sh.lockCanvas(null);
 		try {
 			synchronized (sh) {

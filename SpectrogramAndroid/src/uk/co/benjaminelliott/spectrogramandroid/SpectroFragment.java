@@ -91,7 +91,7 @@ public class SpectroFragment extends Fragment {
 		
 		captureButtonContainer = (LinearLayout)rootView.findViewById(R.id.capture_button_container);
 		lssv.setCaptureButtonContainer(captureButtonContainer);
-		captureButtonContainer.setVisibility(View.GONE);
+		captureButtonContainer.setVisibility(View.INVISIBLE);
 
 		bottomFreqTextView.setText("0 kHz");
 		rightTimeTextView.setText("0 sec");
