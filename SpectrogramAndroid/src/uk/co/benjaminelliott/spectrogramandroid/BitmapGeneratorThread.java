@@ -1,3 +1,6 @@
+//NOTE NOTE USED - PLANNED REFACTOR
+
+
 package uk.co.benjaminelliott.spectrogramandroid;
 
 import java.util.concurrent.Semaphore;

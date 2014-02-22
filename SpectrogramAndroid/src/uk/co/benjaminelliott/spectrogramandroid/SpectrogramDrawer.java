@@ -15,6 +15,7 @@ class SpectrogramDrawer {
 	private final int HORIZONTAL_STRETCH = 2;
 	private final float VERTICAL_STRETCH;
 	private final int SAMPLES_PER_WINDOW;
+	private final int NUM_FREQ_BINS;
 	//private int SELECT_RECT_COLOUR = Color.argb(80, 255, 255, 255);
 	private int SCROLL_SHADOW_INV_SPREAD = 8; //decrease for a larger shadow
 	private final ReentrantLock scrollingLock = new ReentrantLock(false);
@@ -61,8 +62,9 @@ class SpectrogramDrawer {
 		bg = new BitmapGenerator(lssv.getContext());
 		SAMPLE_RATE = bg.getSampleRate();
 		SAMPLES_PER_WINDOW = bg.getSamplesPerWindow();
-		VERTICAL_STRETCH = ((float)height)/((float)SAMPLES_PER_WINDOW); // stretch spectrogram to all of available height
-		Log.d("dim","Height: "+height+", samples per window: "+SAMPLES_PER_WINDOW+", VERTICAL_STRETCH: "+VERTICAL_STRETCH);
+		NUM_FREQ_BINS = bg.getNumFreqBins();
+		VERTICAL_STRETCH = ((float)height)/((float)NUM_FREQ_BINS); // stretch spectrogram to all of available height
+		Log.d("dim","Height: "+height+", num freq bins: "+NUM_FREQ_BINS+", VERTICAL_STRETCH: "+VERTICAL_STRETCH);
 		buffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 		bufferCanvas = new Canvas(buffer);
 		buffer2 = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -76,7 +78,7 @@ class SpectrogramDrawer {
 		};
 		scrollingThread.setName("Scrolling thread");
 		generateScrollShadow();
-		scaleMatrix = generateScaleMatrix(1,SAMPLES_PER_WINDOW,HORIZONTAL_STRETCH, SAMPLES_PER_WINDOW * VERTICAL_STRETCH); //generate matrix to scale by horiz/vert scale params
+		scaleMatrix = generateScaleMatrix(1,NUM_FREQ_BINS,HORIZONTAL_STRETCH, NUM_FREQ_BINS * VERTICAL_STRETCH); //generate matrix to scale by horiz/vert scale params
 		clearCanvas();
 		scrollingThread.start();
 		bg.start(); //start scrolling thread before generator to stop 'jumping' when scrolling is resumed
@@ -212,7 +214,7 @@ class SpectrogramDrawer {
 		/*
 		 * Retreive and draw the next bitmap, determined by the BitmapGenerator itself.
 		 */
-		unscaledBitmap = Bitmap.createBitmap(bg.getNextBitmap(), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888);
+		unscaledBitmap = Bitmap.createBitmap(bg.getNextBitmap(), 0, 1, 1, NUM_FREQ_BINS, Bitmap.Config.ARGB_8888);
 		bufferCanvas.drawBitmap(scaleBitmap(unscaledBitmap), xCoord, 0f, null);
 	}
 
@@ -222,7 +224,7 @@ class SpectrogramDrawer {
 		 * Draw the bitmap specified by the provided index from the top of the screen at the provided x-coordinate, 
 		 * stretching according to the HORIZONTAL_STRETCH and VERTICAL_STRETCH parameters.
 		 */
-		unscaledBitmap = Bitmap.createBitmap(bg.getBitmapWindow(index), 0, 1, 1, SAMPLES_PER_WINDOW, Bitmap.Config.ARGB_8888);
+		unscaledBitmap = Bitmap.createBitmap(bg.getBitmapWindow(index), 0, 1, 1, NUM_FREQ_BINS, Bitmap.Config.ARGB_8888);
 		bufferCanvas.drawBitmap(scaleBitmap(unscaledBitmap), xCoord, 0f, null);
 	}
 	

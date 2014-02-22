@@ -27,6 +27,7 @@ public class BitmapGenerator {
 
 	private final int SAMPLE_RATE; //options are 11025, 16000, 22050, 44100
 	private final int SAMPLES_PER_WINDOW; //usually around 300
+	private final int NUM_FREQ_BINS;
 	public static final String PREF_COLOURMAP_KEY = "pref_colourmap";
 	protected static final String PREF_CONTRAST_KEY = "pref_contrast";
 	protected static final String PREF_SAMPLE_RATE_KEY = "pref_sample_rate";
@@ -83,10 +84,11 @@ public class BitmapGenerator {
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 		SAMPLE_RATE = Integer.parseInt(prefs.getString(PREF_SAMPLE_RATE_KEY, "16000"));
 		SAMPLES_PER_WINDOW = Integer.parseInt(prefs.getString(PREF_SAMPLES_WINDOW_KEY, "300"));
+		NUM_FREQ_BINS = SAMPLES_PER_WINDOW / 2; //lose half because of symmetry
 		Log.d("","Sample rate: "+SAMPLE_RATE+", samples per window: "+SAMPLES_PER_WINDOW);
 		
 		audioWindows = new short[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
-		bitmapWindows = new int[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
+		bitmapWindows = new int[WINDOW_LIMIT][NUM_FREQ_BINS];
 		
 		fftSamples = new double[SAMPLES_PER_WINDOW*2];
 		previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
@@ -239,9 +241,9 @@ public class BitmapGenerator {
 			combinedWindow[i] = fftSamples[i] + previousWindow[i];
 		}
 
-		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
+		for (int i = 0; i < NUM_FREQ_BINS; i++) {
 			val = cappedValue(combinedWindow[i]);
-			destArray[SAMPLES_PER_WINDOW-i-1] = colours[val]; //fill upside-down because y=0 is at top of screen
+			destArray[NUM_FREQ_BINS-i-1] = colours[val]; //fill upside-down because y=0 is at top of screen
 		}
 		
 		//keep samples for next process
@@ -273,10 +275,10 @@ public class BitmapGenerator {
 
 		dfft1d.realForward(paddedSamples);
 
-		//Now the STFT has been calculated, need to square it:
-
-		for (int i = 0; i < paddedSamples.length / 2; i++) {
-			paddedSamples[i] *= paddedSamples[i];
+		//Calculate the STFT by using squared magnitudes. Store these in the first half of the array, and the rest will be discarded:
+		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
+			//Note that for frequency k, Re[k] and Im[k] are stored adjacently
+			paddedSamples[i] = paddedSamples[2*i] * paddedSamples[2*i] + paddedSamples[2*i+1] * paddedSamples[2*i+1];
 		}
 	}
 
@@ -339,8 +341,8 @@ public class BitmapGenerator {
 		String topFreqText = Integer.toString(topFreq)+" Hz";
 
 		//convert frequency range into array indices
-		bottomFreq = (int) ((2f*(float)bottomFreq/(float)SAMPLE_RATE)*SAMPLES_PER_WINDOW);
-		topFreq = (int) ((2f*(float)topFreq/(float)SAMPLE_RATE)*SAMPLES_PER_WINDOW);
+		bottomFreq = (int) ((2f*(float)bottomFreq/(float)SAMPLE_RATE)*NUM_FREQ_BINS);
+		topFreq = (int) ((2f*(float)topFreq/(float)SAMPLE_RATE)*NUM_FREQ_BINS);
 
 		//same for windows
 		startWindow %= WINDOW_LIMIT;
@@ -350,7 +352,7 @@ public class BitmapGenerator {
 		Canvas retCanvas;
 		int bitmapWidth;
 		int bitmapHeight;
-		int[] window = new int[SAMPLES_PER_WINDOW];
+		int[] window = new int[NUM_FREQ_BINS];
 		int[] subsection;
 
 		if (endWindow < startWindow) {
@@ -369,19 +371,19 @@ public class BitmapGenerator {
 
 
 			for (int i = startWindow; i < WINDOW_LIMIT; i++) {
-				window = new int[SAMPLES_PER_WINDOW];
+				window = new int[NUM_FREQ_BINS];
 				processAudioWindow(audioWindows[i], window);
 				for (int j = 0; j < topFreq - bottomFreq; j++) {
-					subsection[bitmapHeight-j-1] = window[SAMPLES_PER_WINDOW-(j+bottomFreq)-1]; //array was filled backwards
+					subsection[bitmapHeight-j-1] = window[NUM_FREQ_BINS-(j+bottomFreq)-1]; //array was filled backwards
 				}
 				retCanvas.drawBitmap(subsection, 0, 1, BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
 			}
 
 			for (int i = 0; i < endWindow; i++) {
-				window = new int[SAMPLES_PER_WINDOW];
+				window = new int[NUM_FREQ_BINS];
 				processAudioWindow(audioWindows[i], window);
 				for (int j = 0; j < topFreq - bottomFreq; j++) {
-					subsection[bitmapHeight-j-1] = window[SAMPLES_PER_WINDOW-(j+bottomFreq)-1]; //array was filled backwards
+					subsection[bitmapHeight-j-1] = window[NUM_FREQ_BINS-(j+bottomFreq)-1]; //array was filled backwards
 				}
 				retCanvas.drawBitmap(subsection, 0, 1, BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
 			}
@@ -401,10 +403,10 @@ public class BitmapGenerator {
 			retCanvas.drawColor(Color.BLACK);
 			
 			for (int i = startWindow; i < endWindow; i++) {
-				window = new int[SAMPLES_PER_WINDOW];
+				window = new int[NUM_FREQ_BINS];
 				processAudioWindow(audioWindows[i], window);
 				for (int j = 0; j < topFreq - bottomFreq; j++) {
-					subsection[bitmapHeight-j-1] = window[SAMPLES_PER_WINDOW-(j+bottomFreq)-1]; //array was filled backwards
+					subsection[bitmapHeight-j-1] = window[NUM_FREQ_BINS-(j+bottomFreq)-1]; //array was filled backwards
 				}
 				retCanvas.drawBitmap(subsection, 0, 1, BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
 			}
@@ -520,6 +522,10 @@ public class BitmapGenerator {
 	
 	protected int getSamplesPerWindow() {
 		return SAMPLES_PER_WINDOW;
+	}
+	
+	protected int getNumFreqBins() {
+		return NUM_FREQ_BINS;
 	}
 
 }
