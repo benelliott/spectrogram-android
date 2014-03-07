@@ -90,7 +90,7 @@ public class BitmapGenerator {
 		audioWindows = new short[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
 		bitmapWindows = new int[WINDOW_LIMIT][NUM_FREQ_BINS];
 		
-		fftSamples = new double[SAMPLES_PER_WINDOW*2];
+		fftSamples = new double[SAMPLES_PER_WINDOW];
 		previousWindow = new double[SAMPLES_PER_WINDOW]; //keep a handle on the previous audio sample window so that values can be averaged across them
 		combinedWindow = new double[SAMPLES_PER_WINDOW];
 		dfft1d = new DoubleFFT_1D(SAMPLES_PER_WINDOW); //DoubleFFT_1D constructor must be supplied with an 'n' value, where n = data size
@@ -276,7 +276,7 @@ public class BitmapGenerator {
 		dfft1d.realForward(paddedSamples);
 
 		//Calculate the STFT by using squared magnitudes. Store these in the first half of the array, and the rest will be discarded:
-		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
+		for (int i = 0; i < NUM_FREQ_BINS; i++) {
 			//Note that for frequency k, Re[k] and Im[k] are stored adjacently
 			paddedSamples[i] = paddedSamples[2*i] * paddedSamples[2*i] + paddedSamples[2*i+1] * paddedSamples[2*i+1];
 		}

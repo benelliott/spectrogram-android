@@ -122,11 +122,11 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 				selectRectB = (centreY + SELECT_RECT_HEIGHT/2 > getHeight()) ? getHeight() : centreY + SELECT_RECT_HEIGHT/2;
 				sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
 				moveCaptureButtonContainer();
-				captureButtonContainer.setVisibility(View.VISIBLE); //TODO removed only for user test!!
-				selectRectTextView.setVisibility(View.VISIBLE);
+				captureButtonContainer.setVisibility(View.VISIBLE);
+				//selectRectTextView.setVisibility(View.VISIBLE);
 				selectionConfirmButton.setEnabled(true);
 				selectionCancelButton.setEnabled(true);
-				updateSelectRectText();
+				//updateSelectRectText();
 			}
 		};
 		
@@ -377,8 +377,8 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		selectRectT = (selectRectT > height) ? height : selectRectT;
 		selectRectB = (selectRectB > height) ? height : selectRectB;
 		sd.drawSelectRect(selectRectL,selectRectR,selectRectT,selectRectB);
-		updateSelectRectText();
-		moveCaptureButtonContainer(); //TODO restore after user test!
+		//updateSelectRectText();
+		moveCaptureButtonContainer();
 		//Log.d("","L: "+selectRectL+" R: "+selectRectR+" T: "+selectRectT+" B: "+selectRectB);
 	}
 	
@@ -415,7 +415,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		if (selecting) cancelSelection();
 		sd = new SpectrogramDrawer(this);
 		resumeButton.setVisibility(View.GONE);
-		selectRectTextView.setVisibility(View.GONE);
+		//selectRectTextView.setVisibility(View.GONE);
 	}
 
 	private void updateLeftTimeFillText() {
@@ -442,21 +442,21 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		topFreqTextView.setText(bd.floatValue()+" kHz");
 	}
 
-	private void updateSelectRectText() {
-		t0 = sd.getTimeFromStartAtPixel(selectRectL);
-		t1 = sd.getTimeFromStartAtPixel(selectRectR);
-		f0 = sd.getFrequencyAtPixel(selectRectT);
-		f1 = sd.getFrequencyAtPixel(selectRectB);
-		
-		startTime = (t0 < t1) ? new BigDecimal(Float.toString(t0)) : new BigDecimal(Float.toString(t1));
-		startTime = startTime.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
-		endTime = (t0 < t1) ? new BigDecimal(Float.toString(t1)) : new BigDecimal(Float.toString(t0));
-		endTime = endTime.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
-		int minFreq = (f0 < f1) ? f0 : f1;
-		int maxFreq = (f1 > f0) ? f1 : f0;
-
-		selectRectTextView.setText("Start time: "+startTime.floatValue()+" End time: "+endTime.floatValue()+"\n"+"Min freq: "+minFreq+" Max freq: "+maxFreq);
-	}
+//	private void updateSelectRectText() {
+//		t0 = sd.getTimeFromStartAtPixel(selectRectL);
+//		t1 = sd.getTimeFromStartAtPixel(selectRectR);
+//		f0 = sd.getFrequencyAtPixel(selectRectT);
+//		f1 = sd.getFrequencyAtPixel(selectRectB);
+//		
+//		startTime = (t0 < t1) ? new BigDecimal(Float.toString(t0)) : new BigDecimal(Float.toString(t1));
+//		startTime = startTime.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
+//		endTime = (t0 < t1) ? new BigDecimal(Float.toString(t1)) : new BigDecimal(Float.toString(t0));
+//		endTime = endTime.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
+//		int minFreq = (f0 < f1) ? f0 : f1;
+//		int maxFreq = (f1 > f0) ? f1 : f0;
+//
+//		selectRectTextView.setText("Start time: "+startTime.floatValue()+" End time: "+endTime.floatValue()+"\n"+"Min freq: "+minFreq+" Max freq: "+maxFreq);
+//	}
 
 	public void confirmSelection() {
 		//create and display an AlertDialog requesting a filename

@@ -28,8 +28,8 @@ public class BandpassButterworth {
 		double[] gain = new double[length];
 		int bins = length; //number of frequency bins 
 		double binWidth = ((double)sampleRate) / ((double)bins);
-		double centre = (minFreq+maxFreq)/binWidth; // by not dividing by 2, effectively multiply by 2 because of imaginary component for each bin
-		double cutoff = (maxFreq-minFreq)/binWidth; // by not dividing by 2, effectively multiply by 2 because of imaginary component for each bin
+		double centre = (minFreq+maxFreq)/(binWidth); // by not dividing by 2, effectively multiply by 2 because of imaginary component for each bin
+		double cutoff = (maxFreq-minFreq)/(binWidth); // by not dividing by 2, effectively multiply by 2 because of imaginary component for each bin
 		Log.d("","Bin width: "+binWidth+" bins: "+bins+" cutoff: "+cutoff+" centre: "+centre+" order: "+order+" length: "+length);
 		for (int i = 0; i < length; i++) {
 			gain[i] = dcGain/Math.sqrt((1+Math.pow((double)binWidth*((double)i-centre)/cutoff, 2.0*order)));
