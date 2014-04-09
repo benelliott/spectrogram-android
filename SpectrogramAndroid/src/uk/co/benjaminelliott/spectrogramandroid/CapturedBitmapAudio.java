@@ -30,6 +30,11 @@ public class CapturedBitmapAudio implements Serializable {
 	}
 	
 	public int[] getBitmapRGBPixels() {
+		/*
+		 * Creates a new array containing the bitmap
+		 * pixel values, rather than just returning a
+		 * reference to the original.
+		 */
 		int[] ret = new int[bitmapAsIntArray.length];
 		for (int i = 0; i < bitmapAsIntArray.length; i++) {
 			ret[i] = 0xffffff&bitmapAsIntArray[i];

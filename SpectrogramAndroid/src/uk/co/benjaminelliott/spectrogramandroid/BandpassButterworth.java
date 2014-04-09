@@ -3,7 +3,7 @@ package uk.co.benjaminelliott.spectrogramandroid;
 import android.util.Log;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
-public class BandpassButterworth {
+public class BandpassButterworth extends BandpassFilter{
 	
 	private final int sampleRate;
 	private final int order; 
@@ -23,23 +23,25 @@ public class BandpassButterworth {
 	}
 	
 	private double[] generateGain(int length) {
-		//find low-pass filter with cut-off at (maxFreq-minFreq)/2 then shift its 
-		//centre to (minFreq+maxFreq)/2
+		/*
+		 * Generates and returns an array of gain coefficients, 
+		 * given the number of frequency bins in the audio signal
+		 * (or the length the array of coefficients should be).
+		 */
 		double[] gain = new double[length];
-		int bins = length; //number of frequency bins 
+		int bins = length; //number of frequency bins = length of array
 		double binWidth = ((double)sampleRate) / ((double)bins);
-		double centre = (minFreq+maxFreq)/(binWidth); // by not dividing by 2, effectively multiply by 2 because of imaginary component for each bin
-		double cutoff = (maxFreq-minFreq)/(binWidth); // by not dividing by 2, effectively multiply by 2 because of imaginary component for each bin
+		double centre = (minFreq+maxFreq)/(2*binWidth);
+		double cutoff = (maxFreq-minFreq)/(2*binWidth);
 		Log.d("","Bin width: "+binWidth+" bins: "+bins+" cutoff: "+cutoff+" centre: "+centre+" order: "+order+" length: "+length);
 		for (int i = 0; i < length; i++) {
 			gain[i] = dcGain/Math.sqrt((1+Math.pow((double)binWidth*((double)i-centre)/cutoff, 2.0*order)));
 		}
 		return gain;
-		
 	}
 
 	
-	void applyBandpassFilter(short[] samples) {
+	void applyFilter(short[] samples) {
 		int length = samples.length;
 		System.out.println();
 		System.out.println();

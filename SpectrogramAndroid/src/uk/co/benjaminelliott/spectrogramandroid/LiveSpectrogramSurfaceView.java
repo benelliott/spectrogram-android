@@ -59,6 +59,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private TextView leftTimeTextView;
 	private TextView rightTimeTextView;
 	private TextView topFreqTextView;
+	@SuppressWarnings("unused")
 	private TextView selectRectTextView;
 	private String filename;
 	private LocationClient lc;
@@ -86,12 +87,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 	private float y;
 	private float dx;
 	private float dy;
-	private float t0;
-	private float t1;
-	private int f0;
-	private int f1;
-	private BigDecimal startTime;
-	private BigDecimal endTime;
+
 	
 	public LiveSpectrogramSurfaceView(Context context) {
 		super(context);
@@ -271,7 +267,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 					Log.d("","Bottom right");
 					selectedCorner = 4;
 				}
-				if (selectedCorner == 0) cancelSelection();
+				//if (selectedCorner == 0) cancelSelection(); un-comment this to enable sleection cancelling by tapping outside of rectangle
 			}
 			break;
 		}
@@ -279,7 +275,6 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		case MotionEvent.ACTION_MOVE: { //occurs when there is a difference between ACTION_UP and ACTION_DOWN
 			// Find the index of the active pointer and fetch its position
 			pointerIndex = MotionEventCompat.findPointerIndex(ev,mActivePointerId);
-			//final float x = ev.getRawX(); //Note: never care about y axis
 			// Calculate the distance moved
 			if (!selecting) { //don't allow for scrolling if user is trying to select an area of the spectrogram
 				x = MotionEventCompat.getX(ev, pointerIndex); //Note: never care about y axis

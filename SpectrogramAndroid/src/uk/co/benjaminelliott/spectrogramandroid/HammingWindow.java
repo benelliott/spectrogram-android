@@ -1,6 +1,6 @@
 package uk.co.benjaminelliott.spectrogramandroid;
 
-public class HammingWindow {
+public class HammingWindow extends WindowFunction {
 	
 	private final int windowSize;
 
@@ -25,7 +25,7 @@ public class HammingWindow {
 		}
 	}
 	
-	void applyHammingWindow(double[] samples) {
+	void applyWindow(double[] samples) {
 
 		//apply windowing function through multiplication with time-domain samples
 		for (int i = 0; i < windowSize; i++) {

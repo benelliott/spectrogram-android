@@ -66,7 +66,7 @@ public class BitmapGenerator {
 	private int lastBitmapRequested = 0; //keeps track of the most recently requested bitmap window
 	private int oldestBitmapAvailable = 0;
 	private Context context;
-	private HammingWindow hammingWindow;
+	private WindowFunction window;
 	
 	//allocate memory here rather than in performance-affecting methods:
 	private int samplesRead = 0;
@@ -95,7 +95,7 @@ public class BitmapGenerator {
 		combinedWindow = new double[SAMPLES_PER_WINDOW];
 		dfft1d = new DoubleFFT_1D(SAMPLES_PER_WINDOW); //DoubleFFT_1D constructor must be supplied with an 'n' value, where n = data size
 
-		hammingWindow = new HammingWindow(SAMPLES_PER_WINDOW);
+		window = new HammingWindow(SAMPLES_PER_WINDOW);
 		
 		String colMapString = prefs.getString(PREF_COLOURMAP_KEY, "NULL");
 		int colourMap = 0;
@@ -171,7 +171,7 @@ public class BitmapGenerator {
 		//note no locking on audioWindows - dangerous but crucial for responsiveness
 		readUntilFull(audioWindows[audioCurrentIndex], 0, SAMPLES_PER_WINDOW); //request samplesPerWindow shorts be written into the next free microphone buffer
 
-		synchronized(audioCurrentIndex) { //don't modify this when it might be being read by another thread
+		//synchronized(audioCurrentIndex) { //don't modify this when it might be being read by another thread TODO delete when certain it's ok!!
 			audioCurrentIndex++;
 			audioReady.release();
 			if (audioCurrentIndex == audioWindows.length) {
@@ -180,7 +180,7 @@ public class BitmapGenerator {
 				audioCurrentIndex = 0;
 
 			}
-		}
+		
 		//Log.d("Audio thread","Audio window "+audioCurrentIndex+" added.");
 	}
 
@@ -234,7 +234,7 @@ public class BitmapGenerator {
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
 			fftSamples[i] = (double)(samples[i]);
 		}
-		hammingWindow.applyHammingWindow(fftSamples); //apply Hamming window before performing STFT
+		window.applyWindow(fftSamples); //apply Hamming window before performing STFT
 		spectroTransform(fftSamples); //do the STFT on the copied data
 
 		for (int i = 0; i < SAMPLES_PER_WINDOW; i++) {
@@ -485,7 +485,7 @@ public class BitmapGenerator {
 		
 		Log.d("","Filtering capture from "+bottomFreq+"Hz to "+topFreq+"Hz.");
 		BandpassButterworth butter = new BandpassButterworth(SAMPLE_RATE, 8, (double)bottomFreq, (double)topFreq, 1.0);
-		butter.applyBandpassFilter(toReturn);
+		butter.applyFilter(toReturn);
 		
 		for (int i = 0; i < toReturn.length; i++) toReturn[i] = Short.reverseBytes(toReturn[i]); //must be little-endian for WAV
 		return toReturn;

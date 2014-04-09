@@ -20,7 +20,7 @@ public class AudioBitmapConverter  {
 	private final String filename;
 	private final int[] bitmapAsIntArray;
 	private final byte[] wavAudio;
-	private transient String directory;
+	private String directory;
 	private final int width;
 	private final int height;
 	private CapturedBitmapAudio cba;

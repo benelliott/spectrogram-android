@@ -124,12 +124,16 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle item selection
+		/*
+		 * Called when an item is selected by the user
+		 * from the drop-down menu. The menu only contains one
+		 * item; Settings.
+		 */
 		switch (item.getItemId()) {
-		case R.id.action_settings:
-			lssv.pauseScrolling();
-			Intent openSettings = new Intent(SpectroActivity.this, SettingsActivity.class);
-			startActivityForResult(openSettings,PREF_REQUEST_CODE);
+		case R.id.action_settings: //if 'Settings' is selected
+			lssv.pauseScrolling(); //pause the moving spectrogram display
+			Intent openSettings = new Intent(SpectroActivity.this, SettingsActivity.class); //create an Intent to transition from SpectroActivity to SettingsActivity
+			startActivityForResult(openSettings,PREF_REQUEST_CODE); //execute the Intent, anticipating the return of a result (the settings change made by the user)
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);

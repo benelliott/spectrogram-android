@@ -1,6 +1,7 @@
 package uk.co.benjaminelliott.spectrogramandroid;
 
 
+
 public class HeatMap {
 
 
