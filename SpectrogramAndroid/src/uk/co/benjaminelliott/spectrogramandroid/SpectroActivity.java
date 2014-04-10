@@ -15,6 +15,7 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -143,28 +144,21 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	@Override
 	protected void onActivityResult (int requestCode, int resultCode, Intent data) {
 		//extract data from Intent URI and update values in spectrogram code accordingly
-//		Log.d("SpectroActivity","Activity result");
-//
-//		if (requestCode == PREF_REQUEST_CODE && resultCode == RESULT_OK) {
-//			Log.d("SpectroActivity","Preference changed!");
-//			String key = data.getStringExtra("PREF_KEY");
-//			Log.d("SpectroActivity","Key: "+key);
-//			if (key.equals(BitmapGenerator.PREF_COLOURMAP_KEY)) {
-//				lssv.updateColourMap();
-//			}
-//
-//			else if (key.equals(PREF_PORTRAIT_KEY)) {
-//				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-//				boolean portrait = prefs.getBoolean(PREF_PORTRAIT_KEY, false);
-//				if (portrait) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-//				else setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
-//			}
-//			
-//			else if (key.equals(BitmapGenerator.PREF_CONTRAST_KEY)) {
-//				lssv.updateContrast();
-//			}
-//			
-//		}
+		Log.d("SpectroActivity","Activity result");
+
+		if (requestCode == PREF_REQUEST_CODE && resultCode == RESULT_OK) {
+			Log.d("SpectroActivity","Preference changed!");
+			String key = data.getStringExtra("PREF_KEY");
+			Log.d("SpectroActivity","Key: "+key);
+
+			if (key.equals(PREF_LANDSCAPE_KEY)) {
+				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+				boolean landscape = prefs.getBoolean(PREF_LANDSCAPE_KEY, false);
+				if (landscape) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+				else setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+			}
+			
+		}
 	}
 
 	@Override
