@@ -437,6 +437,7 @@ public class LiveSpectrogramSurfaceView extends SurfaceView implements SurfaceHo
 		topFreqTextView.setText(bd.floatValue()+" kHz");
 	}
 
+// FOR USER TESTS ONLY:
 //	private void updateSelectRectText() {
 //		t0 = sd.getTimeFromStartAtPixel(selectRectL);
 //		t1 = sd.getTimeFromStartAtPixel(selectRectR);

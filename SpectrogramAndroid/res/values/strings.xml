@@ -19,5 +19,10 @@
     <string name="pref_sample_rate">Sample rate</string>
     <string name="pref_samples_window">Samples per window</string>
     <string name="pref_samples_window_default">300</string>
+    <string name="pref_audio_data_title">Audio data</string>
+    <string name="pref_display_title">Display</string>
+    <string name="pref_captured_audio_title">Captured audio</string>
+    <string name="pref_overfilter">Overfilter audio captures</string>
+    <string name="pref_overfilter_summary">Automatically overfilter audio clips before they are saved to disk</string>
 
 </resources>

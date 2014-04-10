@@ -1,40 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
-    <ListPreference
-        android:defaultValue="@string/pref_sample_rate_default"
-        android:dialogTitle="@string/pref_sample_rate"
-        android:entries="@array/pref_sample_rate_values"
-        android:entryValues="@array/pref_sample_rate_values"
-        android:key="pref_sample_rate"
-        android:title="@string/pref_sample_rate" />
-    
+    <PreferenceCategory android:title="@string/pref_audio_data_title" >
         <ListPreference
-        android:defaultValue="@string/pref_samples_window_default"
-        android:dialogTitle="@string/pref_samples_window"
-        android:entries="@array/pref_samples_window_values"
-        android:entryValues="@array/pref_samples_window_values"
-        android:key="pref_samples_window"
-        android:title="@string/pref_samples_window" />
+            android:defaultValue="@string/pref_sample_rate_default"
+            android:dialogTitle="@string/pref_sample_rate"
+            android:entries="@array/pref_sample_rate_values"
+            android:entryValues="@array/pref_sample_rate_values"
+            android:key="pref_sample_rate"
+            android:title="@string/pref_sample_rate" />
+        <ListPreference
+            android:defaultValue="@string/pref_samples_window_default"
+            android:dialogTitle="@string/pref_samples_window"
+            android:entries="@array/pref_samples_window_values"
+            android:entryValues="@array/pref_samples_window_values"
+            android:key="pref_samples_window"
+            android:title="@string/pref_samples_window" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_display_title" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="pref_landscape"
+            android:title="@string/pref_landscape" />
 
-    <CheckBoxPreference
-        android:defaultValue="false"
-        android:key="pref_landscape"
-        android:title="@string/pref_landscape" />
+        <ListPreference
+            android:defaultValue="@string/pref_colourmap_default"
+            android:dialogTitle="@string/pref_colourmap"
+            android:entries="@array/pref_colourmap_entries"
+            android:entryValues="@array/pref_colourmap_values"
+            android:key="pref_colourmap"
+            android:title="@string/pref_colourmap" />
 
-    <ListPreference
-        android:defaultValue="@string/pref_colourmap_default"
-        android:dialogTitle="@string/pref_colourmap"
-        android:entries="@array/pref_colourmap_entries"
-        android:entryValues="@array/pref_colourmap_values"
-        android:key="pref_colourmap"
-        android:title="@string/pref_colourmap" />
-
-    <net.jayschwa.android.preference.SliderPreference
-        android:defaultValue="@string/pref_contrast_default"
-        android:dialogMessage="@string/pref_contrast_message"
-        android:key="pref_contrast"
-        android:summary="@string/pref_contrast_summary"
-        android:title="@string/pref_contrast" />
+        <net.jayschwa.android.preference.SliderPreference
+            android:defaultValue="@string/pref_contrast_default"
+            android:dialogMessage="@string/pref_contrast_message"
+            android:key="pref_contrast"
+            android:summary="@string/pref_contrast_summary"
+            android:title="@string/pref_contrast" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_captured_audio_title" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="pref_overfilter"
+            android:title="@string/pref_overfilter"
+            android:summary="@string/pref_overfilter_summary" />
+    </PreferenceCategory>
 
 </PreferenceScreen>

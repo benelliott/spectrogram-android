@@ -32,6 +32,7 @@ public class BitmapGenerator {
 	protected static final String PREF_CONTRAST_KEY = "pref_contrast";
 	protected static final String PREF_SAMPLE_RATE_KEY = "pref_sample_rate";
 	protected static final String PREF_SAMPLES_WINDOW_KEY = "pref_samples_window";
+	protected static final String PREF_OVERFILTER_KEY = "pref_overfilter";
 
 	//number of windows that can be held in the arrays at once before older ones are deleted. Time this represents is
 	// WINDOW_LIMIT*SAMPLES_PER_WINDOW/SAMPLE_RATE, e.g. 10000*300/16000 = 187.5 seconds.
@@ -74,7 +75,9 @@ public class BitmapGenerator {
 	private double[] previousWindow; //keep a handle on the previous audio sample window so that values can be averaged across them
 	private double[] combinedWindow;
 	private DoubleFFT_1D dfft1d; //DoubleFFT_1D constructor must be supplied with an 'n' value, where n = data size
-	private int val = 0;
+	private int val = 0; //current value for cappedValue function
+	
+	private boolean overfilter = false;
 
 	public BitmapGenerator(Context context) {
 		//bitmapsReady = new Semaphore(0);
@@ -84,6 +87,8 @@ public class BitmapGenerator {
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 		SAMPLE_RATE = Integer.parseInt(prefs.getString(PREF_SAMPLE_RATE_KEY, "16000"));
 		SAMPLES_PER_WINDOW = Integer.parseInt(prefs.getString(PREF_SAMPLES_WINDOW_KEY, "300"));
+		overfilter = prefs.getBoolean(PREF_OVERFILTER_KEY, false);
+
 		NUM_FREQ_BINS = SAMPLES_PER_WINDOW / 2; //lose half because of symmetry
 		Log.d("","Sample rate: "+SAMPLE_RATE+", samples per window: "+SAMPLES_PER_WINDOW);
 		
@@ -167,7 +172,6 @@ public class BitmapGenerator {
 		//note no locking on audioWindows - dangerous but crucial for responsiveness
 		readUntilFull(audioWindows[audioCurrentIndex], 0, SAMPLES_PER_WINDOW); //request samplesPerWindow shorts be written into the next free microphone buffer
 
-		//synchronized(audioCurrentIndex) { //don't modify this when it might be being read by another thread TODO delete when certain it's ok!!
 			audioCurrentIndex++;
 			audioReady.release();
 			if (audioCurrentIndex == audioWindows.length) {
@@ -480,36 +484,19 @@ public class BitmapGenerator {
 		}
 		
 		Log.d("","Filtering capture from "+bottomFreq+"Hz to "+topFreq+"Hz.");
-		BandpassButterworth butter = new BandpassButterworth(SAMPLE_RATE, 8, (double)bottomFreq, (double)topFreq, 1.0);
+		double minFreq = bottomFreq;
+		double maxFreq = topFreq;
+		if (overfilter) {
+			//User preference for overfiltering is enabled so reduce passband width by 40%
+			double difference = (double)(topFreq - bottomFreq)*0.2d;
+			minFreq += difference;
+			maxFreq -= difference;
+		}
+		BandpassButterworth butter = new BandpassButterworth(SAMPLE_RATE, 8, minFreq, maxFreq, 1.0);
 		butter.applyFilter(toReturn);
 		
 		for (int i = 0; i < toReturn.length; i++) toReturn[i] = Short.reverseBytes(toReturn[i]); //must be little-endian for WAV
 		return toReturn;
-	}
-
-	protected void updateColourMap() {
-		/*
-		 * Called when the colour map preference is changed.
-		 */
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		int newMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
-		Log.d("","NEW MAP: "+newMap);
-		switch(newMap) {
-		case 0: colours = HeatMap.whitePurpleGrouped(); break;
-		case 1: colours = HeatMap.inverseGreyscale();break;
-		case 2: colours = HeatMap.hotMetal(); break;
-		case 3: colours = HeatMap.blueGreenRed(); break;
-		}
-	}
-
-	protected void updateContrast() {
-		/*
-		 * Called when the colour map preference is changed.
-		 */
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
-		if (newContrast != Float.MAX_VALUE) contrast = newContrast * 3.0f + 1.0f; //slider value must be between 0 and 1, so multiply by 3 and add 1
-		Log.d("","NEW CONTRAST: "+newContrast);
 	}
 	
 	protected int getSampleRate() {
