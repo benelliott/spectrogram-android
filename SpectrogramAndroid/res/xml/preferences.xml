@@ -19,8 +19,8 @@
 
     <CheckBoxPreference
         android:defaultValue="false"
-        android:key="pref_portrait"
-        android:title="@string/pref_portrait" />
+        android:key="pref_landscape"
+        android:title="@string/pref_landscape" />
 
     <ListPreference
         android:defaultValue="@string/pref_colourmap_default"

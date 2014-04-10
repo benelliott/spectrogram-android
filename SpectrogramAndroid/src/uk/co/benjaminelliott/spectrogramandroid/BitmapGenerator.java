@@ -102,13 +102,9 @@ public class BitmapGenerator {
 		if (!colMapString.equals("NULL")) colourMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
 
 		switch (colourMap) {
-		case 0: colours = HeatMap.whitePurpleGrouped(); break;
-		case 1: colours = HeatMap.inverseGreyscale();break;
-		case 2: colours = HeatMap.hotMetal(); break;
-		case 3: colours = HeatMap.blueGreenRed(); break;
-		case 4: colours = HeatMap.Greys_ColorBrewer(); break;
-		case 5: colours = HeatMap.YlOrRd_ColorBrewer(); break;
-		case 6: colours = HeatMap.PuOr_Backwards_ColorBrewer(); break;
+		case 0: colours = HeatMap.Greys_ColorBrewer(); break;
+		case 1: colours = HeatMap.YlOrRd_ColorBrewer();break;
+		case 2: colours = HeatMap.PuOr_Backwards_ColorBrewer(); break;
 		}
 		
 		float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);

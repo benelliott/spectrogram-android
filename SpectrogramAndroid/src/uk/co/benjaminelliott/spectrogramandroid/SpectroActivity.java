@@ -43,7 +43,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	ViewPager mViewPager;
 	private final int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
 	private final int PREF_REQUEST_CODE = 600;
-	private final String PREF_PORTRAIT_KEY = "pref_portrait";
+	private final String PREF_LANDSCAPE_KEY = "pref_landscape";
 	private LocationClient lc;
 	private LiveSpectrogramSurfaceView lssv;
 	private LibraryFragment library;
@@ -52,8 +52,8 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		boolean portrait = prefs.getBoolean(PREF_PORTRAIT_KEY, false);
-		if (portrait) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		boolean landscape = prefs.getBoolean(PREF_LANDSCAPE_KEY, false);
+		if (landscape) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		else setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
 
 		setContentView(R.layout.activity_spectro);
@@ -112,7 +112,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		lssv.stop();
+		if (lssv != null) lssv.stop();
 	}
 
 	@Override

@@ -130,7 +130,7 @@ int string pref_contrast 0x7f070024
 int string pref_contrast_default 0x7f070026
 int string pref_contrast_message 0x7f070027
 int string pref_contrast_summary 0x7f070025
-int string pref_portrait 0x7f070022
+int string pref_landscape 0x7f070022
 int string pref_sample_rate 0x7f070029
 int string pref_sample_rate_default 0x7f070028
 int string pref_samples_window 0x7f07002a

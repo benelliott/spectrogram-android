@@ -9,7 +9,7 @@
     <string name="settings">Settings</string>
     <string name="pref_colourmap">Spectrogram colour map</string>
     <string name="pref_colourmap_default">0</string>
-    <string name="pref_portrait">Lock portrait orientation</string>
+    <string name="pref_landscape">Lock landscape orientation</string>
     <string name="resume_desc">Resume scrolling</string>
     <string name="pref_contrast">Spectrogram contrast</string>
     <string name="pref_contrast_summary">Adjust spectrogram contrast/sensitivity</string>
