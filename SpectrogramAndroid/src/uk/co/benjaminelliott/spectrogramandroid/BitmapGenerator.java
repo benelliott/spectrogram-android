@@ -66,7 +66,6 @@ public class BitmapGenerator {
 	private Semaphore bitmapsReady = new Semaphore(0);
 	private int lastBitmapRequested = 0; //keeps track of the most recently requested bitmap window
 	private int oldestBitmapAvailable = 0;
-	private Context context;
 	private WindowFunction window;
 	
 	//allocate memory here rather than in performance-affecting methods:
@@ -81,7 +80,6 @@ public class BitmapGenerator {
 
 	public BitmapGenerator(Context context) {
 		//bitmapsReady = new Semaphore(0);
-		this.context = context;
 		colours = new int[256];
 
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -483,11 +481,12 @@ public class BitmapGenerator {
 			}
 		}
 		
-		Log.d("","Filtering capture from "+bottomFreq+"Hz to "+topFreq+"Hz.");
+		Log.d("","Filtering capture from "+bottomFreq+"Hz to "+topFreq+"Hz. No. bins: "+NUM_FREQ_BINS);
 		double minFreq = bottomFreq;
 		double maxFreq = topFreq;
 		if (overfilter) {
 			//User preference for overfiltering is enabled so reduce passband width by 40%
+			Log.d("BG","Overfiltering on");
 			double difference = (double)(topFreq - bottomFreq)*0.2d;
 			minFreq += difference;
 			maxFreq -= difference;
