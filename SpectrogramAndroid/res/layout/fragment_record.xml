@@ -11,7 +11,7 @@
         android:layout_height="match_parent"
         android:layout_gravity="fill_horizontal" >
 
-        <uk.co.benjaminelliott.spectrogramandroid.VerticalTextView
+        <uk.co.benjaminelliott.spectrogramandroid.ui.VerticalTextView
             android:id="@+id/freq_text_top"
     		android:layout_width="wrap_content"
     		android:layout_height="wrap_content"
@@ -22,7 +22,7 @@
  			android:paddingRight="5dp"
     		android:text="top" />
 
-        <uk.co.benjaminelliott.spectrogramandroid.VerticalTextView
+        <uk.co.benjaminelliott.spectrogramandroid.ui.VerticalTextView
             android:id="@+id/freq_text_bottom"
     		android:layout_width="wrap_content"
     		android:layout_height="wrap_content"
@@ -46,7 +46,7 @@
             android:layout_gravity="fill_horizontal"
             android:layout_weight="1" >
 
-            <uk.co.benjaminelliott.spectrogramandroid.LiveSpectrogramSurfaceView
+            <uk.co.benjaminelliott.spectrogramandroid.ui.LiveSpectrogramSurfaceView
                 android:id="@+id/lssv"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />

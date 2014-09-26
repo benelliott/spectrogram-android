@@ -1,4 +1,4 @@
-<uk.co.benjaminelliott.spectrogramandroid.NonSwipeableViewPager xmlns:android="http://schemas.android.com/apk/res/android"
+<uk.co.benjaminelliott.spectrogramandroid.ui.NonSwipeableViewPager xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/pager"
     android:layout_width="match_parent"
