@@ -6,7 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
-import uk.co.benjaminelliott.spectrogramandroid.audioproc.BitmapGenerator;
+import uk.co.benjaminelliott.spectrogramandroid.audioproc.BitmapProvider;
 
 import android.graphics.Bitmap;
 import android.location.Location;
@@ -79,7 +79,7 @@ public class AudioBitmapConverter  {
 					suffix++;
 				}
 				fos = new FileOutputStream(bmpFile);
-				bitmap.compress(Bitmap.CompressFormat.JPEG, BitmapGenerator.BITMAP_STORE_QUALITY, fos);
+				bitmap.compress(Bitmap.CompressFormat.JPEG, BitmapProvider.BITMAP_STORE_QUALITY, fos);
 				Log.d("","Bitmap stored successfully at path "+bmpFile.getAbsolutePath());
 			} catch (FileNotFoundException e) {
 				Log.d("","File not found. Path: "+dir.getAbsolutePath()+"/"+filename);

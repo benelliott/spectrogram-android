@@ -13,7 +13,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.InputType;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -75,7 +74,6 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	    spectroFragment.setLeftTimeText(sd.getScreenFillTime());
 	    spectroFragment.setRightTimeText(sd.getTimeFromStopAtPixel(width));
 	    spectroFragment.setTopFreqText(sd.getMaxFrequency() / 1000);
-	    Log.d("","SURFACE CREATED");
 	} catch (IllegalArgumentException e) {
 	    e.printStackTrace();
 	} catch (SecurityException e) {
@@ -97,13 +95,19 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 
     @Override
     public void surfaceDestroyed(SurfaceHolder arg0) {
-	if (sd != null) sd.stop();
+	if (sd != null) {
+	    sd.stop();
+	}
 	sd = null;
     }
 
     public void stop() {
-	sd.stop();
-	if (selecting) cancelSelection();
+	if (sd != null) {
+	    sd.stop();
+	}
+	if (selecting) {
+	    cancelSelection();
+	}
 
     }
 

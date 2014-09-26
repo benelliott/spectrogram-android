@@ -2,7 +2,7 @@ package uk.co.benjaminelliott.spectrogramandroid.ui;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-import uk.co.benjaminelliott.spectrogramandroid.audioproc.BitmapGenerator;
+import uk.co.benjaminelliott.spectrogramandroid.audioproc.BitmapProvider;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -20,7 +20,7 @@ class SpectrogramDrawer {
     private final int NUM_FREQ_BINS;
     private int SCROLL_SHADOW_INV_SPREAD = 8; //decrease for a larger shadow
     private final ReentrantLock scrollingLock = new ReentrantLock(false);
-    private BitmapGenerator bg;
+    private BitmapProvider bg;
     private SpectrogramSurfaceView lssv;
     private Thread scrollingThread;
     private Canvas displayCanvas;
@@ -60,7 +60,7 @@ class SpectrogramDrawer {
 	this.lssv = lssv;
 	this.width = lssv.getWidth();
 	this.height = lssv.getHeight();
-	bg = new BitmapGenerator(lssv.getContext());
+	bg = new BitmapProvider(lssv.getContext());
 	SAMPLE_RATE = bg.getSampleRate();
 	SAMPLES_PER_WINDOW = bg.getSamplesPerWindow();
 	NUM_FREQ_BINS = bg.getNumFreqBins();
@@ -133,14 +133,14 @@ class SpectrogramDrawer {
 	if (canScroll) { //only scroll if there are more than a screen's worth of windows
 	    //stop new windows from coming in immediately
 	    offset /= HORIZONTAL_STRETCH; //convert from pixel offset to window offset 
-	    oldestBitmapAvailable = bg.getOldestBitmapAvailable();
+	    oldestBitmapAvailable = bg.getOldestBitmapIndex();
 	    drawLeftShadow = true;
 	    drawRightShadow = true;
-	    if (offset > BitmapGenerator.WINDOW_LIMIT/2) offset = BitmapGenerator.WINDOW_LIMIT/2;
-	    if (offset < -BitmapGenerator.WINDOW_LIMIT/2) offset = -BitmapGenerator.WINDOW_LIMIT/2;
-	    leftmostWindowAsIndex = leftmostWindow % BitmapGenerator.WINDOW_LIMIT;
+	    if (offset > BitmapProvider.WINDOW_LIMIT/2) offset = BitmapProvider.WINDOW_LIMIT/2;
+	    if (offset < -BitmapProvider.WINDOW_LIMIT/2) offset = -BitmapProvider.WINDOW_LIMIT/2;
+	    leftmostWindowAsIndex = leftmostWindow % BitmapProvider.WINDOW_LIMIT;
 	    rightmostWindow = leftmostWindow + width/HORIZONTAL_STRETCH;
-	    rightmostWindowAsIndex = rightmostWindow % BitmapGenerator.WINDOW_LIMIT;
+	    rightmostWindowAsIndex = rightmostWindow % BitmapProvider.WINDOW_LIMIT;
 
 	    if (rightmostWindow - offset >= windowsDrawn) {
 		offset = -(windowsDrawn - rightmostWindow);
@@ -157,7 +157,7 @@ class SpectrogramDrawer {
 		    bufferCanvas.drawBitmap(buffer2, 0, 0, null); //must copy to a second buffer first due to a bug in Android source
 		    leftmostWindowAsIndex = Math.abs(leftmostWindowAsIndex - offset);
 		    for (int i = 0; i < offset; i++) {
-			drawSingleBitmap((leftmostWindowAsIndex + i)%BitmapGenerator.WINDOW_LIMIT, i
+			drawSingleBitmap((leftmostWindowAsIndex + i)%BitmapProvider.WINDOW_LIMIT, i
 				* HORIZONTAL_STRETCH); //draw windows from x = 0 to x = HORIZONTAL_STRETCH*offset
 		    }
 		    leftmostWindow -= offset;
@@ -168,7 +168,7 @@ class SpectrogramDrawer {
 		    bufferCanvas.drawBitmap(buffer, -HORIZONTAL_STRETCH
 			    * offset, 0, null);//shift current display to the left by HORIZONTAL_STRETCH*offset pixels
 		    for (int i = 0; i < offset; i++) {
-			drawSingleBitmap((rightmostWindowAsIndex + i)%BitmapGenerator.WINDOW_LIMIT, width
+			drawSingleBitmap((rightmostWindowAsIndex + i)%BitmapProvider.WINDOW_LIMIT, width
 				+ HORIZONTAL_STRETCH * (i - offset)); //draw windows from x=width+HORIZONTAL_STRETCH*(i-offset).
 		    }
 		    leftmostWindow += offset;
@@ -213,7 +213,7 @@ class SpectrogramDrawer {
 
     private void drawNextBitmap(int xCoord) {
 	/*
-	 * Retreive and draw the next bitmap, determined by the BitmapGenerator itself.
+	 * Retreive and draw the next bitmap, determined by the BitmapProvider itself.
 	 */
 	unscaledBitmap = Bitmap.createBitmap(bg.getNextBitmap(), 0, 1, 1, NUM_FREQ_BINS, Bitmap.Config.ARGB_8888);
 	bufferCanvas.drawBitmap(scaleBitmap(unscaledBitmap), xCoord, 0f, null);
@@ -294,8 +294,8 @@ class SpectrogramDrawer {
 	 */
 	running = false;
 	bg.stop(); //stop taking in and processing new samples since this will overwrite those you are trying to scroll through
-	leftmostBitmapAvailable = bg.getLeftmostBitmapAvailable();
-	rightmostBitmapAvailable = bg.getRightmostBitmapAvailable();
+	leftmostBitmapAvailable = bg.getLeftmostBitmapIndex();
+	rightmostBitmapAvailable = bg.getRightmostBitmapIndex();
 	quickSlide(0); //force the shadows to be drawn immediately
     }
 
@@ -453,7 +453,7 @@ class SpectrogramDrawer {
 	return bg.getAudioChunk(startWindow, endWindow, bottomFreq, topFreq);
     }
 
-    protected BitmapGenerator getBitmapGenerator() {
+    protected BitmapProvider getBitmapGenerator() {
 	return bg;
     }
 

@@ -10,19 +10,15 @@ public class AudioCollector extends Thread {
 
     private short[][] audioWindows;
     private Semaphore audioReady;
-    private BitmapGenerator bg;
     private AudioRecord mic;
     private int audioCurrentIndex = 0;
     private int samplesPerWindow;
-    private int sampleRate;
-    boolean running = false;
+    boolean running = true;
     private int samplesRead = 0;
 
     AudioCollector(short[][] audioWindows, Semaphore audioReady, int sampleRate, int samplesPerWindow) {
         this.audioWindows = audioWindows;
         this.audioReady = audioReady;
-        this.bg = bg;
-        this.sampleRate = sampleRate;
         this.samplesPerWindow = samplesPerWindow;
 
         int readSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
