@@ -113,7 +113,6 @@ int id holo_dark 0x7f080005
 int id holo_light 0x7f080006
 int id hybrid 0x7f080004
 int id listview_file_library 0x7f080015
-int id lssv 0x7f080019
 int id match_parent 0x7f08000c
 int id monochrome 0x7f080013
 int id none 0x7f080000
@@ -127,6 +126,7 @@ int id selection_cancel 0x7f08001d
 int id selection_confirm 0x7f08001c
 int id slider_preference_layout 0x7f080022
 int id slider_preference_seekbar 0x7f080023
+int id ssv 0x7f080019
 int id strict_sandbox 0x7f080009
 int id terrain 0x7f080003
 int id text_select_rect 0x7f08001e

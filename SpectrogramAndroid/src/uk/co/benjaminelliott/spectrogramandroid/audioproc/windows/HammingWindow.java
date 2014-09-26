@@ -1,13 +1,14 @@
-package uk.co.benjaminelliott.spectrogramandroid.audioproc;
+package uk.co.benjaminelliott.spectrogramandroid.audioproc.windows;
 
 
-public class HammingWindow extends WindowFunction {
+
+public class HammingWindow implements WindowFunction {
 	
 	private final int windowSize;
 
 	private double[] hammingWindow;
 	
-	HammingWindow(int windowSize) {
+	public HammingWindow(int windowSize) {
 		this.windowSize = windowSize;
 		hammingWindow = new double[windowSize];
 		generateHammingWindow();
@@ -26,8 +27,7 @@ public class HammingWindow extends WindowFunction {
 		}
 	}
 	
-	void applyWindow(double[] samples) {
-
+	public void applyWindow(double[] samples) {
 		//apply windowing function through multiplication with time-domain samples
 		for (int i = 0; i < windowSize; i++) {
 			samples[i] *= hammingWindow[i]; 

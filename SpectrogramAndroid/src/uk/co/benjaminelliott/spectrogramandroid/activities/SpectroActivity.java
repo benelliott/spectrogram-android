@@ -4,8 +4,8 @@ import java.util.Locale;
 
 import uk.co.benjaminelliott.spectrogramandroid.R;
 import uk.co.benjaminelliott.spectrogramandroid.ui.LibraryFragment;
-import uk.co.benjaminelliott.spectrogramandroid.ui.LiveSpectrogramSurfaceView;
 import uk.co.benjaminelliott.spectrogramandroid.ui.SpectroFragment;
+import uk.co.benjaminelliott.spectrogramandroid.ui.SpectrogramSurfaceView;
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
 import android.content.Intent;
@@ -50,7 +50,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	private final int PREF_REQUEST_CODE = 600;
 	private final String PREF_LANDSCAPE_KEY = "pref_landscape";
 	private LocationClient lc;
-	private LiveSpectrogramSurfaceView lssv;
+	private SpectrogramSurfaceView ssv;
 	private LibraryFragment library;
 
 	@Override
@@ -81,7 +81,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		mViewPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
 			@Override
 			public void onPageSelected(int position) {
-				if (position != 1) lssv.pauseScrolling();
+				if (position != 1) ssv.pauseScrolling();
 				actionBar.setSelectedNavigationItem(position);
 			}
 		});
@@ -117,7 +117,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	@Override
 	protected void onPause() {
 		super.onPause();
-		if (lssv != null) lssv.stop();
+		if (ssv != null) ssv.stop();
 	}
 
 	@Override
@@ -136,7 +136,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		 */
 		switch (item.getItemId()) {
 		case R.id.action_settings: //if 'Settings' is selected
-			lssv.pauseScrolling(); //pause the moving spectrogram display
+			ssv.pauseScrolling(); //pause the moving spectrogram display
 			Intent openSettings = new Intent(SpectroActivity.this, SettingsActivity.class); //create an Intent to transition from SpectroActivity to SettingsActivity
 			startActivityForResult(openSettings,PREF_REQUEST_CODE); //execute the Intent, anticipating the return of a result (the settings change made by the user)
 			return true;
@@ -273,8 +273,8 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 	public void onConnected(Bundle connectionHint) {
 		//TODO
 		//Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
-		if (lssv != null) {
-			lssv.setLocationClient(lc);
+		if (ssv != null) {
+			ssv.setLocationClient(lc);
 		}
 	}
 
@@ -289,9 +289,9 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		//Toast.makeText(this, "Disconnected. Please re-connect.",Toast.LENGTH_SHORT).show();
 	}
 
-	public void setLiveSpectrogramSurfaceView(LiveSpectrogramSurfaceView lssv) {
-		this.lssv = lssv;
-		if (library != null) lssv.setLibraryFragment(library);
+	public void setSpectrogramSurfaceView(SpectrogramSurfaceView ssv) {
+		this.ssv = ssv;
+		if (library != null) ssv.setLibraryFragment(library);
 		
 	}
 }

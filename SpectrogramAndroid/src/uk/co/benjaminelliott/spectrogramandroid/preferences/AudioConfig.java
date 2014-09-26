@@ -13,4 +13,6 @@ public class AudioConfig {
 	// WINDOW_LIMIT*SAMPLES_PER_WINDOW*(bytes per int + bytes per double),
 	// e.g. 10000*300*(4+8) = 34MB
 
+	public static final String STORE_DIR_NAME = "Spectrogram captures";
+	public static final String PREF_AUDIO_KEY = "pref_user_test_audio";
 }

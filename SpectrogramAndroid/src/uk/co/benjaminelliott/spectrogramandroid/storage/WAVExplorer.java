@@ -6,8 +6,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import android.os.Environment;
+import android.util.Log;
 
-/*
+/**
  *  A class for extracting information from a .wav file based on
  *  information in its header. It also provides a means for extracting
  *  the samples as an array.
@@ -26,7 +27,6 @@ public class WAVExplorer {
 	private double[] secondChannelArray; //array of samples from second (right) channel, if it exists
 	private boolean isMono; // true if there is only one channel, i.e. signal is mono, not stereo
 	private int duration; //duration of WAV file in seconds
-	//TODO: use ints for things like sampleRate?
 	public WAVExplorer(String filepath) {
 		String loc = null;
 		try {
@@ -42,11 +42,10 @@ public class WAVExplorer {
 			
 			sampleRate = wavFile.readInt(); //at offset 24 so no seeking necessary
 			sampleRate = Integer.reverseBytes(sampleRate); //little-endian
-			System.out.println("Sample rate: "+sampleRate);
 			wavFile.seek(34);
 			bitsPerSample = wavFile.readByte();
 			if (bitsPerSample > 32) {
-				System.err.println("Sample size of "+bitsPerSample+" bits not supported. Please use a file with a sample size of 32 bits or lower.");
+				Log.e("WAVExplorer","Sample size of "+bitsPerSample+" bits not supported. Please use a file with a sample size of 32 bits or lower.");
 				throw new IOException();
 			}
 			
@@ -93,7 +92,7 @@ public class WAVExplorer {
 			duration = numSamples * sampleRate;
 			wavFile.close();
 		} catch (FileNotFoundException e) {
-			System.err.println("Couldn't find file "+loc+"/"+filepath);
+			Log.e("WAVExplorer","Couldn't find file "+loc+"/"+filepath);
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -120,8 +119,8 @@ public class WAVExplorer {
 			return toReturn;
 		}
 		else {
-			System.err.println("File is not stereo; no second channel available.");
-			return new double[0]; //TODO is this bad?
+			Log.e("WAVExplorer","File is not stereo; no second channel available.");
+			return null;
 		}
 	}
 	
@@ -156,23 +155,4 @@ public class WAVExplorer {
 	public int getDuration() {
 		return duration;
 	}
-	
-	
-	public static void wavTest(String[] args) {
-		if (args.length != 1 || !(args[0].endsWith(".wav"))) {
-			System.err.println("Please provide path to .wav file.");
-			return;
-		}
-		WAVExplorer we = new WAVExplorer(args[0]);
-		System.out.println(we.getSampleRate());
-		System.out.println(we.getNumSamples());
-		System.out.println(we.getNumChannels());
-		System.out.println(we.getBitsPerSample());
-		double[] dataArray = we.getFirstChannelData();
-		for (int i = 1000; i < 1005; i++) {
-			System.out.println(dataArray[i]);
-		}
-
-	}
-
 }

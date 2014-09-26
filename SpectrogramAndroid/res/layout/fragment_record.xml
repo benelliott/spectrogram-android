@@ -46,8 +46,8 @@
             android:layout_gravity="fill_horizontal"
             android:layout_weight="1" >
 
-            <uk.co.benjaminelliott.spectrogramandroid.ui.LiveSpectrogramSurfaceView
-                android:id="@+id/lssv"
+            <uk.co.benjaminelliott.spectrogramandroid.ui.SpectrogramSurfaceView
+                android:id="@+id/ssv"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
 

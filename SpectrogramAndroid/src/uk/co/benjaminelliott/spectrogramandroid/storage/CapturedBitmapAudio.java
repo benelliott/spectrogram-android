@@ -2,11 +2,15 @@ package uk.co.benjaminelliott.spectrogramandroid.storage;
 
 import java.io.Serializable;
 
+/**
+ * A serializable class which allows for the audio data, bitmap data and parameters to be packaged up
+ * and unpackaged at the other end by the server.
+ * 
+ * 
+ * TODO: Move away from serialisation, which is notoriously slow on Android.
+ */
+
 public class CapturedBitmapAudio implements Serializable {
-	/*
-	 * A serializable class which allows for the audio data, bitmap data and parameters to be packaged up
-	 * and unpackaged at the other end by the server.
-	 */
 
 	public static final long serialVersionUID = 2L;
 	public static final String EXTENSION = ".cba";
@@ -29,12 +33,11 @@ public class CapturedBitmapAudio implements Serializable {
 
 	}
 	
+	/**
+	 * Creates and returns new array containing the bitmap's 
+	 * RGB pixel values.
+	 */
 	public int[] getBitmapRGBPixels() {
-		/*
-		 * Creates a new array containing the bitmap
-		 * pixel values, rather than just returning a
-		 * reference to the original.
-		 */
 		int[] ret = new int[bitmapAsIntArray.length];
 		for (int i = 0; i < bitmapAsIntArray.length; i++) {
 			ret[i] = 0xffffff&bitmapAsIntArray[i];

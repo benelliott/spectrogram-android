@@ -4,6 +4,9 @@ import java.util.concurrent.Semaphore;
 
 import org.jtransforms.fft.DoubleFFT_1D;
 
+import uk.co.benjaminelliott.spectrogramandroid.audioproc.filters.BandpassButterworth;
+import uk.co.benjaminelliott.spectrogramandroid.audioproc.windows.HammingWindow;
+import uk.co.benjaminelliott.spectrogramandroid.audioproc.windows.WindowFunction;
 import uk.co.benjaminelliott.spectrogramandroid.preferences.HeatMap;
 
 import android.content.Context;
