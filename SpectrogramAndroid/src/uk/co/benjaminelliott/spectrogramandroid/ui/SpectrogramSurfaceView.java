@@ -32,15 +32,11 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
     private InteractionHandler interactionHandler;
     private Context context;
     protected boolean selecting = false; //true if user has entered the selection state
-    //private int selectedCorner; // indicates which corner is being dragged; 0 is top-left, 1 is top-right, 2 is bottom-left, 3 is bottom-right
-
     private String filename;
     private LocationClient lc;
     private AlertDialog loadingAlert; //used to force user to wait for capture
     private LibraryFragment library;
     private ViewUpdateHandler vuh; //used to send message to library pane to update file list
-
-
 
     public SpectrogramSurfaceView(Context context) {
 	super(context);
@@ -60,7 +56,6 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
     private void init(Context context) { //Initialiser for displaying audio from microphone
 	this.context = context;
 	getHolder().addCallback(this);
-
 	interactionHandler = new InteractionHandler(this);
 
 	AlertDialog.Builder builder = new AlertDialog.Builder(context);
@@ -70,38 +65,9 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	loadingAlert = builder.create();
 	vuh = new ViewUpdateHandler(this);
     }
-
-    private static class ViewUpdateHandler extends Handler {
-	private final WeakReference<SpectrogramSurfaceView> wr; 
-
-	ViewUpdateHandler(SpectrogramSurfaceView lssv) { 
-	    wr = new WeakReference<SpectrogramSurfaceView>(lssv); 
-	} 
-	@Override
-	public void handleMessage(Message msg) {
-	    wr.get().updateLibraryFiles();
-	}
-    };
-
-    public void updateLibraryFiles() {
-	library.updateFilesList();
-    }
-
-    public void setLibraryFragment(LibraryFragment library) {
-	this.library = library;
-    }
-
-    public void setSpectroFragment(SpectroFragment spectroFragment) {
-	this.spectroFragment = spectroFragment;
-    }
-
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)  {
-	Log.d("LSSV","SURFACE CHANGED");
-    }
-
+    
     @Override
     public void surfaceCreated(SurfaceHolder arg0) {
-	Log.d("","CREATING SURFACE");
 	width = getWidth();
 	try {
 	    sd = new SpectrogramDrawer(this);
@@ -120,14 +86,22 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
     }
 
     @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width,
+	    int height) {
+	//Nothing to do?
+    }
+
+    public void updateLibraryFiles() {
+	library.updateFilesList();
+    }
+
+    @Override
     public void surfaceDestroyed(SurfaceHolder arg0) {
-	Log.d("LSSV","SURFACE DESTROYED");
 	if (sd != null) sd.stop();
 	sd = null;
     }
 
     public void stop() {
-	Log.d("LSSV","STOP");
 	sd.stop();
 	if (selecting) cancelSelection();
 
@@ -141,8 +115,6 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	return true;
     }
 
-
-
     public void pauseScrolling() {
 	if (sd != null) {
 	    sd.pauseScrolling();
@@ -155,23 +127,6 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	sd = new SpectrogramDrawer(this);
 	spectroFragment.disableResumeButton();
     }
-
-    // FOR USER TESTS ONLY:
-    //	private void updateSelectRectText() {
-    //		t0 = sd.getTimeFromStartAtPixel(selectRectL);
-    //		t1 = sd.getTimeFromStartAtPixel(selectRectR);
-    //		f0 = sd.getFrequencyAtPixel(selectRectT);
-    //		f1 = sd.getFrequencyAtPixel(selectRectB);
-    //		
-    //		startTime = (t0 < t1) ? new BigDecimal(Float.toString(t0)) : new BigDecimal(Float.toString(t1));
-    //		startTime = startTime.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
-    //		endTime = (t0 < t1) ? new BigDecimal(Float.toString(t1)) : new BigDecimal(Float.toString(t0));
-    //		endTime = endTime.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
-    //		int minFreq = (f0 < f1) ? f0 : f1;
-    //		int maxFreq = (f1 > f0) ? f1 : f0;
-    //
-    //		selectRectTextView.setText("Start time: "+startTime.floatValue()+" End time: "+endTime.floatValue()+"\n"+"Min freq: "+minFreq+" Max freq: "+maxFreq);
-    //	}
 
     public void confirmSelection() {
 	//create and display an AlertDialog requesting a filename
@@ -203,22 +158,42 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	selecting = false;
     }
 
-    public void setLocationClient(LocationClient lc) {
-	this.lc = lc;
-    }
-    
-    protected void slideForward(int offset) {
+    protected void slideTo(int offset) {
 	sd.quickSlide(offset);
     }
-    
+
     protected void updateSelectRect(float selectRectL, float selectRectT, float selectRectR, float selectRectB) {
 	sd.drawSelectRect(selectRectL,selectRectT,selectRectR,selectRectB);
 	spectroFragment.moveCaptureButtonContainer(selectRectL, selectRectT, selectRectR, selectRectB);
     }
-    
+
     protected void enableCaptureButtonContainer() {
 	spectroFragment.enableCaptureButtonContainer();
     }
+    
+    public void setLocationClient(LocationClient lc) {
+	this.lc = lc;
+    }
+    
+    public void setLibraryFragment(LibraryFragment library) {
+	this.library = library;
+    }
+
+    public void setSpectroFragment(SpectroFragment spectroFragment) {
+	this.spectroFragment = spectroFragment;
+    }
+    
+    private static class ViewUpdateHandler extends Handler {
+	private final WeakReference<SpectrogramSurfaceView> wr; 
+
+	ViewUpdateHandler(SpectrogramSurfaceView lssv) { 
+	    wr = new WeakReference<SpectrogramSurfaceView>(lssv); 
+	} 
+	@Override
+	public void handleMessage(Message msg) {
+	    wr.get().updateLibraryFiles();
+	}
+    };
 
     private class CaptureTask extends AsyncTask<Void, Void, Void> {
 	private Context context;
@@ -250,4 +225,5 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	}
 
     }
+
 }

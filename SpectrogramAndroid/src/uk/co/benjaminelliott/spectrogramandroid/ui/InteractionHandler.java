@@ -120,7 +120,7 @@ public class InteractionHandler {
 	    dx = x - lastTouchX;
 	    if (dx > 5 || dx < -5) { //only if moved more than 5 pixels
 		handler.removeCallbacks(onLongPress); //cancel long-press runnable
-		ssv.slideForward((int) dx);
+		ssv.slideTo((int) dx);
 		// Remember this touch position for the next move event
 	    }
 	    lastTouchX = x;
