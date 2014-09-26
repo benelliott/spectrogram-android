@@ -1,4 +1,4 @@
-spectrogramandroid
+Spectrogram - Android app
 ==================
 
 
