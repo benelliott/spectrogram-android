@@ -230,13 +230,11 @@ public class BitmapProvider {
             toReturn = new short[((WINDOW_LIMIT - startWindow) + endWindow)*SAMPLES_PER_WINDOW];
             for (int i = startWindow; i < WINDOW_LIMIT; i++) {
                 for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
-                    //Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
                     toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
                 }
             }
             for (int i = 0; i < endWindow; i++) {
                 for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
-                    //Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
                     toReturn[(WINDOW_LIMIT-startWindow+i)*SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
                 }
             }
@@ -244,9 +242,7 @@ public class BitmapProvider {
         else {
             toReturn = new short[(endWindow-startWindow)*SAMPLES_PER_WINDOW];
             for (int i = startWindow; i < endWindow; i++) {
-
                 for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
-                    //Log.d("Audio chunk","i: "+i+", j: "+j+" i*SAMPLES_PER_WINDOW+j: "+(i*SAMPLES_PER_WINDOW+j));
                     toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
                 }
             }

@@ -222,7 +222,7 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	    float[] dimens = interactionHandler.getSelectRectDimensions();
 	    Bitmap bitmapToStore = sd.getBitmapToStore(dimens[0],dimens[1],dimens[2],dimens[3]);
 	    short[] audioToStore = sd.getAudioToStore(dimens[0],dimens[1],dimens[2],dimens[3]);
-	    AudioBitmapConverter abc = new AudioBitmapConverter(filename, AudioConfig.STORE_DIR_NAME, bitmapToStore,audioToStore,lc.getLastLocation(),sd.getBitmapGenerator().getSampleRate());
+	    AudioBitmapConverter abc = new AudioBitmapConverter(filename, AudioConfig.STORE_DIR_NAME, bitmapToStore,audioToStore,lc.getLastLocation(),sd.getBitmapProvider().getSampleRate());
 	    abc.writeCBAToFile(filename, AudioConfig.STORE_DIR_NAME);
 	    abc.storeJPEGandWAV();
 	    return null;
