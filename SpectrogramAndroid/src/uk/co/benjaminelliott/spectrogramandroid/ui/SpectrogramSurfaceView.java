@@ -1,7 +1,6 @@
 package uk.co.benjaminelliott.spectrogramandroid.ui;
 
-import java.lang.ref.WeakReference;
-
+import uk.co.benjaminelliott.spectrogramandroid.activities.SpectroActivity;
 import uk.co.benjaminelliott.spectrogramandroid.preferences.DynamicAudioConfig;
 import uk.co.benjaminelliott.spectrogramandroid.storage.AudioBitmapConverter;
 import android.app.AlertDialog;
@@ -9,8 +8,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Message;
 import android.text.InputType;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -36,7 +33,6 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
     private LocationClient lc;
     private AlertDialog loadingAlert; //used to force user to wait for capture
     private LibraryFragment library;
-    private ViewUpdateHandler vuh; //used to send message to library pane to update file list
 
     public SpectrogramSurfaceView(Context context) {
 	super(context);
@@ -63,7 +59,6 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	final ProgressBar pb = new ProgressBar(context);
 	builder.setView(pb);
 	loadingAlert = builder.create();
-	vuh = new ViewUpdateHandler(this);
     }
     
     @Override
@@ -181,27 +176,11 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
     public void setLocationClient(LocationClient lc) {
 	this.lc = lc;
     }
-    
-    public void setLibraryFragment(LibraryFragment library) {
-	this.library = library;
-    }
 
     public void setSpectroFragment(SpectroFragment spectroFragment) {
 	this.spectroFragment = spectroFragment;
     }
     
-    private static class ViewUpdateHandler extends Handler {
-	private final WeakReference<SpectrogramSurfaceView> wr; 
-
-	ViewUpdateHandler(SpectrogramSurfaceView lssv) { 
-	    wr = new WeakReference<SpectrogramSurfaceView>(lssv); 
-	} 
-	@Override
-	public void handleMessage(Message msg) {
-	    wr.get().updateLibraryFiles();
-	}
-    };
-
     private class CaptureTask extends AsyncTask<Void, Void, Void> {
 	private Context context;
 	public CaptureTask(Context context) {
@@ -213,7 +192,7 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	    super.onPostExecute(result);
 	    Toast.makeText(context, "Capture completed!", Toast.LENGTH_SHORT).show();
 	    loadingAlert.dismiss();
-	    vuh.sendMessage(new Message()); //update library contents (must be done from UI thread)
+	    ((SpectroActivity)spectroFragment.getActivity()).updateLibraryFiles();
 	}
 	@Override
 	protected void onPreExecute() {
@@ -230,6 +209,5 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	    abc.storeJPEGandWAV();
 	    return null;
 	}
-
     }
 }

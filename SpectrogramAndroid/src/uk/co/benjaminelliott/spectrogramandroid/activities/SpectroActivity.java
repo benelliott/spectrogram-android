@@ -5,7 +5,6 @@ import java.util.Locale;
 import uk.co.benjaminelliott.spectrogramandroid.R;
 import uk.co.benjaminelliott.spectrogramandroid.ui.LibraryFragment;
 import uk.co.benjaminelliott.spectrogramandroid.ui.SpectroFragment;
-import uk.co.benjaminelliott.spectrogramandroid.ui.SpectrogramSurfaceView;
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
 import android.content.Intent;
@@ -50,7 +49,7 @@ public class SpectroActivity extends FragmentActivity implements
     private final int PREF_REQUEST_CODE = 600;
     private final String PREF_LANDSCAPE_KEY = "pref_landscape";
     private LocationClient lc;
-    private SpectrogramSurfaceView ssv;
+    private SpectroFragment spectroFragment;
     private LibraryFragment library;
 
     @Override
@@ -86,7 +85,7 @@ public class SpectroActivity extends FragmentActivity implements
 		    @Override
 		    public void onPageSelected(int position) {
 			if (position != 1)
-			    ssv.pauseScrolling();
+			    spectroFragment.pauseScrolling();
 			actionBar.setSelectedNavigationItem(position);
 		    }
 		});
@@ -122,8 +121,8 @@ public class SpectroActivity extends FragmentActivity implements
     @Override
     protected void onPause() {
 	super.onPause();
-	if (ssv != null)
-	    ssv.stop();
+	if (spectroFragment != null)
+	    spectroFragment.pauseScrolling();
     }
 
     @Override
@@ -141,7 +140,7 @@ public class SpectroActivity extends FragmentActivity implements
 	 */
 	switch (item.getItemId()) {
 	case R.id.action_settings: // if 'Settings' is selected
-	    ssv.pauseScrolling(); // pause the moving spectrogram display
+	    spectroFragment.pauseScrolling(); // pause the moving spectrogram display
 	    Intent openSettings = new Intent(SpectroActivity.this,
 		    SettingsActivity.class); // create an Intent to transition
 					     // from SpectroActivity to
@@ -230,7 +229,8 @@ public class SpectroActivity extends FragmentActivity implements
 		fragment = library;
 		break;
 	    case 1:
-		fragment = new SpectroFragment();
+		spectroFragment = new SpectroFragment();
+		fragment = spectroFragment;
 		break;
 	    }
 	    return fragment;
@@ -302,8 +302,8 @@ public class SpectroActivity extends FragmentActivity implements
     public void onConnected(Bundle connectionHint) {
 	// TODO
 	// Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
-	if (ssv != null) {
-	    ssv.setLocationClient(lc);
+	if (spectroFragment != null) {
+	    spectroFragment.setLocationClient(lc);
 	}
     }
 
@@ -319,9 +319,14 @@ public class SpectroActivity extends FragmentActivity implements
 	// "Disconnected. Please re-connect.",Toast.LENGTH_SHORT).show();
     }
 
-    public void setSpectrogramSurfaceView(SpectrogramSurfaceView ssv) {
-	this.ssv = ssv;
-	if (library != null)
-	    ssv.setLibraryFragment(library);
+    public void updateLibraryFiles() {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                if (library != null) {
+                    library.updateFilesList();
+                }
+            }
+        });
+        
     }
 }

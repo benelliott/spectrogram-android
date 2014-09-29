@@ -3,7 +3,6 @@ package uk.co.benjaminelliott.spectrogramandroid.ui;
 import java.math.BigDecimal;
 
 import uk.co.benjaminelliott.spectrogramandroid.R;
-import uk.co.benjaminelliott.spectrogramandroid.activities.SpectroActivity;
 import uk.co.benjaminelliott.spectrogramandroid.preferences.UiConfig;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -16,6 +15,8 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import com.google.android.gms.location.LocationClient;
 
 public class SpectroFragment extends Fragment {
 
@@ -55,12 +56,16 @@ public class SpectroFragment extends Fragment {
     public void onResume() {
 	super.onResume();
     }
+    
+    public void pauseScrolling() {
+        if (ssv != null) {
+            ssv.pauseScrolling();
+        }
+    }
 
     private void init() {
         
 	ssv = (SpectrogramSurfaceView)rootView.findViewById(R.id.ssv);
-	((SpectroActivity)getActivity()).setSpectrogramSurfaceView(ssv); //pass the LSSV back to the activity for location updates
-
 	ssv.setSpectroFragment(this);
 
 	resumeButton = (ImageButton)rootView.findViewById(R.id.button_resume);
@@ -154,6 +159,10 @@ public class SpectroFragment extends Fragment {
 	BigDecimal bd = new BigDecimal(Float.toString(freqInKHz));
 	bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
 	topFreqTextView.setText(bd.floatValue()+" kHz");
+    }
+
+    public void setLocationClient(LocationClient lc) {
+        ssv.setLocationClient(lc); 
     }
 
     //Bottom freq is always 0 kHz
