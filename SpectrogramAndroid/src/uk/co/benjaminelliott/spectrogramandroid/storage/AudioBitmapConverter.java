@@ -6,8 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
-import uk.co.benjaminelliott.spectrogramandroid.audioproc.BitmapProvider;
-
+import uk.co.benjaminelliott.spectrogramandroid.preferences.DynamicAudioConfig;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.media.ExifInterface;
@@ -16,22 +15,20 @@ import android.util.Log;
 
 public class AudioBitmapConverter  {
 
-	private final int SAMPLE_RATE;
+        private final DynamicAudioConfig dac;
 	private final double decLatitude;
 	private final double decLongitude;
 	private final String filename;
 	private final int[] bitmapAsIntArray;
 	private final byte[] wavAudio;
-	private String directory;
 	private final int width;
 	private final int height;
 	private CapturedBitmapAudio cba;
 	private Bitmap bitmap;
 	
-	public AudioBitmapConverter(String filename, String directory, Bitmap bitmap, short[] rawWavAudio, Location loc, int sampleRate) {
-		this.filename = filename;
-		this.directory = directory;
-		this.SAMPLE_RATE = sampleRate;
+	public AudioBitmapConverter(String filename, DynamicAudioConfig dac, Bitmap bitmap, short[] rawWavAudio, Location loc) {
+		this.dac = dac;
+	        this.filename = filename;
 		this.bitmap = bitmap;
 		decLatitude = loc.getLatitude();
 		decLongitude = loc.getLongitude();
@@ -51,7 +48,7 @@ public class AudioBitmapConverter  {
 	
 	private byte[] wavAsByteArray(short[] rawWavAudio) {
 		byte[] ret = new byte[44+rawWavAudio.length*2];
-		byte[] header = getWAVHeader(SAMPLE_RATE, 16, rawWavAudio.length*2, 1);
+		byte[] header = getWAVHeader(dac.SAMPLE_RATE, 16, rawWavAudio.length*2, 1);
 		for (int i = 0; i < 44; i++) {
 			ret[i] = header[i];
 		}
@@ -69,7 +66,7 @@ public class AudioBitmapConverter  {
 	
 	private void writeBitmapToJPEG(Bitmap bitmap) {
 		if (isExternalStorageWritable()) {
-			File dir = getAlbumStorageDir(directory);
+			File dir = getAlbumStorageDir(DynamicAudioConfig.STORE_DIR_NAME);
 			FileOutputStream fos = null;
 			try {
 				int suffix = 0;
@@ -79,7 +76,7 @@ public class AudioBitmapConverter  {
 					suffix++;
 				}
 				fos = new FileOutputStream(bmpFile);
-				bitmap.compress(Bitmap.CompressFormat.JPEG, BitmapProvider.BITMAP_STORE_QUALITY, fos);
+				bitmap.compress(Bitmap.CompressFormat.JPEG, DynamicAudioConfig.BITMAP_STORE_QUALITY, fos);
 				Log.d("","Bitmap stored successfully at path "+bmpFile.getAbsolutePath());
 			} catch (FileNotFoundException e) {
 				Log.d("","File not found. Path: "+dir.getAbsolutePath()+"/"+filename);
@@ -96,7 +93,7 @@ public class AudioBitmapConverter  {
 	}
 	
 	private void geotagJPEG() {
-			File dir = getAlbumStorageDir(directory);
+			File dir = getAlbumStorageDir(DynamicAudioConfig.STORE_DIR_NAME);
 			String jpegFilepath = dir.getAbsolutePath()+"//"+filename+".jpg";
 			try {
 				Log.d("StoredBitmapAudio","Opening EXIF data for "+jpegFilepath);
@@ -118,7 +115,7 @@ public class AudioBitmapConverter  {
 	private void writeAudioToWAV() {
 		FileOutputStream fos = null;
 		if (isExternalStorageWritable()) {
-			File dir = getAlbumStorageDir(directory);
+			File dir = getAlbumStorageDir(DynamicAudioConfig.STORE_DIR_NAME);
 			try {
 				File audioFile = new File(dir.getAbsolutePath()+"/"+filename+".wav");
 				int suffix = 0;

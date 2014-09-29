@@ -6,9 +6,11 @@ import org.jtransforms.fft.DoubleFFT_1D;
 
 import uk.co.benjaminelliott.spectrogramandroid.audioproc.windows.HammingWindow;
 import uk.co.benjaminelliott.spectrogramandroid.audioproc.windows.WindowFunction;
+import uk.co.benjaminelliott.spectrogramandroid.preferences.DynamicAudioConfig;
 
 public class BitmapCreator extends Thread {
 
+    private DynamicAudioConfig dac;
     boolean running = true;
     private int samplesPerWindow;
     private int numFreqBins;
@@ -38,10 +40,12 @@ public class BitmapCreator extends Thread {
         this.bitmapWindows = bp.getBitmapWindowArray();
         this.audioReady = bp.getAudioSemaphore();
         this.bitmapsReady = bp.getBitmapSemaphore();
-        this.contrast = bp.getContrast();
         this.colours = bp.getColours();
-        this.samplesPerWindow = bp.getSamplesPerWindow();
-        this.numFreqBins = bp.getNumFreqBins();
+        this.dac = bp.getDynamicAudioConfig();
+
+        this.samplesPerWindow = dac.SAMPLES_PER_WINDOW;
+        this.numFreqBins = dac.NUM_FREQ_BINS;
+        this.contrast = dac.CONTRAST;
         window = new HammingWindow(samplesPerWindow);
         
         fftSamples = new double[samplesPerWindow];
@@ -175,5 +179,4 @@ public class BitmapCreator extends Thread {
         //Log.d("Spectro","Bitmap "+lastBitmapRequested+" requested");
         return bitmapWindows[lastBitmapRequested++];
     }
-
 }

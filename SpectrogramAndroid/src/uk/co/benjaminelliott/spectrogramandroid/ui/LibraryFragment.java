@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import uk.co.benjaminelliott.spectrogramandroid.R;
-import uk.co.benjaminelliott.spectrogramandroid.preferences.AudioConfig;
+import uk.co.benjaminelliott.spectrogramandroid.preferences.DynamicAudioConfig;
 import uk.co.benjaminelliott.spectrogramandroid.storage.AudioBitmapConverter;
 import uk.co.benjaminelliott.spectrogramandroid.transmission.ServerSendTask;
 import android.app.AlertDialog;
@@ -43,7 +43,7 @@ public class LibraryFragment extends Fragment {
 		View rootView = inflater.inflate(
 				R.layout.fragment_library,
 				container, false);
-		directory = AudioBitmapConverter.getAlbumStorageDir(AudioConfig.STORE_DIR_NAME);
+		directory = AudioBitmapConverter.getAlbumStorageDir(DynamicAudioConfig.STORE_DIR_NAME);
 		directory.mkdirs();
 		fileListView = (ListView) rootView.findViewById(R.id.listview_file_library);
 		populateFilesList();

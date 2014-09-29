@@ -1,8 +1,7 @@
 package uk.co.benjaminelliott.spectrogramandroid.ui;
 
-import java.util.concurrent.locks.ReentrantLock;
-
 import uk.co.benjaminelliott.spectrogramandroid.audioproc.BitmapProvider;
+import uk.co.benjaminelliott.spectrogramandroid.preferences.DynamicAudioConfig;
 import uk.co.benjaminelliott.spectrogramandroid.preferences.UiConfig;
 import uk.co.benjaminelliott.spectrogramandroid.ui.bitmaps.ScrollShadowGenerator;
 import uk.co.benjaminelliott.spectrogramandroid.ui.bitmaps.SelectRectGenerator;
@@ -13,13 +12,14 @@ import android.graphics.Matrix;
 import android.view.SurfaceHolder;
 
 class SpectrogramDrawer {
-    private final int SAMPLE_RATE;
-    private final float VERTICAL_STRETCH;
-    private final int SAMPLES_PER_WINDOW;
-    private final int NUM_FREQ_BINS;
-    private final ReentrantLock scrollingLock = new ReentrantLock(false);
+
+    private DynamicAudioConfig dac;
+    private int width; 
+    private int height;
+    private SurfaceHolder holder;
+
+    private final float verticalStretch;
     private BitmapProvider bg;
-    private SpectrogramSurfaceView ssv;
     private Thread scrollingThread;
     private Canvas displayCanvas;
     private Bitmap buffer;
@@ -28,8 +28,6 @@ class SpectrogramDrawer {
     private Canvas buffer2Canvas;
     private Bitmap leftShadow;
     private Bitmap rightShadow;
-    private int width;
-    private int height;
     private int windowsDrawn;
     private int leftmostWindow;
     private boolean canScroll = false;
@@ -47,17 +45,16 @@ class SpectrogramDrawer {
     private int leftmostWindowAsIndex;
     private int rightmostWindow;
     private int rightmostWindowAsIndex;
-    private SurfaceHolder sh;
 
-    public SpectrogramDrawer(SpectrogramSurfaceView lssv) {
-        this.ssv = lssv;
-        this.width = lssv.getWidth();
-        this.height = lssv.getHeight();
-        bg = new BitmapProvider(lssv.getContext());
-        SAMPLE_RATE = bg.getSampleRate();
-        SAMPLES_PER_WINDOW = bg.getSamplesPerWindow();
-        NUM_FREQ_BINS = bg.getNumFreqBins();
-        VERTICAL_STRETCH = ((float)height)/((float)NUM_FREQ_BINS); // stretch spectrogram to all of available height
+    public SpectrogramDrawer(DynamicAudioConfig dac, int width, int height, SurfaceHolder holder) {
+        this.dac = dac;
+        this.width = width;
+        this.height = height;
+        this.holder = holder;
+
+        bg = new BitmapProvider(dac);
+        verticalStretch = ((float)height)/((float)dac.NUM_FREQ_BINS); // stretch spectrogram to all of available height
+
         init();
     }
 
@@ -82,8 +79,8 @@ class SpectrogramDrawer {
         leftShadow = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         rightShadow = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         ScrollShadowGenerator.generateScrollShadows(leftShadow, rightShadow, width, height, UiConfig.SCROLL_SHADOW_SPREAD);
-        scaleMatrix = generateScaleMatrix(1,NUM_FREQ_BINS,UiConfig.HORIZONTAL_STRETCH_FACTOR, NUM_FREQ_BINS * VERTICAL_STRETCH); //generate matrix to scale by horiz/vert scale params
-              
+        // generate matrix to scale by horiz/vert scale params:
+        scaleMatrix = generateScaleMatrix(1,dac.NUM_FREQ_BINS,UiConfig.HORIZONTAL_STRETCH_FACTOR, dac.NUM_FREQ_BINS * verticalStretch); 
         clearCanvas();
         start();
     }
@@ -92,16 +89,15 @@ class SpectrogramDrawer {
      * Clear the display by painting it black.
      */
     private void clearCanvas() {
-        sh = ssv.getHolder();
-        displayCanvas = sh.lockCanvas(null);
+        displayCanvas = holder.lockCanvas(null);
         try {
             bufferCanvas.drawColor(Color.BLACK);
-            synchronized (sh) {
+            synchronized (holder) {
                 displayCanvas.drawBitmap(buffer, 0, 0, null); //draw buffer to display
             }
         } finally {
             if (displayCanvas != null) {
-                sh.unlockCanvasAndPost(displayCanvas);
+                holder.unlockCanvasAndPost(displayCanvas);
             }
         }
     }
@@ -111,22 +107,18 @@ class SpectrogramDrawer {
      * then draw the result to the display.
      */
     public void scroll() {
-        if (scrollingLock.tryLock()) {
-            sh = ssv.getHolder();
-            displayCanvas = sh.lockCanvas(null);
-            try {
-                quickProgress(); //update buffer bitmap
-                synchronized (sh) {
-                    //draw buffer to display
-                    displayCanvas.drawBitmap(buffer, 0, 0, null);
-                    //draw scrolling shadow bitmaps on top
-                    displayCanvas.drawBitmap(leftShadow, 0,  0, null); 
-                }
-            } finally {
-                if (displayCanvas != null) {
-                    sh.unlockCanvasAndPost(displayCanvas);
-                }
-                scrollingLock.unlock();
+        displayCanvas = holder.lockCanvas(null);
+        try {
+            quickProgress(); //update buffer bitmap
+            synchronized (holder) {
+                //draw buffer to display
+                displayCanvas.drawBitmap(buffer, 0, 0, null);
+                //draw scrolling shadow bitmaps on top
+                displayCanvas.drawBitmap(leftShadow, 0,  0, null); 
+            }
+        } finally {
+            if (displayCanvas != null) {
+                holder.unlockCanvasAndPost(displayCanvas);
             }
         }
     }
@@ -136,17 +128,19 @@ class SpectrogramDrawer {
      * then scrolls the screen so long as the appropriate windows are available.
      */
     public void quickSlide(int offset) {
+        int windowLimit = DynamicAudioConfig.WINDOW_LIMIT;
+        int horizontalStretch = UiConfig.HORIZONTAL_STRETCH_FACTOR;
         if (canScroll) { //only scroll if there are more than a screen's worth of windows
             //stop new windows from coming in immediately
-            offset /= UiConfig.HORIZONTAL_STRETCH_FACTOR; //convert from pixel offset to window offset 
+            offset /= horizontalStretch; //convert from pixel offset to window offset 
             oldestBitmapAvailable = bg.getOldestBitmapIndex();
             drawLeftShadow = true;
             drawRightShadow = true;
-            if (offset > BitmapProvider.WINDOW_LIMIT/2) offset = BitmapProvider.WINDOW_LIMIT/2;
-            if (offset < -BitmapProvider.WINDOW_LIMIT/2) offset = -BitmapProvider.WINDOW_LIMIT/2;
-            leftmostWindowAsIndex = leftmostWindow % BitmapProvider.WINDOW_LIMIT;
-            rightmostWindow = leftmostWindow + width/UiConfig.HORIZONTAL_STRETCH_FACTOR;
-            rightmostWindowAsIndex = rightmostWindow % BitmapProvider.WINDOW_LIMIT;
+            if (offset > windowLimit/2) offset = windowLimit/2;
+            if (offset < -windowLimit/2) offset = -windowLimit/2;
+            leftmostWindowAsIndex = leftmostWindow % windowLimit;
+            rightmostWindow = leftmostWindow + width/horizontalStretch;
+            rightmostWindowAsIndex = rightmostWindow % windowLimit;
 
             if (rightmostWindow - offset >= windowsDrawn) {
                 offset = -(windowsDrawn - rightmostWindow);
@@ -158,39 +152,35 @@ class SpectrogramDrawer {
             }
             if (offset > 0) { //slide leftwards
                 if (leftmostWindowAsIndex != leftmostBitmapAvailable) {
-                    buffer2Canvas.drawBitmap(buffer, UiConfig.HORIZONTAL_STRETCH_FACTOR
-                            * offset, 0, null);//shift current display to the right by UiConfig.HORIZONTAL_STRETCH_FACTOR*offset pixels
+                    buffer2Canvas.drawBitmap(buffer, horizontalStretch * offset, 0, null);//shift current display to the right by UiConfig.HORIZONTAL_STRETCH_FACTOR*offset pixels
                     bufferCanvas.drawBitmap(buffer2, 0, 0, null); //must copy to a second buffer first due to a bug in Android source
                     leftmostWindowAsIndex = Math.abs(leftmostWindowAsIndex - offset);
                     for (int i = 0; i < offset; i++) {
-                        drawSingleBitmap((leftmostWindowAsIndex + i)%BitmapProvider.WINDOW_LIMIT, i
-                                * UiConfig.HORIZONTAL_STRETCH_FACTOR); //draw windows from x = 0 to x = UiConfig.HORIZONTAL_STRETCH_FACTOR*offset
+                        drawSingleBitmap((leftmostWindowAsIndex + i)%windowLimit, i * horizontalStretch); //draw windows from x = 0 to x = UiConfig.HORIZONTAL_STRETCH_FACTOR*offset
                     }
                     leftmostWindow -= offset;
                 }
             } else { //slide rightwards
                 offset = -offset; //change to positive for convenience
                 if (rightmostWindowAsIndex != rightmostBitmapAvailable) {
-                    bufferCanvas.drawBitmap(buffer, -UiConfig.HORIZONTAL_STRETCH_FACTOR
-                            * offset, 0, null);//shift current display to the left by UiConfig.HORIZONTAL_STRETCH_FACTOR*offset pixels
+                    bufferCanvas.drawBitmap(buffer, -horizontalStretch * offset, 0, null);//shift current display to the left by UiConfig.HORIZONTAL_STRETCH_FACTOR*offset pixels
                     for (int i = 0; i < offset; i++) {
-                        drawSingleBitmap((rightmostWindowAsIndex + i)%BitmapProvider.WINDOW_LIMIT, width
-                                + UiConfig.HORIZONTAL_STRETCH_FACTOR * (i - offset)); //draw windows from x=width+UiConfig.HORIZONTAL_STRETCH_FACTOR*(i-offset).
+                        drawSingleBitmap((rightmostWindowAsIndex + i)%windowLimit, width
+                                + horizontalStretch * (i - offset)); //draw windows from x=width+UiConfig.HORIZONTAL_STRETCH_FACTOR*(i-offset).
                     }
                     leftmostWindow += offset;
                 }
             }
-            sh = ssv.getHolder();
-            displayCanvas = sh.lockCanvas(null);
+            displayCanvas = holder.lockCanvas(null);
             try {
-                synchronized (sh) {
+                synchronized (holder) {
                     displayCanvas.drawBitmap(buffer, 0, 0, null); //draw buffer to display
                     if (drawLeftShadow) displayCanvas.drawBitmap(leftShadow, 0,  0, null); //draw scrolling shadow bitmaps on top
                     if (drawRightShadow) displayCanvas.drawBitmap(rightShadow, 0,  0, null);
                 }
             } finally {
                 if (displayCanvas != null) {
-                    sh.unlockCanvasAndPost(displayCanvas);
+                    holder.unlockCanvasAndPost(displayCanvas);
                 }
             }
         }
@@ -209,19 +199,24 @@ class SpectrogramDrawer {
             canScroll = true; //can only scroll if whole screen has been filled
             leftmostWindow += windowsAvailable;
         }
-        bufferCanvas.drawBitmap(buffer, -UiConfig.HORIZONTAL_STRETCH_FACTOR*windowsAvailable, 0, null);//shift what is currently displayed by (number of new windows ready to be drawn)*UiConfig.HORIZONTAL_STRETCH_FACTOR
+        
+      //shift what is currently displayed by (number of new windows ready to be drawn)
+      // * UiConfig.HORIZONTAL_STRETCH_FACTOR
+        bufferCanvas.drawBitmap(buffer, -UiConfig.HORIZONTAL_STRETCH_FACTOR*windowsAvailable, 0, null);
         for (int i = 0; i < windowsAvailable; i++) {
-            drawNextBitmap(width+UiConfig.HORIZONTAL_STRETCH_FACTOR*(i-windowsAvailable)); //draw new window at width - UiConfig.HORIZONTAL_STRETCH_FACTOR * difference [start of blank area] + i*UiConfig.HORIZONTAL_STRETCH_FACTOR [offset for current window]
+           //draw new window at width - UiConfig.HORIZONTAL_STRETCH_FACTOR * difference
+           // [start of blank area] + i*UiConfig.HORIZONTAL_STRETCH_FACTOR [offset for current window]
+            drawNextBitmap(width+UiConfig.HORIZONTAL_STRETCH_FACTOR*(i-windowsAvailable)); 
         }
 
         windowsDrawn += windowsAvailable;
     }
 
     /**
-     * Retreive and draw the next bitmap, determined by the BitmapProvider itself.
+     * Retrieve and draw the next bitmap at the provided x-coordinate.
      */
     private void drawNextBitmap(int xCoord) {
-        unscaledBitmap = Bitmap.createBitmap(bg.getNextBitmap(), 0, 1, 1, NUM_FREQ_BINS, Bitmap.Config.ARGB_8888);
+        unscaledBitmap = Bitmap.createBitmap(bg.getNextBitmap(), 0, 1, 1, dac.NUM_FREQ_BINS, Bitmap.Config.ARGB_8888);
         bufferCanvas.drawBitmap(scaleBitmap(unscaledBitmap), xCoord, 0f, null);
     }
 
@@ -229,10 +224,10 @@ class SpectrogramDrawer {
     /**
      * Draw the bitmap specified by the provided index from the top of the screen
      * at the provided x-coordinate, stretching according to the UiConfig.HORIZONTAL_STRETCH_FACTOR
-     * and VERTICAL_STRETCH parameters.
+     * and verticalStretch parameters.
      */
     private void drawSingleBitmap(int index, int xCoord) {
-        unscaledBitmap = Bitmap.createBitmap(bg.getBitmapWindow(index), 0, 1, 1, NUM_FREQ_BINS, Bitmap.Config.ARGB_8888);
+        unscaledBitmap = Bitmap.createBitmap(bg.getBitmapWindow(index), 0, 1, 1, dac.NUM_FREQ_BINS, Bitmap.Config.ARGB_8888);
         bufferCanvas.drawBitmap(scaleBitmap(unscaledBitmap), xCoord, 0f, null);
     }
 
@@ -245,17 +240,16 @@ class SpectrogramDrawer {
         rectBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
         SelectRectGenerator.generateSelectRect(selectRectL, selectRectT, selectRectR, selectRectB, rectBitmap);
-        
-        sh = ssv.getHolder();
-        displayCanvas = sh.lockCanvas(null);
+
+        displayCanvas = holder.lockCanvas(null);
         try {
-            synchronized (sh) {
+            synchronized (holder) {
                 displayCanvas.drawBitmap(buffer, 0, 0, null); //clean any old rectangles away
                 displayCanvas.drawBitmap(rectBitmap, 0, 0, null); //draw new rectangle to display buffer
             }
         } finally {
             if (displayCanvas != null) {
-                sh.unlockCanvasAndPost(displayCanvas);
+                holder.unlockCanvasAndPost(displayCanvas);
             }
         }
     }
@@ -304,7 +298,7 @@ class SpectrogramDrawer {
         //no. windows on screen = width/UiConfig.HORIZONTAL_STRETCH_FACTOR,
         //no. samples on screen = no. windows * samplesPerWindow
         //time on screen = no. samples / samples per second [sample rate]
-        return ((float)width/(float)UiConfig.HORIZONTAL_STRETCH_FACTOR*(float)SAMPLES_PER_WINDOW)/(float)SAMPLE_RATE;
+        return ((float)width/(float)UiConfig.HORIZONTAL_STRETCH_FACTOR*(float)dac.SAMPLES_PER_WINDOW)/(float)dac.SAMPLE_RATE;
     }
 
     /**
@@ -312,7 +306,7 @@ class SpectrogramDrawer {
      * to the Nyquist limit, is half the sample rate.
      */
     public float getMaxFrequency() {
-        return 0.5f*SAMPLE_RATE;
+        return 0.5f*dac.SAMPLE_RATE;
     }
 
     /**
@@ -376,18 +370,16 @@ class SpectrogramDrawer {
      * bitmap on top.
      */
     public void hideSelectRect() {
-        sh = ssv.getHolder();
-        displayCanvas = sh.lockCanvas(null);
+        displayCanvas = holder.lockCanvas(null);
         try {
-            synchronized (sh) {
+            synchronized (holder) {
                 displayCanvas.drawBitmap(buffer, 0, 0, null); //clean any rectangles away
             }
         } finally {
             if (displayCanvas != null) {
-                sh.unlockCanvasAndPost(displayCanvas);
+                holder.unlockCanvasAndPost(displayCanvas);
             }
         }
-
     }
 
     /**
@@ -477,9 +469,5 @@ class SpectrogramDrawer {
         running = true;
         scrollingThread.start();
         bg.start();
-    }
-    
-    public BitmapProvider getBitmapProvider() {
-        return bg;
     }
 }

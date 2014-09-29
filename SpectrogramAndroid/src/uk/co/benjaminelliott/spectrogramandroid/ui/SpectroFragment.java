@@ -57,6 +57,7 @@ public class SpectroFragment extends Fragment {
     }
 
     private void init() {
+        
 	ssv = (SpectrogramSurfaceView)rootView.findViewById(R.id.ssv);
 	((SpectroActivity)getActivity()).setSpectrogramSurfaceView(ssv); //pass the LSSV back to the activity for location updates
 

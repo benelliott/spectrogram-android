@@ -2,6 +2,7 @@ package uk.co.benjaminelliott.spectrogramandroid.audioproc;
 
 import java.util.concurrent.Semaphore;
 
+import uk.co.benjaminelliott.spectrogramandroid.preferences.DynamicAudioConfig;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -16,13 +17,13 @@ public class AudioCollector extends Thread {
     boolean running = true;
     private int samplesRead = 0;
 
-    AudioCollector(short[][] audioWindows, Semaphore audioReady, int sampleRate, int samplesPerWindow) {
+    AudioCollector(short[][] audioWindows, DynamicAudioConfig dac, Semaphore audioReady) {
         this.audioWindows = audioWindows;
         this.audioReady = audioReady;
-        this.samplesPerWindow = samplesPerWindow;
+        this.samplesPerWindow = dac.SAMPLES_PER_WINDOW;
 
-        int readSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        mic = new AudioRecord(MediaRecorder.AudioSource.MIC,sampleRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, readSize*2);
+        int readSize = AudioRecord.getMinBufferSize(dac.SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        mic = new AudioRecord(MediaRecorder.AudioSource.MIC,dac.SAMPLE_RATE,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT, readSize*2);
     }
 
     @Override

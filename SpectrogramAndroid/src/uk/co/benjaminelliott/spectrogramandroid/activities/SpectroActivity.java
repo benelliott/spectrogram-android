@@ -323,6 +323,5 @@ public class SpectroActivity extends FragmentActivity implements
 	this.ssv = ssv;
 	if (library != null)
 	    ssv.setLibraryFragment(library);
-
     }
 }

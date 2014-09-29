@@ -2,7 +2,7 @@ package uk.co.benjaminelliott.spectrogramandroid.ui;
 
 import java.lang.ref.WeakReference;
 
-import uk.co.benjaminelliott.spectrogramandroid.preferences.AudioConfig;
+import uk.co.benjaminelliott.spectrogramandroid.preferences.DynamicAudioConfig;
 import uk.co.benjaminelliott.spectrogramandroid.storage.AudioBitmapConverter;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -27,6 +27,7 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
     private int width;
 
     private SpectroFragment spectroFragment;
+    private DynamicAudioConfig dac;
     private SpectrogramDrawer sd;
     private InteractionHandler interactionHandler;
     private Context context;
@@ -69,7 +70,8 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
     public void surfaceCreated(SurfaceHolder arg0) {
 	width = getWidth();
 	try {
-	    sd = new SpectrogramDrawer(this);
+	    dac = new DynamicAudioConfig(this.getContext());
+	    sd = new SpectrogramDrawer(dac, this.getWidth(), this.getHeight(), this.getHolder());
 	    spectroFragment.disableResumeButton();
 	    spectroFragment.setLeftTimeText(sd.getScreenFillTime());
 	    spectroFragment.setRightTimeText(sd.getTimeFromStopAtPixel(width));
@@ -128,7 +130,8 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 
     public void resumeScrolling() {
 	if (selecting) cancelSelection();
-	sd = new SpectrogramDrawer(this);
+        dac = new DynamicAudioConfig(this.getContext());
+        sd = new SpectrogramDrawer(dac, this.getWidth(), this.getHeight(), this.getHolder());
 	spectroFragment.disableResumeButton();
     }
 
@@ -222,12 +225,11 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	    float[] dimens = interactionHandler.getSelectRectDimensions();
 	    Bitmap bitmapToStore = sd.getBitmapToStore(dimens[0],dimens[1],dimens[2],dimens[3]);
 	    short[] audioToStore = sd.getAudioToStore(dimens[0],dimens[1],dimens[2],dimens[3]);
-	    AudioBitmapConverter abc = new AudioBitmapConverter(filename, AudioConfig.STORE_DIR_NAME, bitmapToStore,audioToStore,lc.getLastLocation(),sd.getBitmapProvider().getSampleRate());
-	    abc.writeCBAToFile(filename, AudioConfig.STORE_DIR_NAME);
+	    AudioBitmapConverter abc = new AudioBitmapConverter(filename, dac, bitmapToStore,audioToStore,lc.getLastLocation());
+	    abc.writeCBAToFile(filename, DynamicAudioConfig.STORE_DIR_NAME);
 	    abc.storeJPEGandWAV();
 	    return null;
 	}
 
     }
-
 }

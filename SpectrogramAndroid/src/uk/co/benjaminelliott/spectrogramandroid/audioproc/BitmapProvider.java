@@ -3,80 +3,40 @@ package uk.co.benjaminelliott.spectrogramandroid.audioproc;
 import java.util.concurrent.Semaphore;
 
 import uk.co.benjaminelliott.spectrogramandroid.audioproc.filters.BandpassButterworth;
+import uk.co.benjaminelliott.spectrogramandroid.preferences.DynamicAudioConfig;
 import uk.co.benjaminelliott.spectrogramandroid.preferences.HeatMap;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class BitmapProvider {
 
-    private final int SAMPLE_RATE; //options are 11025, 16000, 22050, 44100
-    private final int SAMPLES_PER_WINDOW; //usually around 300
-    private final int NUM_FREQ_BINS;
-    public static final String PREF_COLOURMAP_KEY = "pref_colourmap";
-    protected static final String PREF_CONTRAST_KEY = "pref_contrast";
-    protected static final String PREF_SAMPLE_RATE_KEY = "pref_sample_rate";
-    protected static final String PREF_SAMPLES_WINDOW_KEY = "pref_samples_window";
-    protected static final String PREF_OVERFILTER_KEY = "pref_overfilter";
-
-    //number of windows that can be held in the arrays at once before older ones are deleted. Time this represents is
-    // WINDOW_LIMIT*SAMPLES_PER_WINDOW/SAMPLE_RATE, e.g. 10000*300/16000 = 187.5 seconds.
-    public static final int WINDOW_LIMIT = 1000; //usually around 10000 
-
-    //Storage for audio and bitmap windows is pre-allocated, and the quantity is determined by
-    // WINDOW_LIMIT*SAMPLES_PER_WINDOW*(bytes per int + bytes per double),
-    // e.g. 10000*300*(4+8) = 34MB
-
-
-    protected static final int BITMAP_STORE_WIDTH_ADJ = 2;
-    protected static final int BITMAP_STORE_HEIGHT_ADJ = 2;
-    public static final int BITMAP_STORE_QUALITY = 90; //compression quality parameter for storage
-    protected static final int BITMAP_FREQ_AXIS_WIDTH = 30; //number of pixels (subject to width adjustment) to use to display frequency axis on stored bitmaps
+    private DynamicAudioConfig dac;
 
     private short[][] audioWindows;
     private int[][] bitmapWindows;
-    private float contrast = 2.0f;
     private boolean running = false;
     private AudioCollector audioCollector;
     private BitmapCreator bitmapCreator;
     private int[] colours;
     private Semaphore audioReady = new Semaphore(0);
     private Semaphore bitmapsReady = new Semaphore(0);
-    private boolean overfilter = false;
 
-    public BitmapProvider(Context context) {
-        //bitmapsReady = new Semaphore(0);
-        colours = new int[256];
-
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        SAMPLE_RATE = Integer.parseInt(prefs.getString(PREF_SAMPLE_RATE_KEY, "16000"));
-        SAMPLES_PER_WINDOW = Integer.parseInt(prefs.getString(PREF_SAMPLES_WINDOW_KEY, "300"));
-        overfilter = prefs.getBoolean(PREF_OVERFILTER_KEY, false);
-
-        NUM_FREQ_BINS = SAMPLES_PER_WINDOW / 2; //lose half because of symmetry
-
-        audioWindows = new short[WINDOW_LIMIT][SAMPLES_PER_WINDOW];
-        bitmapWindows = new int[WINDOW_LIMIT][NUM_FREQ_BINS];
-
-
-        String colMapString = prefs.getString(PREF_COLOURMAP_KEY, "NULL");
-        int colourMap = 0;
-        if (!colMapString.equals("NULL")) colourMap = Integer.parseInt(prefs.getString(PREF_COLOURMAP_KEY, "NULL"));
-
-        switch (colourMap) {
+    public BitmapProvider(DynamicAudioConfig dac) {
+        this.dac = dac;
+        
+        audioWindows = new short[DynamicAudioConfig.WINDOW_LIMIT][dac.SAMPLES_PER_WINDOW];
+        bitmapWindows = new int[DynamicAudioConfig.WINDOW_LIMIT][dac.NUM_FREQ_BINS];
+                
+        switch (dac.COLOUR_MAP) {
         case 0: colours = HeatMap.Greys_ColorBrewer(); break;
         case 1: colours = HeatMap.YlOrRd_ColorBrewer();break;
         case 2: colours = HeatMap.PuOr_Backwards_ColorBrewer(); break;
+        default: colours = HeatMap.Greys_ColorBrewer();
         }
-
-        float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
-        if (newContrast != Float.MAX_VALUE) contrast = newContrast * 3.0f + 1.0f; //slider value must be between 0 and 1, so multiply by 3 and add 1
     }
 
     /**
@@ -85,7 +45,7 @@ public class BitmapProvider {
     public void start() {
         running = true;
 
-        audioCollector = new AudioCollector(audioWindows, audioReady, SAMPLE_RATE, SAMPLES_PER_WINDOW);
+        audioCollector = new AudioCollector(audioWindows, dac, audioReady);
         bitmapCreator = new BitmapCreator(this);
 
         audioCollector.start();
@@ -113,23 +73,23 @@ public class BitmapProvider {
         String topFreqText = Integer.toString(topFreq)+" Hz";
 
         //convert frequency range into array indices
-        bottomFreq = (int) ((2f*(float)bottomFreq/(float)SAMPLE_RATE)*NUM_FREQ_BINS);
-        topFreq = (int) ((2f*(float)topFreq/(float)SAMPLE_RATE)*NUM_FREQ_BINS);
+        bottomFreq = (int) ((2f*(float)bottomFreq/(float)dac.SAMPLE_RATE)*dac.NUM_FREQ_BINS);
+        topFreq = (int) ((2f*(float)topFreq/(float)dac.SAMPLE_RATE)*dac.NUM_FREQ_BINS);
 
         //same for windows
-        startWindow %= WINDOW_LIMIT;
-        endWindow %= WINDOW_LIMIT;
+        startWindow %= DynamicAudioConfig.WINDOW_LIMIT;
+        endWindow %= DynamicAudioConfig.WINDOW_LIMIT;
 
         Bitmap ret;
         Canvas retCanvas;
         int bitmapWidth;
         int bitmapHeight;
-        int[] window = new int[NUM_FREQ_BINS];
+        int[] window = new int[dac.NUM_FREQ_BINS];
         int[] subsection;
 
         if (endWindow < startWindow) {
             //selection crosses a loop boundary
-            bitmapWidth = (WINDOW_LIMIT - startWindow) + endWindow + BITMAP_FREQ_AXIS_WIDTH;
+            bitmapWidth = (DynamicAudioConfig.WINDOW_LIMIT - startWindow) + endWindow + DynamicAudioConfig.BITMAP_FREQ_AXIS_WIDTH;
             bitmapHeight = topFreq - bottomFreq;
 
             subsection = new int[bitmapHeight];
@@ -142,56 +102,56 @@ public class BitmapProvider {
             retCanvas.drawColor(Color.BLACK);
 
 
-            for (int i = startWindow; i < WINDOW_LIMIT; i++) {
-                window = new int[NUM_FREQ_BINS];
+            for (int i = startWindow; i < DynamicAudioConfig.WINDOW_LIMIT; i++) {
+                window = new int[dac.NUM_FREQ_BINS];
                 bitmapCreator.processAudioWindow(audioWindows[i], window);
                 for (int j = 0; j < topFreq - bottomFreq; j++) {
-                    subsection[bitmapHeight-j-1] = window[NUM_FREQ_BINS-(j+bottomFreq)-1]; //array was filled backwards
+                    subsection[bitmapHeight-j-1] = window[dac.NUM_FREQ_BINS-(j+bottomFreq)-1]; //array was filled backwards
                 }
-                retCanvas.drawBitmap(subsection, 0, 1, BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
+                retCanvas.drawBitmap(subsection, 0, 1, DynamicAudioConfig.BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
             }
 
             for (int i = 0; i < endWindow; i++) {
-                window = new int[NUM_FREQ_BINS];
+                window = new int[dac.NUM_FREQ_BINS];
                 bitmapCreator.processAudioWindow(audioWindows[i], window);
                 for (int j = 0; j < topFreq - bottomFreq; j++) {
-                    subsection[bitmapHeight-j-1] = window[NUM_FREQ_BINS-(j+bottomFreq)-1]; //array was filled backwards
+                    subsection[bitmapHeight-j-1] = window[dac.NUM_FREQ_BINS-(j+bottomFreq)-1]; //array was filled backwards
                 }
-                retCanvas.drawBitmap(subsection, 0, 1, BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
+                retCanvas.drawBitmap(subsection, 0, 1, DynamicAudioConfig.BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
             }
 
         }
         else {
-            bitmapWidth = endWindow - startWindow + BITMAP_FREQ_AXIS_WIDTH;
+            bitmapWidth = endWindow - startWindow + DynamicAudioConfig.BITMAP_FREQ_AXIS_WIDTH;
             bitmapHeight = topFreq - bottomFreq;
 
             subsection = new int[bitmapHeight];
-            
+
             ret = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888);
             retCanvas = new Canvas(ret);
             retCanvas.drawColor(Color.BLACK);
 
             for (int i = startWindow; i < endWindow; i++) {
-                window = new int[NUM_FREQ_BINS];
+                window = new int[dac.NUM_FREQ_BINS];
                 bitmapCreator.processAudioWindow(audioWindows[i], window);
                 for (int j = 0; j < topFreq - bottomFreq; j++) {
-                    subsection[bitmapHeight-j-1] = window[NUM_FREQ_BINS-(j+bottomFreq)-1]; //array was filled backwards
+                    subsection[bitmapHeight-j-1] = window[dac.NUM_FREQ_BINS-(j+bottomFreq)-1]; //array was filled backwards
                 }
-                retCanvas.drawBitmap(subsection, 0, 1, BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
+                retCanvas.drawBitmap(subsection, 0, 1, DynamicAudioConfig.BITMAP_FREQ_AXIS_WIDTH + i - startWindow, 0, 1, bitmapHeight, false, null);
             }
 
         }
 
-        Bitmap scaled = scaleBitmap(ret,bitmapWidth*BITMAP_STORE_WIDTH_ADJ, bitmapHeight*BITMAP_STORE_HEIGHT_ADJ);
+        Bitmap scaled = scaleBitmap(ret,bitmapWidth*DynamicAudioConfig.BITMAP_STORE_WIDTH_ADJ, bitmapHeight*DynamicAudioConfig.BITMAP_STORE_HEIGHT_ADJ);
         Canvas scaledCanvas = new Canvas(scaled);
 
         //annotate bitmap with frequency range:
         Paint textStyle = new Paint();
         textStyle.setColor(Color.WHITE);
-        textStyle.setTextSize(BITMAP_FREQ_AXIS_WIDTH/3);
-        scaledCanvas.drawText(bottomFreqText, BITMAP_FREQ_AXIS_WIDTH/2, bitmapHeight*BITMAP_STORE_HEIGHT_ADJ-5*BITMAP_STORE_HEIGHT_ADJ, textStyle);
-        Log.d("Bitmap capture","bottomFreqText drawn at x:"+(BITMAP_FREQ_AXIS_WIDTH*BITMAP_STORE_WIDTH_ADJ/10)+" y: "+(bitmapHeight*BITMAP_STORE_HEIGHT_ADJ-5*BITMAP_STORE_HEIGHT_ADJ));
-        scaledCanvas.drawText(topFreqText, BITMAP_FREQ_AXIS_WIDTH/2, BITMAP_FREQ_AXIS_WIDTH/2, textStyle);
+        textStyle.setTextSize(DynamicAudioConfig.BITMAP_FREQ_AXIS_WIDTH/3);
+        scaledCanvas.drawText(bottomFreqText, DynamicAudioConfig.BITMAP_FREQ_AXIS_WIDTH/2, bitmapHeight*DynamicAudioConfig.BITMAP_STORE_HEIGHT_ADJ-5*DynamicAudioConfig.BITMAP_STORE_HEIGHT_ADJ, textStyle);
+        Log.d("Bitmap capture","bottomFreqText drawn at x:"+(DynamicAudioConfig.BITMAP_FREQ_AXIS_WIDTH*DynamicAudioConfig.BITMAP_STORE_WIDTH_ADJ/10)+" y: "+(bitmapHeight*DynamicAudioConfig.BITMAP_STORE_HEIGHT_ADJ-5*DynamicAudioConfig.BITMAP_STORE_HEIGHT_ADJ));
+        scaledCanvas.drawText(topFreqText, DynamicAudioConfig.BITMAP_FREQ_AXIS_WIDTH/2, DynamicAudioConfig.BITMAP_FREQ_AXIS_WIDTH/2, textStyle);
         return scaled;
     }
 
@@ -219,51 +179,51 @@ public class BitmapProvider {
      */
     public short[] getAudioChunk(int startWindow, int endWindow, int bottomFreq, int topFreq) {
         //convert windows into array indices
-        startWindow %= WINDOW_LIMIT;
-        endWindow %= WINDOW_LIMIT;
+        startWindow %= DynamicAudioConfig.WINDOW_LIMIT;
+        endWindow %= DynamicAudioConfig.WINDOW_LIMIT;
 
 
         short[] toReturn;
 
         if (endWindow < startWindow) {
             //selection crosses a loop boundary
-            toReturn = new short[((WINDOW_LIMIT - startWindow) + endWindow)*SAMPLES_PER_WINDOW];
-            for (int i = startWindow; i < WINDOW_LIMIT; i++) {
-                for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
-                    toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
+            toReturn = new short[((DynamicAudioConfig.WINDOW_LIMIT - startWindow) + endWindow)*dac.SAMPLES_PER_WINDOW];
+            for (int i = startWindow; i < DynamicAudioConfig.WINDOW_LIMIT; i++) {
+                for (int j = 0; j < dac.SAMPLES_PER_WINDOW; j++) {
+                    toReturn[(i-startWindow)*dac.SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
                 }
             }
             for (int i = 0; i < endWindow; i++) {
-                for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
-                    toReturn[(WINDOW_LIMIT-startWindow+i)*SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
+                for (int j = 0; j < dac.SAMPLES_PER_WINDOW; j++) {
+                    toReturn[(DynamicAudioConfig.WINDOW_LIMIT-startWindow+i)*dac.SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
                 }
             }
         }
         else {
-            toReturn = new short[(endWindow-startWindow)*SAMPLES_PER_WINDOW];
+            toReturn = new short[(endWindow-startWindow)*dac.SAMPLES_PER_WINDOW];
             for (int i = startWindow; i < endWindow; i++) {
-                for (int j = 0; j < SAMPLES_PER_WINDOW; j++) {
-                    toReturn[(i-startWindow)*SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
+                for (int j = 0; j < dac.SAMPLES_PER_WINDOW; j++) {
+                    toReturn[(i-startWindow)*dac.SAMPLES_PER_WINDOW+j] = audioWindows[i][j];
                 }
             }
         }
 
-        Log.d("","Filtering capture from "+bottomFreq+"Hz to "+topFreq+"Hz. No. bins: "+NUM_FREQ_BINS);
+        Log.d("","Filtering capture from "+bottomFreq+"Hz to "+topFreq+"Hz. No. bins: "+dac.NUM_FREQ_BINS);
         double minFreq = bottomFreq;
         double maxFreq = topFreq;
-        if (overfilter) {
+        if (dac.OVERFILTER) {
             //User preference for overfiltering is enabled so reduce passband width by 40%
             double difference = (double)(topFreq - bottomFreq)*0.2d;
             minFreq += difference;
             maxFreq -= difference;
         }
-        BandpassButterworth butter = new BandpassButterworth(SAMPLE_RATE, 8, minFreq, maxFreq, 1.0);
+        BandpassButterworth butter = new BandpassButterworth(dac.SAMPLE_RATE, 8, minFreq, maxFreq, 1.0);
         butter.applyFilter(toReturn);
 
         for (int i = 0; i < toReturn.length; i++) toReturn[i] = Short.reverseBytes(toReturn[i]); //must be little-endian for WAV
         return toReturn;
     }
-    
+
 
     /**
      * Returns the number of bitmaps ready to be drawn.
@@ -298,18 +258,6 @@ public class BitmapProvider {
         return bitmapCreator.getNextBitmap();
     }
 
-    public int getSampleRate() {
-        return SAMPLE_RATE;
-    }
-
-    public int getSamplesPerWindow() {
-        return SAMPLES_PER_WINDOW;
-    }
-
-    public int getNumFreqBins() {
-        return NUM_FREQ_BINS;
-    }
-
     public short[][] getAudioWindowArray() {
         return audioWindows;
     }
@@ -326,11 +274,11 @@ public class BitmapProvider {
         return bitmapsReady;
     }
 
-    public double getContrast() {
-        return contrast;
-    }
-    
     public int[] getColours() {
         return colours;
+    }
+    
+    public DynamicAudioConfig getDynamicAudioConfig() {
+        return dac;
     }
 }
