@@ -24,6 +24,7 @@ public class DynamicAudioConfig {
     public static final int BITMAP_STORE_QUALITY = 90; //compression quality parameter for storage
     public static final int BITMAP_FREQ_AXIS_WIDTH = 30; //number of pixels (subject to width adjustment) to use to display frequency axis on stored bitmaps
 
+    public static final int BITS_PER_SAMPLE = 16;
     
     public final int SAMPLE_RATE; //options are 11025, 16000, 22050, 44100
     public final int SAMPLES_PER_WINDOW; //usually around 300

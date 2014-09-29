@@ -52,7 +52,6 @@ public class BitmapCreator extends Thread {
         previousWindow = new double[samplesPerWindow];
         combinedWindow = new double[samplesPerWindow];
         dfft1d = new DoubleFFT_1D(samplesPerWindow);
-
     }
 
     @Override
