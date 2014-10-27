@@ -12,10 +12,15 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.util.Log;
 
+/**
+ * Class that manages the threads responsible for processing and saving audio and bitmaps, 
+ * and that supplies other classes with entire "chunks" of the bitmap display and audio history.
+ * @author Ben
+ *
+ */
 public class BitmapProvider {
 
     private DynamicAudioConfig dac;
-
     private short[][] audioWindows;
     private int[][] bitmapWindows;
     private boolean running = false;
@@ -208,7 +213,6 @@ public class BitmapProvider {
             }
         }
 
-        Log.d("","Filtering capture from "+bottomFreq+"Hz to "+topFreq+"Hz. No. bins: "+dac.NUM_FREQ_BINS);
         double minFreq = bottomFreq;
         double maxFreq = topFreq;
         if (dac.OVERFILTER) {

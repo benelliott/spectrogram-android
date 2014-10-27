@@ -7,15 +7,20 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
+/**
+ * Thread which brings in audio samples from the microphone so they can be 
+ * processed into bitmaps and later saved if the user makes a capture.
+ * @author Ben
+ *
+ */
 public class AudioCollector extends Thread {
 
-    private short[][] audioWindows;
-    private Semaphore audioReady;
-    private AudioRecord mic;
-    private int audioCurrentIndex = 0;
-    private int samplesPerWindow;
-    boolean running = true;
-    private int samplesRead = 0;
+    private short[][] audioWindows; // array of audio windows
+    private Semaphore audioReady; // semaphore used to indicate when a new window is ready to be processed
+    private AudioRecord mic; // access to the microphone
+    private int audioCurrentIndex = 0; // current index into the window array
+    private int samplesPerWindow; // number of audio samples per audio window
+    boolean running = true; // whether or not this thread should be running
 
     AudioCollector(short[][] audioWindows, DynamicAudioConfig dac, Semaphore audioReady) {
         this.audioWindows = audioWindows;
@@ -28,12 +33,14 @@ public class AudioCollector extends Thread {
 
     @Override
     public void run() {
+    	// start recording from the microphone
         mic.startRecording();
-
+        // loop indefinitely, adding data from the microphone to the list of
+        // audio windows
         while (running) {
             fillAudioList();
         }
-
+        // when running is false, stop bringing data from the microphone and release it
         mic.stop();
         mic.release();
         mic = null;
@@ -44,14 +51,13 @@ public class AudioCollector extends Thread {
      * that it remains available in case the user chooses to replay certain sections.
      */
     public void fillAudioList() {
-        //note no locking on audioWindows
-        //request samplesPerWindow shorts be written into the next free microphone buffer
+        //NOTE: no locking on audioWindows
+        //request samplesPerWindow shorts be written into the next free microphone buffer:
         readUntilFull(audioWindows[audioCurrentIndex], 0, samplesPerWindow); 
         audioCurrentIndex++;
         audioReady.release();
         if (audioCurrentIndex == audioWindows.length) {
-            //if entire array has been filled, loop and start filling from the start
-            //Log.d("", "Adding audio item "+audioCurrentIndex+" and array full, so looping back to start");
+            //if entire array has been filled, loop and start filling from the start:
             audioCurrentIndex = 0;
         }
     }
@@ -63,7 +69,7 @@ public class AudioCollector extends Thread {
      */
     private void readUntilFull(short[] buffer, int offset, int spaceRemaining) {
         while (spaceRemaining > 0) {
-            samplesRead = mic.read(buffer, offset, spaceRemaining);
+            int samplesRead = mic.read(buffer, offset, spaceRemaining);
             spaceRemaining -= samplesRead;
             offset += samplesRead;
         }

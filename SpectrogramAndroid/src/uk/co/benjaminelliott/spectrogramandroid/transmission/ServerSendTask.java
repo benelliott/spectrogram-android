@@ -15,12 +15,22 @@ import uk.co.benjaminelliott.spectrogramandroid.storage.CapturedBitmapAudio;
 import android.os.AsyncTask;
 import android.util.Log;
 
+/**
+ * An AsyncTask that sends the user's capture to a server.
+ * TODO: some indication of progress and failure.
+ * @author Ben
+ *
+ */
 public class ServerSendTask extends AsyncTask<String, Void, Void> {
 	
-	private final String HOST = "172.17.156.36";
+	private static final String TAG = "ServerSendTask";
+	private final String HOST = "172.17.156.36"; //TODO hard-coded server IP!
 	private final int PORT = 5353;
 	private CapturedBitmapAudio cba;
 	
+	/**
+	 * Send the user's CBA file to the server.
+	 */
 	protected void sendCBAToServer() {
 		try {
 			Socket socket = new Socket(HOST, PORT);
@@ -31,10 +41,9 @@ public class ServerSendTask extends AsyncTask<String, Void, Void> {
 			os.close();
 			socket.close();
 		} catch (UnknownHostException e) {
-			Log.e("ServerSendTask","UNKNOWN HOST: "+HOST+" PORT: "+PORT);
-			e.printStackTrace();
+			Log.e(TAG,"Unknown host: "+HOST+", port: "+PORT);
 		} catch (IOException e) {
-			e.printStackTrace();
+			Log.e(TAG,"Error when trying to send CBA file to server", e);
 		}
 	}
 

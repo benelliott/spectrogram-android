@@ -13,8 +13,15 @@ import android.media.ExifInterface;
 import android.os.Environment;
 import android.util.Log;
 
+/**
+ * Class that helps in writing a capture to disk by saving the bitmap as a geotagged JPEG and the audio as
+ * a WAV, as well as serialising all of the captured data as a {@link CapturedBitmapAudio} object.
+ * @author Ben
+ *
+ */
 public class AudioBitmapConverter  {
 
+	private static final String TAG = "AudioBitmapConverter";
     private final double decLatitude;
     private final double decLongitude;
     private final String filename;
@@ -38,17 +45,26 @@ public class AudioBitmapConverter  {
         cba = new CapturedBitmapAudio(filename, bitmapAsIntArray, wavAudio, width, height, decLatitude, decLongitude);
     }
 
+    /**
+     * Write the bitmap to a JPEG file and geotag it, then write the audio to a WAV file.
+     */
     public void storeJPEGandWAV() {
         writeBitmapToJpegFile(bitmap, filename);
         geotagJpeg(filename, decLatitude, decLongitude);
         writeWavToFile(wavAudio, filename);
     }
 
+    /**
+     * Creates a JPEG from the provided bitmap and saves it under the provided filename.
+     * @param bitmap - the bitmap to use to create the JPEG
+     * @param filename - the name of the file under which it should be stored
+     */
     private static void writeBitmapToJpegFile(Bitmap bitmap, String filename) {
         if (isExternalStorageWritable()) {
             File dir = getAlbumStorageDir(DynamicAudioConfig.STORE_DIR_NAME);
             FileOutputStream fos = null;
             try {
+            	// keep incrementing filename until one is found that does not clash:
                 int suffix = 0;
                 File bmpFile = new File(dir.getAbsolutePath()+"/"+filename+".jpg");
                 while (bmpFile.exists()) {
@@ -56,11 +72,10 @@ public class AudioBitmapConverter  {
                     suffix++;
                 }
                 fos = new FileOutputStream(bmpFile);
+                // save the bitmap into the file:
                 bitmap.compress(Bitmap.CompressFormat.JPEG, DynamicAudioConfig.BITMAP_STORE_QUALITY, fos);
-                Log.d("","Bitmap stored successfully at path "+bmpFile.getAbsolutePath());
             } catch (FileNotFoundException e) {
-                Log.d("","File not found. Path: "+dir.getAbsolutePath()+"/"+filename);
-                e.printStackTrace();
+                Log.e(TAG,"Unable to create file",e);
             } finally {
                 try {
                     fos.close();
@@ -68,29 +83,46 @@ public class AudioBitmapConverter  {
                     e.printStackTrace();
                 }
             }
-        }
+        } 
+        else
+        	Log.e(TAG,"External storage is not writable.");
     }
 
+    /**
+     * Geotag the JPEG at the specified filename with the specified latitude and longitude
+     * @param filename - the filename of the file in the captures directory to geotag
+     * @param decLatitude - the latitude (in decimal degrees)
+     * @param decLongitude - the longitude (in decimal degrees)
+     */
     private static void geotagJpeg(String filename, double decLatitude, double decLongitude) {
         File dir = getAlbumStorageDir(DynamicAudioConfig.STORE_DIR_NAME);
         String jpegFilepath = dir.getAbsolutePath()+"//"+filename+".jpg";
         try {
-            Log.d("StoredBitmapAudio","Opening EXIF data for "+jpegFilepath);
             ExifInterface exif = new ExifInterface(jpegFilepath);
+            // add latitude and longitude to JPEG's EXIF:
+            // latitude in degrees-minutes-seconds format:
             exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, convertDecToDMS(decLatitude));
+            // North or South:
             exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, latitudeRef(decLatitude));
-
+            // longitude in degrees-minutes-seconds format:
             exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, convertDecToDMS(decLongitude));
+            // East or West:
             exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, longitudeRef(decLongitude));
+            
             exif.saveAttributes();
         } catch (IOException e) {
-            Log.e("StoredBitmapAudio","Error finding JPEG file for tagging, path: "+jpegFilepath);
+            Log.e(TAG,"Error finding JPEG file for tagging: "+jpegFilepath);
             e.printStackTrace();
         }
     }
 
 
 
+    /**
+     * Write the supplied data (header and samples) to a WAV file.
+     * @param data - the data to write
+     * @param filename - the filename under which the audio should be stored
+     */
     private static void writeWavToFile(byte[] data, String filename) {
         FileOutputStream fos = null;
         if (isExternalStorageWritable()) {
@@ -104,9 +136,9 @@ public class AudioBitmapConverter  {
                 }
                 fos = new FileOutputStream(audioFile);
                 fos.write(data);
-                Log.d("","Audio file stored successfully at path "+audioFile.getAbsolutePath());
+                Log.d(TAG,"Audio file stored successfully at path "+audioFile.getAbsolutePath());
             } catch (FileNotFoundException e) {
-                Log.d("","File not found. Path: "+dir.getAbsolutePath()+"/"+filename);
+                Log.d(TAG,"Unable to save audio file: "+dir.getAbsolutePath()+"/"+filename);
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -121,15 +153,31 @@ public class AudioBitmapConverter  {
     }
 
 
+    /**
+     * Return a "S" if latitude is south or "N" if north.
+     * @param latitude
+     * @return
+     */
     public static String latitudeRef(double latitude) {
         return (latitude < 0) ? "S" : "N";
     }
 
+    /**
+     * Return a "W" if longitude is west or "E" if east.
+     * @param latitude
+     * @return
+     */
     public static String longitudeRef(double longitude) {
         return (longitude <0) ? "W" : "E";
     }
 
-    //INSPIRED BY http://stackoverflow.com/questions/5280479/how-to-save-gps-coordinates-in-exif-data-on-android
+    /**
+     * Convert latitude or longitude expressed in degrees, to a degrees-minutes-seconds string.
+     * 
+     * INSPIRED BY http://stackoverflow.com/questions/5280479/how-to-save-gps-coordinates-in-exif-data-on-android
+     * @param decDegreeCoord
+     * @return
+     */
     public static String convertDecToDMS(double decDegreeCoord) {
         //decimal degree coordinate could be latitude or longitude.
         // see http://en.wikipedia.org/wiki/Geographic_coordinate_conversion#Conversion_from_Decimal_Degree_to_DMS
@@ -151,7 +199,7 @@ public class AudioBitmapConverter  {
         return degrees+"/1,"+minutes+"/1,"+seconds+"/1000";
     }
 
-    /* FROM ANDROID DEV DOCUMENTATION */
+    //  --------------------- FROM ANDROID DEV DOCUMENTATION
     public static boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state)) {
@@ -169,8 +217,15 @@ public class AudioBitmapConverter  {
         }
         return file;
     }
-    /* 	======================	*/
+    //  --------------------- 
 
+    /**
+     * Returns the provided bitmap's pixels as a new integer array.
+     * @param bitmapAsIntArray
+     * @param width
+     * @param height
+     * @return
+     */
     public static int[] getBitmapPixels(int[] bitmapAsIntArray, int width, int height) {
         int[] ret = new int[width*height];
         for (int i = 0; i < bitmapAsIntArray.length; i++) {
@@ -179,12 +234,19 @@ public class AudioBitmapConverter  {
         return ret;
     }
 
+    /**
+     * Serialise the user's capture to file using a {@link CapturedBitmapAudio} object.
+     * @param cba
+     * @param filename
+     * @param directory
+     */
     private static void writeCbaToFile(CapturedBitmapAudio cba, String filename, String directory) {
         if (AudioBitmapConverter.isExternalStorageWritable()) {
             File dir = AudioBitmapConverter.getAlbumStorageDir(directory);
             FileOutputStream fos = null;
             ObjectOutputStream oos = null;
             try {
+            	// keep incrementing file suffix until file does not clash:
                 int suffix = 0;
                 File cbaFile = new File(dir.getAbsolutePath()+"/"+filename+CapturedBitmapAudio.EXTENSION);
                 while (cbaFile.exists()) {
@@ -195,15 +257,14 @@ public class AudioBitmapConverter  {
                 oos = new ObjectOutputStream(fos);
                 oos.writeObject(cba);
             } catch (FileNotFoundException e) {
-                Log.d("","File not found. Path: "+dir.getAbsolutePath()+"/"+filename);
-                e.printStackTrace();
+            	Log.e(TAG,"Unable to write to file: "+dir.getAbsolutePath()+"/"+filename, e);
             } catch (IOException e) {
-                e.printStackTrace();
+            	Log.e(TAG,"Unable to write to file: "+dir.getAbsolutePath()+"/"+filename, e);
             } finally {
                 try {
                     fos.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                	Log.e(TAG,"Error when closing file output stream");
                 }
             }
         }

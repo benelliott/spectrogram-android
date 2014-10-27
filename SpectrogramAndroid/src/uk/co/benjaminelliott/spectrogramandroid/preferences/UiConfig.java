@@ -2,6 +2,11 @@ package uk.co.benjaminelliott.spectrogramandroid.preferences;
 
 import android.graphics.Color;
 
+/**
+ * Class that holds user interface settings.
+ * @author Ben
+ *
+ */
 public class UiConfig {
 
     // radius in which to accept touches of the selection rectangle corner

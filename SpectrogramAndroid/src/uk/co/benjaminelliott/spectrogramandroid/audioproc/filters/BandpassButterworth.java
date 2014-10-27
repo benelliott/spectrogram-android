@@ -5,7 +5,12 @@ import org.jtransforms.fft.DoubleFFT_1D;
 
 import android.util.Log;
 
-public class BandpassButterworth implements BandpassFilter{
+/**
+ * A bandpass filter that is based on a symmetrical Butterworth low-pass filter.
+ * @author Ben
+ *
+ */
+public class BandpassButterworth implements BandpassFilter {
 	
 	private final double nyquistFreq;
 	private final int order; 
@@ -24,24 +29,25 @@ public class BandpassButterworth implements BandpassFilter{
 		
 	}
 	
+	/**
+	 * Returns an array of gain coefficients, given the number of 
+	 * frequency bins in the audio signal.
+	 * @param bins - the number of frequency bins
+	 * @return the gain coefficients
+	 */
 	private double[] generateGain(int bins) {
-		/*
-		 * Generates and returns an array of gain coefficients, 
-		 * given the number of frequency bins in the audio signal.
-		 */
 		double[] gain = new double[bins];
 		double binWidth = nyquistFreq / (double)bins;
-		Log.d("FILTER","Min: "+minFreq+" max: "+maxFreq);
-		double centre = (minFreq+maxFreq)/2;
-		double cutoff = (maxFreq-minFreq)/2;
-		Log.d("","Bin width: "+binWidth+" bins: "+bins+" cutoff: "+cutoff+" centre: "+centre+" order: "+order);
+		double centre = (minFreq+maxFreq)/2; // centre of the filter
+		double cutoff = (maxFreq-minFreq)/2; // filter cutoff
 		for (int i = 0; i < bins; i++) {
-			gain[i] = dcGain/Math.sqrt((1+Math.pow(((double)i*binWidth-centre)/cutoff, 2.0*order))); //real
+			// create gain coefficients based on the index's proximity to the filter's centre and cutoff
+			gain[i] = dcGain/Math.sqrt((1+Math.pow(((double)i*binWidth-centre)/cutoff, 2.0*order)));
 		}
 		return gain;
 	}
 
-	
+	@Override
 	public void applyFilter(short[] samples) {
 		int length = samples.length;
 		dfft1d = new DoubleFFT_1D(length);
@@ -56,7 +62,6 @@ public class BandpassButterworth implements BandpassFilter{
 		}
 		dfft1d.realInverse(fftSamples, true); //inverse FT samples
 		for (int i = 0; i < length; i++) samples[i] = (short)fftSamples[i]; //copy filtered samples back
-
 	}
 	
 

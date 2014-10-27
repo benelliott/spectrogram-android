@@ -27,6 +27,13 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 
+/**
+ * The Fragment that holds the user's previous captures so they can review them, share them and
+ * view their locations on a map.
+ * 
+ * @author Ben
+ *
+ */
 public class LibraryFragment extends Fragment {
 
 	private ArrayList<String> imageFiles = new ArrayList<String>();

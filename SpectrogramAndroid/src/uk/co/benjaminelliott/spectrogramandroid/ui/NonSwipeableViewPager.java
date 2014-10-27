@@ -5,7 +5,11 @@ import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 
-
+/**
+ * A ViewPager that ignores swiping gestures so they can be used to interact with child views.
+ * @author Ben
+ *
+ */
 public class NonSwipeableViewPager extends ViewPager {
 
     public NonSwipeableViewPager(Context context) {

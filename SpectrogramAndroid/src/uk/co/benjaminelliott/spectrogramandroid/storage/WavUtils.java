@@ -2,8 +2,19 @@ package uk.co.benjaminelliott.spectrogramandroid.storage;
 
 import uk.co.benjaminelliott.spectrogramandroid.preferences.DynamicAudioConfig;
 
+/**
+ * Class that provides methods to generate a WAV file from raw audio data.
+ * @author Ben
+ *
+ */
 public class WavUtils {
 
+	/**
+	 * Returns a {@code byte[]} of a complete WAV file of the provided audio.
+	 * @param rawWavAudio - the raw audio samples
+	 * @param sampleRate - the sample rate used for the samples
+	 * @return the bytes of a WAV file of the audio samples
+	 */
     public static byte[] wavFromAudio(short[] rawWavAudio, int sampleRate) {
         byte[] ret = new byte[44+rawWavAudio.length*2];
         byte[] header = getWAVHeader(sampleRate, DynamicAudioConfig.BITS_PER_SAMPLE, rawWavAudio.length*2, 1);
@@ -20,6 +31,14 @@ public class WavUtils {
         return ret;
     }
 
+    /**
+     * Generates a WAV header using the information provided.
+     * @param sampleRate - the sample rate
+     * @param bitsPerSample - the number of bits used per sample
+     * @param audioDataLength - the number of audio samples
+     * @param numChannels - the number of audio channels
+     * @return the WAV header as an array of bytes
+     */
     public static byte[] getWAVHeader(int sampleRate, int bitsPerSample, int audioDataLength, int numChannels) {
         byte[] header = new byte[44];
         //NOTE all fields are little-endian unless they contain characters

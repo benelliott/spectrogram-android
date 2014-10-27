@@ -2,6 +2,12 @@ package uk.co.benjaminelliott.spectrogramandroid.preferences;
 
 
 
+/**
+ * Class that holds different methods for generating spectrograms colour schemes.
+ * TODO - needs refactoring
+ * @author Ben
+ *
+ */
 public class HeatMap {
 
 

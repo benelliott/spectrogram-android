@@ -11,6 +11,11 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.view.SurfaceHolder;
 
+/**
+ * Class responsible for drawing generated bitmaps to the screen.
+ * @author Ben
+ *
+ */
 class SpectrogramDrawer {
 
     private DynamicAudioConfig dac;

@@ -7,8 +7,15 @@ import android.util.AttributeSet;
 import android.view.Gravity;
 import android.widget.TextView;
 
+/**
+ * A TextView that runs vertically.
+ * 
+ * FROM http://blog.stylingandroid.com/archives/796
+ * 
+ * @author Ben
+ *
+ */
 public class VerticalTextView extends TextView {
-// FROM http://blog.stylingandroid.com/archives/796
 
     final boolean topDown;
  
