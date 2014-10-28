@@ -73,7 +73,7 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 			dac = new DynamicAudioConfig(this.getContext());
 			sd = new SpectrogramDrawer(dac, this.getWidth(), this.getHeight(), this.getHolder());
 			spectroFragment.disableResumeButton();
-			spectroFragment.setLeftTimeText(sd.getScreenFillTime());
+			spectroFragment.setLeftTimeText(-sd.getScreenFillTime());
 			spectroFragment.setRightTimeText(sd.getTimeFromStopAtPixel(width));
 			spectroFragment.setTopFreqText(sd.getMaxFrequency() / 1000);
 		} catch (IllegalArgumentException e) {
@@ -116,8 +116,9 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	@Override
 	public boolean onTouchEvent(MotionEvent ev) {
 		interactionHandler.handleTouchEvent(ev);
-		spectroFragment.setLeftTimeText(sd.getTimeAtPixel(0)); //TODO update these live
-		spectroFragment.setLeftTimeText(sd.getTimeAtPixel(width));
+		float leftTextTime = sd.getTimeAtPixel(0) > -sd.getScreenFillTime() ? -sd.getScreenFillTime() : sd.getTimeAtPixel(0);
+		spectroFragment.setLeftTimeText(leftTextTime); //TODO update these live
+		spectroFragment.setRightTimeText(sd.getTimeAtPixel(width));
 		return true;
 	}
 

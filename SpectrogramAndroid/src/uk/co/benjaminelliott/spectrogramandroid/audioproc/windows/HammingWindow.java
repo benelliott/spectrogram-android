@@ -11,7 +11,6 @@ public class HammingWindow implements WindowFunction {
 	
 	public HammingWindow(int windowSize) {
 		this.windowSize = windowSize;
-		hammingWindow = new double[windowSize];
 	}
 
 

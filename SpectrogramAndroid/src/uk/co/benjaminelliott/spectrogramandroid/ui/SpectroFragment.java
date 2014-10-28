@@ -151,13 +151,13 @@ public class SpectroFragment extends Fragment {
 	public void setLeftTimeText(float timeInSec) {
 		BigDecimal bd = new BigDecimal(Float.toString(timeInSec));
 		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
-		leftTimeTextView.setText("-"+bd.floatValue()+" sec");
+		leftTimeTextView.setText(bd.floatValue()+" sec");
 	}
 
 	public void setRightTimeText(float timeInSec) {
 		BigDecimal bd = new BigDecimal(Float.toString(timeInSec));
 		bd = bd.setScale(2, BigDecimal.ROUND_HALF_UP); //round to 2 dp
-		rightTimeTextView.setText("-"+bd.floatValue()+" sec");
+		rightTimeTextView.setText(bd.floatValue()+" sec");
 	}
 
 	public void setTopFreqText(float freqInKHz) {
