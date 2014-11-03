@@ -49,9 +49,7 @@ public class ServerSendTask extends AsyncTask<String, Void, Void> {
 
 	@Override
 	protected Void doInBackground(String... params) {
-		/*
-		 * params[0] is full directory path, params[1] is filename
-		 */
+		// params[0] is full directory path, params[1] is filename
 		try {
 			FileInputStream fis = new FileInputStream(params[0]+"/"+params[1]+".cba");
 			ObjectInputStream ois = new ObjectInputStream(fis);
@@ -70,8 +68,4 @@ public class ServerSendTask extends AsyncTask<String, Void, Void> {
 		}
 		return null;
 	}
-	
-    protected void onPostExecute() {
-    }
-
 }

@@ -35,12 +35,17 @@ public class AudioBitmapConverter  {
     public AudioBitmapConverter(String filename, DynamicAudioConfig dac, Bitmap bitmap, short[] rawWavAudio, Location loc) {
         this.filename = filename;
         this.bitmap = bitmap;
-        decLatitude = loc.getLatitude();
-        decLongitude = loc.getLongitude();
+        if (loc != null) {
+            decLatitude = loc.getLatitude();
+            decLongitude = loc.getLongitude();
+        } else {
+            decLatitude = 0;
+            decLongitude = 0;
+        }
         wavAudio = WavUtils.wavFromAudio(rawWavAudio, dac.SAMPLE_RATE);
         width = bitmap.getWidth();
         height = bitmap.getHeight();
-        bitmapAsIntArray = new int[width*height];
+        bitmapAsIntArray = new int[width * height];
         bitmap.getPixels(bitmapAsIntArray, 0, width, 0, 0, width, height);
         cba = new CapturedBitmapAudio(filename, bitmapAsIntArray, wavAudio, width, height, decLatitude, decLongitude);
     }

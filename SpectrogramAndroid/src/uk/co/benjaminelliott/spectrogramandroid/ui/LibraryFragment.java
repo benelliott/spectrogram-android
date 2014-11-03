@@ -18,7 +18,6 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,6 +29,9 @@ import android.widget.ListView;
 /**
  * The Fragment that holds the user's previous captures so they can review them, share them and
  * view their locations on a map.
+ * 
+ * TODO: the review dialog presented here is intended as a placeholder and should eventually be replaced
+ * with something more informative.
  * 
  * @author Ben
  *
@@ -47,32 +49,40 @@ public class LibraryFragment extends Fragment {
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		View rootView = inflater.inflate(
-				R.layout.fragment_library,
-				container, false);
+		View rootView = inflater.inflate(R.layout.fragment_library,container, false);
+		// get directory for spectrogram captures:
 		directory = AudioBitmapConverter.getAlbumStorageDir(DynamicAudioConfig.STORE_DIR_NAME);
+		// create the directory if necessary:
 		directory.mkdirs();
 		fileListView = (ListView) rootView.findViewById(R.id.listview_file_library);
+		// populate the ListView with files found in the captures directory:
 		populateFilesList();
 		adapter = new ArrayAdapter<String>(getActivity(),android.R.layout.simple_list_item_1, imageFiles);
 		fileListView.setAdapter(adapter);
+		// when a list item is clicked, present it to the user for review:
 		fileListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-				Log.d("lib","item clicked!");
 				viewImage(imageFiles.get(position));
 			}
 		});
-		Log.d("LIBRARY","View created");
+
 		return rootView;
 	}
-	
+
+	/**
+	 * Presents the specified spectrogram capture's image and audio for review.
+	 * @param filename - the filename of the capture to review
+	 */
 	private void viewImage(final String filename) {
 		final String filepath = directory.getAbsolutePath()+"/"+filename;
-		
-		//play wav file simultaneously with showing spectrogram:
+
+		//play WAV file simultaneously with showing spectrogram image:
+
+		File audioFile = new File(filepath+AUDIO_SUFFIX);
+		//need to set permissions so that it can be read by the media player
+		audioFile.setReadable(true,false);
+
 		player = new MediaPlayer();
-		File f = new File(filepath+AUDIO_SUFFIX);
-		f.setReadable(true,false); //need to set permissions so that it can be read by the media player
 		try {
 			player.setDataSource(filepath+AUDIO_SUFFIX);
 			player.prepare();
@@ -86,49 +96,63 @@ public class LibraryFragment extends Fragment {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
+		// present the image using an AlertDialog:
 		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		// ImageView to hold the image:
 		ImageView specImage = new ImageView(getActivity());
 		specImage.setPadding(0, 50, 0, 50);
 		Bitmap imgAsBmp = BitmapFactory.decodeFile(filepath+IMAGE_SUFFIX);
 		specImage.setImageBitmap(imgAsBmp);
 		builder.setView(specImage);
+
 		builder.setTitle(filename);
+
+		// set AlertDialog to have three buttons: "show on map", "upload" and "dismiss"
 		builder.setPositiveButton("Show on map", new DialogInterface.OnClickListener() { 
-		    @Override
-		    public void onClick(DialogInterface dialog, int which) {
-		        dialog.cancel();
-		        player.stop();
-		        player.release();
-		        
-		        //open Google Maps to display image's geotag
-		        double latitude = getConvertedLatitude(filepath+IMAGE_SUFFIX);
-		        double longitude = getConvertedLongitude(filepath+IMAGE_SUFFIX);
-		        Uri uri = Uri.parse("geo:"+latitude+","+longitude+"?q="+latitude+","+longitude);
-		        Intent intent = new Intent(android.content.Intent.ACTION_VIEW, uri);
-		        startActivity(intent);
-		    }
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				//open Google Maps using an intent to display image's geotag
+
+				// remove dialog and stop audio from playing:
+				dialog.cancel();
+				player.stop();
+				player.release();
+
+				// get latitude and longitude from EXIF data:
+				double latitude = getConvertedLatitude(filepath+IMAGE_SUFFIX);
+				double longitude = getConvertedLongitude(filepath+IMAGE_SUFFIX);
+				// use an intent to open Google Maps (or similar):
+				Uri uri = Uri.parse("geo:"+latitude+","+longitude+"?q="+latitude+","+longitude);
+				Intent intent = new Intent(android.content.Intent.ACTION_VIEW, uri);
+				startActivity(intent);
+			}
 		});
 		builder.setNeutralButton("Upload", new DialogInterface.OnClickListener() { 
-		    @Override
-		    public void onClick(DialogInterface dialog, int which) {
-		    	new ServerSendTask().execute(directory.getAbsolutePath(), filename);
-		    }
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// upload the user's capture to the server. TODO - feedback
+				new ServerSendTask().execute(directory.getAbsolutePath(), filename);
+			}
 		});
 		builder.setNegativeButton("Dismiss", new DialogInterface.OnClickListener() { 
-		    @Override
-		    public void onClick(DialogInterface dialog, int which) {
-		        dialog.cancel();
-		        player.stop();
-		        player.release();
-		    }
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// remove the dialog and stop the audio from playing. TODO - allow deletion
+				dialog.cancel();
+				player.stop();
+				player.release();
+			}
 		});
+
 		builder.show();
-		player.start();
-		
-		
+		player.start();		
 	}
-	private void populateFilesList() {
+
+	/**
+	 * Populates the list of files with the files in the captures directory.
+	 */
+	public void populateFilesList() {
 		File[] directoryContents = directory.listFiles();
 		for (int i = 0; i < directoryContents.length; i++) {
 			String name = directoryContents[i].getName();
@@ -137,15 +161,14 @@ public class LibraryFragment extends Fragment {
 				if (!imageFiles.contains(name)) imageFiles.add(name);
 			}
 		}
-	}
-	
-	public void updateFilesList() {
-		populateFilesList();
-		//adapter.notifyDataSetChanged();
-		Log.d("LIBRARY","Files updated");
-	}
-	
+	}	
 
+	/**
+	 * Returns the longitude (in decimal format) from the EXIF data of a JPEG obtained 
+	 * from the provided filepath.
+	 * @param filepath - the filepath of the image file
+	 * @return the longitude in decimal format
+	 */
 	private double getConvertedLongitude(String filepath) {
 		ExifInterface exif = null;
 		try {
@@ -156,6 +179,12 @@ public class LibraryFragment extends Fragment {
 		return convertDMStoDec(exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE), exif.getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF));
 	}
 
+	/**
+	 * Returns the latitude (in decimal format) from the EXIF data of a JPEG obtained 
+	 * from the provided filepath.
+	 * @param filepath - the filepath of the image file
+	 * @return the latitude in decimal format
+	 */
 	private double getConvertedLatitude(String filepath) {
 		ExifInterface exif = null;
 		try {
@@ -165,18 +194,29 @@ public class LibraryFragment extends Fragment {
 		}
 		return convertDMStoDec(exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE), exif.getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF));
 	}
-	
-	private double convertDMStoDec(String dms, String direction) {
-	    	// see http://en.wikipedia.org/wiki/Geographic_coordinate_conversion#Conversion_from_DMS_to_Decimal_Degree
-		 	//dms string will be of the form degrees+"/1,"+minutes+"/1,"+seconds+"/1000"
-		Log.d("","DMS: "+dms+" Dir: "+direction);
-		 String[] splitDMS = dms.split("/1,");
-		 int dec = Integer.parseInt(splitDMS[0]);
-		 int min = Integer.parseInt(splitDMS[1]);
-		 float sec = Integer.parseInt(splitDMS[2].substring(0, splitDMS[2].length() - 5)) / 1000; //remove "/1000"
-		 double total = dec+ (min*60+sec)/3600;
-		 if (direction.equals("W") || direction.equals("S")) total = -total;
-		 Log.d("","TOTAL: "+total);
-		 return total;
-	 }
+
+	/**
+	 * Converts a degrees-minutes-seconds latitude/longitude to decimal format.
+	 * @param dms - the latitude/longitude in degrees-minutes-seconds format
+	 * @param direction - "W", "E", "S" or "N"
+	 * @return a double representing the input in decimal format.
+	 */
+	private static double convertDMStoDec(String dms, String direction) {
+		// see http://en.wikipedia.org/wiki/Geographic_coordinate_conversion#Conversion_from_DMS_to_Decimal_Degree
+
+		//dms string will be of the form degrees+"/1,"+minutes+"/1,"+seconds+"/1000"
+		String[] splitDMS = dms.split("/1,");
+		if (splitDMS.length != 4)
+			throw new IllegalArgumentException("DMS string did not have hte expected format.");
+
+		int dec = Integer.parseInt(splitDMS[0]);
+		int min = Integer.parseInt(splitDMS[1]);
+		float sec = Integer.parseInt(splitDMS[2].substring(0, splitDMS[2].length() - 5)) / 1000; //remove "/1000"
+
+		double total = dec + (min * 60 + sec) / 3600;
+
+		if (direction.equals("W") || direction.equals("S")) total = -total;
+
+		return total;
+	}
 }

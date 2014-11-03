@@ -76,7 +76,8 @@ class SpectrogramDrawer {
         scrollingThread = new Thread() {
             @Override
             public void run() {
-                while (running) scroll();
+                while (running)
+                	scroll();
             }
         };
         scrollingThread.setName("Scrolling thread");

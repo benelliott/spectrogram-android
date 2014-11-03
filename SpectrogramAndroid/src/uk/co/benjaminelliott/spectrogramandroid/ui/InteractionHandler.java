@@ -3,7 +3,6 @@ package uk.co.benjaminelliott.spectrogramandroid.ui;
 import uk.co.benjaminelliott.spectrogramandroid.preferences.UiConfig;
 import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
-import android.util.Log;
 import android.view.MotionEvent;
 
 /**
@@ -17,7 +16,8 @@ public class InteractionHandler {
 	private SpectrogramSurfaceView ssv;
 	private Runnable onLongPress;
 	private Handler handler;
-	//allocate memory for reused variables here to reduce GC
+	
+	//allocate memory for reused variables here to reduce garbage collection:
 	private float lastTouchX;
 	private float lastTouchY;
 	private int mActivePointerId;
@@ -39,21 +39,30 @@ public class InteractionHandler {
 
 	protected InteractionHandler (SpectrogramSurfaceView specSurfaceView) {
 		ssv = specSurfaceView;
+		handler = new Handler();
+		// define the Runnable to execute when the spectrogram is long-pressed:
 		onLongPress = new Runnable() {
 			public void run() {
-				Log.d("", "Long press detected.");
 				ssv.selecting = true;
+				// calculate positions for corners based on where the user has touched the screen:
+				
+				// user's touch was at (centreX, centreY)
 				selectRectL = (centreX - UiConfig.SELECT_RECT_WIDTH/2 < 0) ? 0 : centreX - UiConfig.SELECT_RECT_WIDTH/2;
 				selectRectR = (centreX + UiConfig.SELECT_RECT_WIDTH/2 > ssv.getWidth()) ? ssv.getWidth() : centreX + UiConfig.SELECT_RECT_WIDTH/2;
 				selectRectT = (centreY - UiConfig.SELECT_RECT_HEIGHT/2 < 0) ? 0 : centreY - UiConfig.SELECT_RECT_HEIGHT/2;
 				selectRectB = (centreY + UiConfig.SELECT_RECT_HEIGHT/2 > ssv.getHeight()) ? ssv.getHeight() : centreY + UiConfig.SELECT_RECT_HEIGHT/2;
+				// update selection rectangle with new dimensions:
 				ssv.updateSelectRect(selectRectT, selectRectB, selectRectL, selectRectR);
+				// show the confirm/cancel buttons:
 				ssv.enableCaptureButtonContainer();
 			}
 		};
-		handler = new Handler();
 	}
 
+	/**
+	 * Determine the type of touch event that has occurred and process it accordingly.
+	 * @param ev
+	 */
 	public void handleTouchEvent(MotionEvent ev) {
 		action = MotionEventCompat.getActionMasked(ev); 
 		switch (action) {
@@ -61,7 +70,7 @@ public class InteractionHandler {
 			handleDown(ev);
 			break;
 
-		case MotionEvent.ACTION_MOVE:  //occurs when there is a difference between ACTION_UP and ACTION_DOWN
+		case MotionEvent.ACTION_MOVE:  //occurs when there is a spatial difference between ACTION_UP and ACTION_DOWN
 			handleMove(ev);
 			break;
 
@@ -70,24 +79,35 @@ public class InteractionHandler {
 			break;
 
 		default: //catch MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL
-			cancelLongpress();
+			cancelLongpress(); // user has lifted their finger
 		}
 
 	}
 
 
+	/**
+	 * Handle a "finger down" event on the spectrogram by pausing it from scrolling or, if selecting,
+	 * deciding which selection rectangle corner is to be moved.
+	 * @param ev
+	 */
 	private void handleDown(MotionEvent ev) {
 		if (!ssv.selecting) {
+			// if scrolling, pause
 			ssv.pauseScrolling();
-			handler.postDelayed(onLongPress, 500); //run the long-press runnable if not cancelled by move event (0.5 second timeout) [only if not already selecting]
+			//run the long-press runnable if not cancelled by move event (0.5 second timeout)
+			handler.postDelayed(onLongPress, 500); 
 		}
+		
+		// find the location of the user's touch:
 		pointerIndex = MotionEventCompat.getActionIndex(ev); 
 		x = MotionEventCompat.getX(ev, pointerIndex); 
 		centreX = MotionEventCompat.getX(ev, pointerIndex);
 		centreY = MotionEventCompat.getY(ev, pointerIndex);
+		
 		// Remember where we started (for dragging)
 		lastTouchX = x;
 		lastTouchY = MotionEventCompat.getY(ev, pointerIndex);
+		
 		// Save the ID of this pointer [finger], in case of drag 
 		mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
 		if (ssv.selecting) {
@@ -95,41 +115,44 @@ public class InteractionHandler {
 			selectedCorner = 0;
 			if (Math.abs(centreX-selectRectL) <= UiConfig.SELECT_RECT_CORNER_RADIUS && Math.abs(centreY-selectRectT) <= UiConfig.SELECT_RECT_CORNER_RADIUS) {
 				//user touched top-left corner
-				Log.d("","Top left");
 				selectedCorner = 1;
 			}
 			if (Math.abs(centreX-selectRectR) <= UiConfig.SELECT_RECT_CORNER_RADIUS && Math.abs(centreY-selectRectT) <= UiConfig.SELECT_RECT_CORNER_RADIUS) {
 				//user touched top-right corner
-				Log.d("","Top right");
 				selectedCorner = 2;
 			}
 			if (Math.abs(centreX-selectRectL) <= UiConfig.SELECT_RECT_CORNER_RADIUS && Math.abs(centreY-selectRectB) <= UiConfig.SELECT_RECT_CORNER_RADIUS) {
 				//user touched bottom-left corner
-				Log.d("","Bottom left");
 				selectedCorner = 3;
 			}
 			if (Math.abs(centreX-selectRectR) <= UiConfig.SELECT_RECT_CORNER_RADIUS && Math.abs(centreY-selectRectB) <= UiConfig.SELECT_RECT_CORNER_RADIUS) {
 				//user touched bottom-right corner
-				Log.d("","Bottom right");
 				selectedCorner = 4;
 			}
-			//if (selectedCorner == 0) cancelSelection(); un-comment this to enable sleection cancelling by tapping outside of rectangle
 		}
 	}
 
+	/**
+	 * Handle a "finger moved" event by either scrolling the spectrogram or moving a selection
+	 * rectangle corner.
+	 * @param ev
+	 */
 	private void handleMove(MotionEvent ev) {
 		// Find the index of the active pointer and fetch its position
 		pointerIndex = MotionEventCompat.findPointerIndex(ev,mActivePointerId);
 		// Calculate the distance moved
-		if (!ssv.selecting) { //don't allow for scrolling if user is trying to select an area of the spectrogram
+		if (!ssv.selecting) {
+			// if not selecting, then scroll the spectrogram
 			x = MotionEventCompat.getX(ev, pointerIndex); //Note: never care about y axis
 			dx = x - lastTouchX;
+			
 			if (dx > 5 || dx < -5) { //only if moved more than 5 pixels
 				handler.removeCallbacks(onLongPress); //cancel long-press runnable
 				ssv.slideTo((int) dx);
 				// Remember this touch position for the next move event
 			}
 			lastTouchX = x;
+			
 		} else { 
 			//if selecting mode entered, allow user to move corners to adjust select-area rectangle size
 			x = MotionEventCompat.getX(ev, pointerIndex);
@@ -142,11 +165,21 @@ public class InteractionHandler {
 		}
 	}
 
+	/**
+	 * Cancel the long-press runnable because the user has lifted their finger before the timeout.
+	 */
 	private void cancelLongpress() {
-		handler.removeCallbacks(onLongPress); //cancel long-press runnable
+		handler.removeCallbacks(onLongPress);
 		mActivePointerId = MotionEvent.INVALID_POINTER_ID;
 	}
 
+	/**
+	 * Handle the user lifting their finger from the screen by cancelling the long-press runnable
+	 * and, if the finger that was lifted was the one that started the move event, storing the 
+	 * x-coorindate of the last touch so that it can be used later.
+	 * 
+	 * @param ev
+	 */
 	private void handlePointerUp(MotionEvent ev) {
 		cancelLongpress();
 		pointerIndex = MotionEventCompat.getActionIndex(ev); 
@@ -161,6 +194,14 @@ public class InteractionHandler {
 		}
 	}
 
+	/**
+	 * Recalculate selection rectangle dimensions based on which corner the user moved and 
+	 * how far they moved it.
+	 * 
+	 * @param cornerIndex - the index of the corner moved by the user
+	 * @param dx - how far the user moved the corner horizontally, in pixels
+	 * @param dy - how far the user moved the corner vertically, in pixels
+	 */
 	public void moveSelectRectCorner(int cornerIndex, float dx, float dy) {
 		int width = ssv.getWidth();
 		int height = ssv.getHeight();
@@ -187,6 +228,7 @@ public class InteractionHandler {
 			selectRectB += dy;
 			break;
 		}
+		// make sure that the selection rectangle coordinates have not exceeded their limits:
 		selectRectL = (selectRectL < 0) ? 0 : selectRectL;
 		selectRectR = (selectRectR < 0) ? 0 : selectRectR;
 		selectRectL = (selectRectL > width) ? width : selectRectL;
@@ -195,6 +237,7 @@ public class InteractionHandler {
 		selectRectB = (selectRectB < 0) ? 0 : selectRectB;
 		selectRectT = (selectRectT > height) ? height : selectRectT;
 		selectRectB = (selectRectB > height) ? height : selectRectB;
+		// redraw the selection rectangle:
 		ssv.updateSelectRect(selectRectL, selectRectT, selectRectR, selectRectB);
 	}
 

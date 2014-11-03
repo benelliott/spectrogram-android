@@ -20,7 +20,6 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
@@ -65,7 +64,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		super.onCreate(savedInstanceState);
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(this);
-		boolean landscape = prefs.getBoolean(PREF_LANDSCAPE_KEY, false);
+		boolean landscape = prefs.getBoolean(PREF_LANDSCAPE_KEY, true);
 		if (landscape)
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		else
@@ -327,7 +326,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		runOnUiThread(new Runnable() {
 			public void run() {
 				if (library != null) {
-					library.updateFilesList();
+					library.populateFilesList();
 				}
 			}
 		});

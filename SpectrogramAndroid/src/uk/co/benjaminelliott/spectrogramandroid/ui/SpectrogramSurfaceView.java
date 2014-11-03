@@ -26,8 +26,6 @@ import com.google.android.gms.location.LocationClient;
  */
 public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder.Callback {
 
-	private int width;
-
 	private SpectroFragment spectroFragment;
 	private DynamicAudioConfig dac;
 	private SpectrogramDrawer sd;
@@ -37,7 +35,6 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 	private String filename;
 	private LocationClient lc;
 	private AlertDialog loadingAlert; //used to force user to wait for capture
-	private LibraryFragment library;
 
 	public SpectrogramSurfaceView(Context context) {
 		super(context);
@@ -54,13 +51,16 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		init(context);
 	}
 
-	private void init(Context context) { //Initialiser for displaying audio from microphone
+	private void init(Context context) {
 		this.context = context;
 		getHolder().addCallback(this);
 		interactionHandler = new InteractionHandler(this);
+		dac = new DynamicAudioConfig(context);
 
+		// Create the "capture in progress" alert dialog to be used later
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle("Capture in progress...");
+		// Add a spinner to the dialog
 		final ProgressBar pb = new ProgressBar(context);
 		builder.setView(pb);
 		loadingAlert = builder.create();
@@ -68,35 +68,24 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 
 	@Override
 	public void surfaceCreated(SurfaceHolder arg0) {
-		width = getWidth();
-		try {
-			dac = new DynamicAudioConfig(this.getContext());
-			sd = new SpectrogramDrawer(dac, this.getWidth(), this.getHeight(), this.getHolder());
-			spectroFragment.disableResumeButton();
-			spectroFragment.setLeftTimeText(-sd.getScreenFillTime());
-			spectroFragment.setRightTimeText(sd.getTimeFromStopAtPixel(width));
-			spectroFragment.setTopFreqText(sd.getMaxFrequency() / 1000);
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (IllegalStateException e) {
-			e.printStackTrace();
-		}
+		// initialise the spectrogram drawer
+		sd = new SpectrogramDrawer(dac, this.getWidth(), this.getHeight(), this.getHolder());
+		// disable the resume button (as the user has not paused the spectrogram yet):
+		spectroFragment.disableResumeButton();
+		// set the initial values for the axis text views:
+		spectroFragment.setLeftTimeText(-sd.getScreenFillTime());
+		spectroFragment.setRightTimeText(sd.getTimeFromStopAtPixel(getWidth()));
+		spectroFragment.setTopFreqText(sd.getMaxFrequency() / 1000);
 	}
 
 	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width,
-			int height) {
-		//Nothing to do?
-	}
-
-	public void updateLibraryFiles() {
-		library.updateFilesList();
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+		// nothing to do
 	}
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder arg0) {
+		// stop the spectrogram drawer and nullify it
 		if (sd != null) {
 			sd.stop();
 		}
@@ -115,29 +104,38 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 
 	@Override
 	public boolean onTouchEvent(MotionEvent ev) {
+		// pass the touch event to the interaction handler:
 		interactionHandler.handleTouchEvent(ev);
+		// update the axis text labels based on how much the user has scrolled:
 		float leftTextTime = sd.getTimeAtPixel(0) > -sd.getScreenFillTime() ? -sd.getScreenFillTime() : sd.getTimeAtPixel(0);
 		spectroFragment.setLeftTimeText(leftTextTime); //TODO update these live
-		spectroFragment.setRightTimeText(sd.getTimeAtPixel(width));
+		spectroFragment.setRightTimeText(sd.getTimeAtPixel(getWidth()));
+		
 		return true;
 	}
 
 	public void pauseScrolling() {
 		if (sd != null) {
 			sd.pauseScrolling();
+			// show the resume button when scrolling is paused
 			spectroFragment.enableResumeButton();
 		}
 	}
 
 	public void resumeScrolling() {
-		if (selecting) cancelSelection();
-		dac = new DynamicAudioConfig(this.getContext());
+		if (selecting)
+			cancelSelection();
 		sd = new SpectrogramDrawer(dac, this.getWidth(), this.getHeight(), this.getHolder());
+		// disable the resume button once scrolling is resumed
 		spectroFragment.disableResumeButton();
 	}
 
+	/**
+	 * Presents to the user an alert dialog in which they csn enter a filename for the capture they have 
+	 * just made.
+	 */
 	public void confirmSelection() {
-		//create and display an AlertDialog requesting a filename
+		//create and display an AlertDialog requesting a filename for the new capture
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle("What did you hear?");
 		final EditText inputText = new EditText(context);
@@ -147,8 +145,9 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
+				// execute the capture operations:
 				filename = inputText.getText().toString().trim();
-				new CaptureTask(context).execute(); //execute the capture operations
+				new CaptureTask(context).execute();
 			}
 		});
 		builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -160,16 +159,31 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		builder.show();
 	}
 
+	/**
+	 * If a selection is cancelled, hide the selection rectangle and its associated buttons.
+	 */
 	public void cancelSelection() {
 		sd.hideSelectRect();
 		spectroFragment.disableCaptureButtonContainer();
 		selecting = false;
 	}
 
+	/**
+	 * Demands that the spectrogram drawer slide the spectrogram by the specified offset.
+	 * @param offset
+	 */
 	protected void slideTo(int offset) {
 		sd.quickSlide(offset);
 	}
 
+	/**
+	 * Draw the selection rectangle using the specified bounds and move its capture button
+	 * container accordingly.
+	 * @param selectRectL
+	 * @param selectRectT
+	 * @param selectRectR
+	 * @param selectRectB
+	 */
 	protected void updateSelectRect(float selectRectL, float selectRectT, float selectRectR, float selectRectB) {
 		sd.drawSelectRect(selectRectL,selectRectT,selectRectR,selectRectB);
 		spectroFragment.moveCaptureButtonContainer(selectRectL, selectRectT, selectRectR, selectRectB);
@@ -187,33 +201,52 @@ public class SpectrogramSurfaceView extends SurfaceView implements SurfaceHolder
 		this.spectroFragment = spectroFragment;
 	}
 
+	/**
+	 * AsyncTask that stores the user's bitmap and audio capture to disk.
+	 * @author Ben
+	 *
+	 */
 	private class CaptureTask extends AsyncTask<Void, Void, Void> {
 		private Context context;
+		
 		public CaptureTask(Context context) {
 			this.context = context;
 		}
 
-		@Override
-		protected void onPostExecute(Void result) {
-			super.onPostExecute(result);
-			Toast.makeText(context, "Capture completed!", Toast.LENGTH_SHORT).show();
-			loadingAlert.dismiss();
-			((SpectroActivity)spectroFragment.getActivity()).updateLibraryFiles();
-		}
+		/**
+		 * Show the "capture in progress" dialog
+		 */
 		@Override
 		protected void onPreExecute() {
-			super.onPreExecute();
 			loadingAlert.show();
 		}
+		
+		/**
+		 * Requests a bitmap and a chunk of audio based on the user's selection and saves it to disk.
+		 */
 		@Override
 		protected Void doInBackground(Void... arg0) {
 			float[] dimens = interactionHandler.getSelectRectDimensions();
 			Bitmap bitmapToStore = sd.getBitmapToStore(dimens[0],dimens[1],dimens[2],dimens[3]);
 			short[] audioToStore = sd.getAudioToStore(dimens[0],dimens[1],dimens[2],dimens[3]);
-			AudioBitmapConverter abc = new AudioBitmapConverter(filename, dac, bitmapToStore,audioToStore,lc.getLastLocation());
+			AudioBitmapConverter abc;
+			if (lc != null)
+				abc = new AudioBitmapConverter(filename, dac, bitmapToStore,audioToStore,lc.getLastLocation());
+			else
+				abc = new AudioBitmapConverter(filename, dac, bitmapToStore, audioToStore, null);
 			abc.writeThisCbaToFile(filename, DynamicAudioConfig.STORE_DIR_NAME);
 			abc.storeJPEGandWAV();
 			return null;
+		}
+		
+		/**
+		 * Dismiss the "capture in progress" dialog, show a "capture completed" toast and update the library's files list.
+		 */
+		@Override
+		protected void onPostExecute(Void result) {
+			Toast.makeText(context, "Capture completed!", Toast.LENGTH_SHORT).show();
+			loadingAlert.dismiss();
+			((SpectroActivity)spectroFragment.getActivity()).updateLibraryFiles();
 		}
 	}
 }

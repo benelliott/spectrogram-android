@@ -2,9 +2,6 @@ package uk.co.benjaminelliott.spectrogramandroid.audioproc.filters;
 
 import org.jtransforms.fft.DoubleFFT_1D;
 
-
-import android.util.Log;
-
 /**
  * A bandpass filter that is based on a symmetrical Butterworth low-pass filter.
  * @author Ben

@@ -19,8 +19,7 @@
     		android:textColor="#FFFFFF"
     		android:gravity="bottom|right"
  			android:textAppearance="?android:attr/textAppearanceSmall"
- 			android:paddingRight="5dp"
-    		android:text="top" />
+ 			android:paddingRight="5dp" />
 
         <uk.co.benjaminelliott.spectrogramandroid.ui.VerticalTextView
             android:id="@+id/freq_text_bottom"
@@ -30,8 +29,7 @@
     		android:textColor="#FFFFFF"
     		android:gravity="bottom|right"
  			android:textAppearance="?android:attr/textAppearanceSmall"
- 			android:paddingLeft="20dp"
-    		android:text="bot" />
+ 			android:paddingLeft="20dp" />
     </RelativeLayout>
 
     <LinearLayout
@@ -40,7 +38,7 @@
         android:layout_weight="1"
         android:orientation="vertical" >
 
-        <RelativeLayout
+       <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="fill_horizontal"
@@ -84,17 +82,7 @@
                     android:text="Cancel" />
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/text_select_rect"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:layout_centerHorizontal="true"
-                android:background="#88444444"
-                android:text="sr"
-                android:textAlignment="center"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:textColor="#FFFFFF" />
+
         </RelativeLayout>
 
         <RelativeLayout
@@ -107,7 +95,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
-                android:text="left"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:textColor="#FFFFFF" />
 
@@ -116,7 +103,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
-                android:text="right"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:textColor="#FFFFFF" />
         </RelativeLayout>
