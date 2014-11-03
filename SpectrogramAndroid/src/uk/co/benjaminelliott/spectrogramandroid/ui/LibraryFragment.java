@@ -56,9 +56,9 @@ public class LibraryFragment extends Fragment {
 		directory.mkdirs();
 		fileListView = (ListView) rootView.findViewById(R.id.listview_file_library);
 		// populate the ListView with files found in the captures directory:
-		populateFilesList();
 		adapter = new ArrayAdapter<String>(getActivity(),android.R.layout.simple_list_item_1, imageFiles);
 		fileListView.setAdapter(adapter);
+		populateFilesList();
 		// when a list item is clicked, present it to the user for review:
 		fileListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
@@ -161,6 +161,7 @@ public class LibraryFragment extends Fragment {
 				if (!imageFiles.contains(name)) imageFiles.add(name);
 			}
 		}
+		adapter.notifyDataSetChanged();
 	}	
 
 	/**
