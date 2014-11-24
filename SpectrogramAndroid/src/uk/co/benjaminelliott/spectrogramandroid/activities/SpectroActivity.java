@@ -148,7 +148,8 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		switch (item.getItemId()) {
 		case R.id.action_settings: 
 			// if 'Settings' is selected:
-			spectroFragment.pauseScrolling(); // pause the moving spectrogram display
+			if (spectroFragment != null)
+				spectroFragment.pauseScrolling(); // pause the moving spectrogram display
 			// create an Intent to transition from SpectroActivity to SettingsActivity:
 			Intent openSettings = new Intent(SpectroActivity.this,
 					SettingsActivity.class); 
