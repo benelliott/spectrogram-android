@@ -64,7 +64,7 @@ GooglePlayServicesClient.OnConnectionFailedListener {
 		super.onCreate(savedInstanceState);
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(this);
-		boolean landscape = prefs.getBoolean(PREF_LANDSCAPE_KEY, true);
+		boolean landscape = prefs.getBoolean(PREF_LANDSCAPE_KEY, false);
 		if (landscape)
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		else

@@ -17,10 +17,9 @@ public class InteractionHandler {
 	private Runnable onLongPress;
 	private Handler handler;
 	
-	//allocate memory for reused variables here to reduce garbage collection:
 	private float lastTouchX;
 	private float lastTouchY;
-	private int mActivePointerId;
+	private int activePointerId = -1;
 	private float centreX;
 	private float centreY;
 	private int action;
@@ -64,6 +63,10 @@ public class InteractionHandler {
 	 * @param ev
 	 */
 	public void handleTouchEvent(MotionEvent ev) {
+		
+		if (activePointerId != -1 && ev.getPointerId(ev.getActionIndex()) != activePointerId) // ignore other fingers for now
+			return;
+		
 		action = MotionEventCompat.getActionMasked(ev); 
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:  //finger pressed on screen
@@ -74,23 +77,17 @@ public class InteractionHandler {
 			handleMove(ev);
 			break;
 
-		case MotionEvent.ACTION_POINTER_UP:
-			handlePointerUp(ev);
-			break;
-
-		default: //catch MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL
-			cancelLongpress(); // user has lifted their finger
+		default: //catch MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_POINTER_UP
+			handlePointerUp(ev); // user has lifted their finger
 		}
-
 	}
-
 
 	/**
 	 * Handle a "finger down" event on the spectrogram by pausing it from scrolling or, if selecting,
 	 * deciding which selection rectangle corner is to be moved.
 	 * @param ev
 	 */
-	private void handleDown(MotionEvent ev) {
+	private void handleDown(MotionEvent ev) {		
 		if (!ssv.selecting) {
 			// if scrolling, pause
 			ssv.pauseScrolling();
@@ -99,7 +96,11 @@ public class InteractionHandler {
 		}
 		
 		// find the location of the user's touch:
-		pointerIndex = MotionEventCompat.getActionIndex(ev); 
+		pointerIndex = MotionEventCompat.getActionIndex(ev);
+		
+		if (pointerIndex == -1)
+			return;
+		
 		x = MotionEventCompat.getX(ev, pointerIndex); 
 		centreX = MotionEventCompat.getX(ev, pointerIndex);
 		centreY = MotionEventCompat.getY(ev, pointerIndex);
@@ -109,7 +110,7 @@ public class InteractionHandler {
 		lastTouchY = MotionEventCompat.getY(ev, pointerIndex);
 		
 		// Save the ID of this pointer [finger], in case of drag 
-		mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
+		activePointerId = MotionEventCompat.getPointerId(ev, pointerIndex);
 		if (ssv.selecting) {
 			//decide which corner is being dragged based on proximity
 			selectedCorner = 0;
@@ -139,7 +140,9 @@ public class InteractionHandler {
 	 */
 	private void handleMove(MotionEvent ev) {
 		// Find the index of the active pointer and fetch its position
-		pointerIndex = MotionEventCompat.findPointerIndex(ev,mActivePointerId);
+		pointerIndex = MotionEventCompat.findPointerIndex(ev, activePointerId);
+		if (pointerIndex == -1)
+			return;
 		// Calculate the distance moved
 		if (!ssv.selecting) {
 			// if not selecting, then scroll the spectrogram
@@ -170,28 +173,18 @@ public class InteractionHandler {
 	 */
 	private void cancelLongpress() {
 		handler.removeCallbacks(onLongPress);
-		mActivePointerId = MotionEvent.INVALID_POINTER_ID;
+		activePointerId = MotionEvent.INVALID_POINTER_ID;
 	}
 
 	/**
 	 * Handle the user lifting their finger from the screen by cancelling the long-press runnable
-	 * and, if the finger that was lifted was the one that started the move event, storing the 
-	 * x-coorindate of the last touch so that it can be used later.
+	 * and resetting the active pointer ID.
 	 * 
 	 * @param ev
 	 */
 	private void handlePointerUp(MotionEvent ev) {
 		cancelLongpress();
-		pointerIndex = MotionEventCompat.getActionIndex(ev); 
-		final int pointerId = MotionEventCompat.getPointerId(ev, pointerIndex); 
-
-		if (pointerId == mActivePointerId) {
-			// This was our active pointer going up. Choose a new
-			// active pointer and adjust accordingly.
-			final int newPointerIndex = pointerIndex == 0 ? 1 : 0;
-			lastTouchX = MotionEventCompat.getX(ev, newPointerIndex); 
-			mActivePointerId = MotionEventCompat.getPointerId(ev, newPointerIndex);
-		}
+		activePointerId = -1;
 	}
 
 	/**

@@ -1,5 +1,6 @@
 package uk.co.benjaminelliott.spectrogramandroid.preferences;
 
+import uk.co.benjaminelliott.spectrogramandroid.R;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -65,17 +66,10 @@ public class DynamicAudioConfig {
             COLOUR_MAP = 0;
         }
         
-        float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.MAX_VALUE);
-        if (newContrast != Float.MAX_VALUE) {
-            // slider value must be between 0 and 1, so multiply by 3 and add 1 to
-            // get something more 'in range' of the usual contrast value
-            CONTRAST = newContrast * 3.0f + 1.0f; 
-        }
-        else {
-            CONTRAST = newContrast;
-        }
-   
-
+        float newContrast = prefs.getFloat(PREF_CONTRAST_KEY, Float.parseFloat(context.getResources().getString(R.string.pref_contrast_default)));
+        // slider value must be between 0 and 1, so multiply by 3 and add 1 to
+        // get something more 'in range' of the usual contrast value
+        CONTRAST = newContrast * 3.0f + 1.0f;
     }
 
 }
